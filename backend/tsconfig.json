@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "module": "NodeNext",          // Obligatorio para Node.js moderno
+    "moduleResolution": "NodeNext",// Obligatorio para Node.js moderno
+    "verbatimModuleSyntax": true,  // El que te pide usar 'import type'
+    "target": "ESNext",
+    "outDir": "./dist"
+  }
+}

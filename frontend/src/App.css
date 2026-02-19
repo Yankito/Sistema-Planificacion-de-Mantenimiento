@@ -1,0 +1,14 @@
+@import "tailwindcss";
+
+@theme {
+  --color-pf-red: #E30613;
+  --color-pf-red-hover: #C10511;
+  --color-pf-light: #F8FAFC; /* Fondo principal claro */
+  --color-pf-sidebar: #FFFFFF; /* Sidebar blanco puro */
+  --color-pf-border: #E2E8F0; /* Bordes suaves */
+}
+
+body {
+  @apply bg-pf-light text-slate-800 antialiased;
+  user-select: none;
+}
