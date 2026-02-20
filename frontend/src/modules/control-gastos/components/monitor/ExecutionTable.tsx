@@ -129,9 +129,13 @@ export const ExecutionTable: React.FC<ExecutionTableProps> = ({
                                                     onShowDetails(`Gastos: ${group.centroCosto}`, getGroupTransactions(group.centroCosto), group.totalBudget);
                                                 }}
                                             >
-                                                {isOver ? (
-                                                    <Tooltip content="Presupuesto total excedido">
+                                                {group.assets.some(a => a.hasActiveOT) ? (
+                                                    <Tooltip content="CRÍTICO: Centro de costo con exceso de presupuesto en categoría y OTs aún LIBERADAS">
                                                         <AlertCircle size={14} className="text-pf-red animate-pulse" />
+                                                    </Tooltip>
+                                                ) : isOver ? (
+                                                    <Tooltip content="Presupuesto del centro de costo excedido (OTs Finalizadas)">
+                                                        <AlertCircle size={14} className="text-amber-500" />
                                                     </Tooltip>
                                                 ) : (
                                                     <>
@@ -140,7 +144,7 @@ export const ExecutionTable: React.FC<ExecutionTableProps> = ({
                                                             (a.totalReal > a.totalBudget && a.totalBudget > 0)
                                                         ) && (
                                                                 <Tooltip content="Alerta: Desviación interna en categorías">
-                                                                    <AlertCircle size={14} className="text-amber-500" />
+                                                                    <AlertCircle size={14} className="text-amber-500/70" />
                                                                 </Tooltip>
                                                             )}
                                                         {group.assets.some(a => a.hasDateAlert) && (
@@ -216,14 +220,18 @@ export const ExecutionTable: React.FC<ExecutionTableProps> = ({
                                                                         className="flex items-center justify-end gap-2 text-xs hover:text-blue-600 transition-colors group/asset"
                                                                         onClick={() => onShowDetails(`Activo: ${asset.activo}`, getAssetTransactions(asset.activo, isHito), asset.totalBudget)}
                                                                     >
-                                                                        {asset.totalReal > asset.totalBudget && asset.totalBudget > 0 ? (
-                                                                            <Tooltip content="Presupuesto del activo excedido">
+                                                                        {asset.hasActiveOT ? (
+                                                                            <Tooltip content="CRÍTICO: Presupuesto de categoría excedido con OT todavía LIBERADA">
                                                                                 <AlertCircle size={12} className="text-pf-red animate-pulse" />
+                                                                            </Tooltip>
+                                                                        ) : (asset.totalReal > asset.totalBudget && asset.totalBudget > 0) ? (
+                                                                            <Tooltip content="Presupuesto excedido (OT Finalizada/Cerrada)">
+                                                                                <AlertCircle size={12} className="text-amber-500" />
                                                                             </Tooltip>
                                                                         ) : (
                                                                             asset.details.some(d => d.real > d.budget && d.budget > 0) && (
                                                                                 <Tooltip content="Alerta: Desviación interna en categorías (ej: Bodega vs Hito)">
-                                                                                    <AlertCircle size={12} className="text-amber-500" />
+                                                                                    <AlertCircle size={12} className="text-amber-500/70" />
                                                                                 </Tooltip>
                                                                             )
                                                                         )}

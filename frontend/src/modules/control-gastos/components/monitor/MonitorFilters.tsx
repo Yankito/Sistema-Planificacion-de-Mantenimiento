@@ -12,6 +12,8 @@ interface MonitorFiltersProps {
     onToggleInternalDeviation: () => void;
     filterDateAlert: boolean;
     onToggleDateAlert: () => void;
+    filterCriticalOnly: boolean;
+    onToggleCriticalOnly: () => void;
     itemsPerPage: number;
     onItemsPerPageChange: (items: number) => void;
     searchTerm: string;
@@ -30,6 +32,8 @@ export const MonitorFilters: React.FC<MonitorFiltersProps> = ({
     onToggleInternalDeviation,
     filterDateAlert,
     onToggleDateAlert,
+    filterCriticalOnly,
+    onToggleCriticalOnly,
     itemsPerPage,
     onItemsPerPageChange,
     searchTerm,
@@ -53,6 +57,19 @@ export const MonitorFilters: React.FC<MonitorFiltersProps> = ({
                     </select>
 
                     <div className="h-6 w-px bg-slate-200 mx-1 hidden md:block"></div>
+
+                    <Tooltip content="CRÍTICO: Ver solo excedidos con OTs aún LIBERADAS">
+                        <button
+                            onClick={onToggleCriticalOnly}
+                            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition-all border uppercase tracking-wider ${filterCriticalOnly
+                                ? 'bg-red-600 text-white border-red-700 shadow-md shadow-red-100 ring-2 ring-red-200'
+                                : 'bg-white text-pf-red border-red-100 hover:bg-red-50'
+                                }`}
+                        >
+                            <AlertCircle size={14} className={filterCriticalOnly ? 'animate-pulse' : ''} />
+                            Críticos (OT Act)
+                        </button>
+                    </Tooltip>
 
                     <Tooltip content="Ver solo grupos con presupuesto total excedido">
                         <button

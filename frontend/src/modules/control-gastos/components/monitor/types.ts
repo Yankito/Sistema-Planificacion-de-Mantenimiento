@@ -15,6 +15,7 @@ export interface AssetExecutionGroup {
     planta?: string;
     claseContable?: string;
     deviation: number;
+    hasActiveOT?: boolean;
 }
 
 export interface CostCenterGroup {

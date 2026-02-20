@@ -29,6 +29,7 @@ export const ExecutionMonitor = ({ selectedYear, selectedPlanta }: ExecutionMoni
     const [filterExceededOnly, setFilterExceededOnly] = useState(false);
     const [filterInternalDeviation, setFilterInternalDeviation] = useState(false);
     const [filterDateAlert, setFilterDateAlert] = useState(false);
+    const [filterCriticalOnly, setFilterCriticalOnly] = useState(false);
 
     // Detail Panel State
     const [rawMonthlyReal, setRawMonthlyReal] = useState<GastoConsolidadoRow[]>([]);
@@ -99,6 +100,10 @@ export const ExecutionMonitor = ({ selectedYear, selectedPlanta }: ExecutionMoni
                     assetDetails.push({ tipo: 'Correctivo', budget: row.montoCorrectivo || 0, real: realCorrectivo });
 
                 const hasDateAlert = assetReal.some(g => g.alertaFecha === 1);
+                const hasActiveOT =
+                    (realBodega > (row.montoBodega || 0) && assetReal.some(g => g.tipoGasto === 'BODEGA' && g.estadoTrabajo === 'Liberado')) ||
+                    (realServExt > (row.montoServExt || 0) && assetReal.some(g => g.tipoGasto === 'SERV_EXT' && g.estadoTrabajo === 'Liberado')) ||
+                    (realCorrectivo > (row.montoCorrectivo || 0) && assetReal.some(g => g.tipoGasto === 'CORRECTIVO' && g.estadoTrabajo === 'Liberado'));
                 const rowBudget = (row.montoBodega || 0) + (row.montoServExt || 0) + (row.montoCorrectivo || 0);
                 const rowReal = realBodega + realServExt + realCorrectivo;
 
@@ -113,7 +118,8 @@ export const ExecutionMonitor = ({ selectedYear, selectedPlanta }: ExecutionMoni
                     hasDateAlert,
                     planta: firstReal?.planta,
                     claseContable: firstReal?.claseContable,
-                    deviation: calculateDeviation(rowReal, rowBudget)
+                    deviation: calculateDeviation(rowReal, rowBudget),
+                    hasActiveOT
                 });
 
                 groups[cc].totalBudget += rowBudget;
@@ -141,7 +147,8 @@ export const ExecutionMonitor = ({ selectedYear, selectedPlanta }: ExecutionMoni
                         hasDateAlert: false,
                         planta: g.planta,
                         claseContable: g.claseContable,
-                        deviation: 100
+                        deviation: 100,
+                        hasActiveOT: false
                     };
                     groups[cc].assets.push(assetRow);
                 }
@@ -149,6 +156,8 @@ export const ExecutionMonitor = ({ selectedYear, selectedPlanta }: ExecutionMoni
                 assetRow.totalReal += g.costoTrx;
                 assetRow.deviation = calculateDeviation(assetRow.totalReal, assetRow.totalBudget);
                 if (g.alertaFecha === 1) assetRow.hasDateAlert = true;
+                // En 'No Presupuestado', cualquier gasto con OT Liberada es critico (presupuesto es 0)
+                if (g.estadoTrabajo === 'Liberado' && g.costoTrx > 0) assetRow.hasActiveOT = true;
 
                 let detail = assetRow.details.find(d => d.tipo === (g.tipoGasto === 'BODEGA' ? 'Bodega' : g.tipoGasto === 'SERV_EXT' ? 'Serv. Externos' : 'Correctivo'));
                 if (!detail) {
@@ -240,6 +249,13 @@ export const ExecutionMonitor = ({ selectedYear, selectedPlanta }: ExecutionMoni
         );
     };
 
+    const handleToggleFilter = (type: 'critical' | 'exceeded' | 'internal' | 'date') => {
+        if (type === 'critical') setFilterCriticalOnly(!filterCriticalOnly);
+        if (type === 'exceeded') setFilterExceededOnly(!filterExceededOnly);
+        if (type === 'internal') setFilterInternalDeviation(!filterInternalDeviation);
+        if (type === 'date') setFilterDateAlert(!filterDateAlert);
+    };
+
     // Filter & Sort Logic
     const filteredAndSortedData = groupedData
         .filter(group => {
@@ -252,12 +268,14 @@ export const ExecutionMonitor = ({ selectedYear, selectedPlanta }: ExecutionMoni
                 (a.totalReal > a.totalBudget && a.totalBudget > 0)
             );
             const hasDateAlert = group.assets.some(a => a.hasDateAlert);
+            const hasCritical = group.assets.some(a => a.totalReal > a.totalBudget && a.hasActiveOT);
 
             const matchesExceeded = !filterExceededOnly || isExceeded;
             const matchesInternal = !filterInternalDeviation || hasInternalDeviation;
             const matchesDate = !filterDateAlert || hasDateAlert;
+            const matchesCritical = !filterCriticalOnly || hasCritical;
 
-            return matchesSearch && matchesExceeded && matchesInternal && matchesDate;
+            return matchesSearch && matchesExceeded && matchesInternal && matchesDate && matchesCritical;
         })
         .sort((a, b) => {
             const factor = sortOrder === 'asc' ? 1 : -1;
@@ -335,6 +353,8 @@ export const ExecutionMonitor = ({ selectedYear, selectedPlanta }: ExecutionMoni
                 onToggleInternalDeviation={() => setFilterInternalDeviation(!filterInternalDeviation)}
                 filterDateAlert={filterDateAlert}
                 onToggleDateAlert={() => setFilterDateAlert(!filterDateAlert)}
+                filterCriticalOnly={filterCriticalOnly}
+                onToggleCriticalOnly={() => setFilterCriticalOnly(!filterCriticalOnly)}
                 itemsPerPage={itemsPerPage}
                 onItemsPerPageChange={setItemsPerPage}
                 searchTerm={searchTerm}
@@ -354,6 +374,7 @@ export const ExecutionMonitor = ({ selectedYear, selectedPlanta }: ExecutionMoni
                 groupedData={groupedData}
                 monthName={months.find(m => m.id === currentMonth)?.name || ''}
                 formatCurrency={formatCurrency}
+                onToggleFilter={handleToggleFilter}
             />
 
             <ExecutionTable

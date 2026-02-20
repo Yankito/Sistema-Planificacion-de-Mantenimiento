@@ -12,6 +12,7 @@ interface KPICardsProps {
     groupedData: CostCenterGroup[];
     monthName: string;
     formatCurrency: (val: number) => string;
+    onToggleFilter?: (type: 'critical' | 'exceeded' | 'internal' | 'date') => void;
 }
 
 export const KPICards: React.FC<KPICardsProps> = ({
@@ -24,7 +25,8 @@ export const KPICards: React.FC<KPICardsProps> = ({
     totalCorrectivoReal,
     groupedData,
     monthName,
-    formatCurrency
+    formatCurrency,
+    onToggleFilter
 }) => {
     return (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -125,40 +127,67 @@ export const KPICards: React.FC<KPICardsProps> = ({
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between relative">
                 <div>
                     <p className="text-slate-500 text-sm font-medium">Alertas de Ejecución</p>
-                    <div className="mt-4 space-y-4">
-                        <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center text-pf-red shadow-sm border border-red-100">
-                                <AlertCircle size={24} />
+                    <div className="mt-4 grid grid-cols-2 gap-4">
+                        <div
+                            className="flex items-center gap-3 cursor-pointer hover:bg-slate-50 p-1.5 rounded-xl transition-colors group/alert"
+                            onClick={() => onToggleFilter?.('critical')}
+                        >
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm border transition-all ${groupedData.some(g => g.totalReal > g.totalBudget && g.assets.some(a => a.hasActiveOT))
+                                ? 'bg-red-50 text-pf-red border-red-100 group-hover/alert:scale-110'
+                                : 'bg-slate-50 text-slate-300 border-slate-100'
+                                }`}>
+                                <AlertCircle size={20} className={groupedData.some(g => g.totalReal > g.totalBudget && g.assets.some(a => a.hasActiveOT)) ? 'animate-pulse' : ''} />
                             </div>
                             <div>
-                                <h4 className="text-2xl font-black text-slate-800">
+                                <h4 className="text-xl font-black text-slate-800 line-clamp-1">
+                                    {groupedData.filter(g => g.totalReal > g.totalBudget && g.assets.some(a => a.hasActiveOT)).length}
+                                </h4>
+                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider line-clamp-1">Críticos (OT Act)</p>
+                            </div>
+                        </div>
+
+                        <div
+                            className="flex items-center gap-3 cursor-pointer hover:bg-slate-50 p-1.5 rounded-xl transition-colors group/alert"
+                            onClick={() => onToggleFilter?.('exceeded')}
+                        >
+                            <div className="w-10 h-10 rounded-xl bg-red-50/50 flex items-center justify-center text-pf-red/70 shadow-sm border border-red-100/50 group-hover/alert:scale-110 transition-transform">
+                                <AlertCircle size={20} />
+                            </div>
+                            <div>
+                                <h4 className="text-xl font-black text-slate-800">
                                     {groupedData.filter(g => g.totalReal > g.totalBudget && g.totalBudget > 0).length}
                                 </h4>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Centros Excedidos</p>
+                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider line-clamp-1">Centros Exc.</p>
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-2xl bg-amber-50 flex items-center justify-center text-amber-600 shadow-sm border border-amber-100">
-                                <AlertCircle size={24} />
+                        <div
+                            className="flex items-center gap-3 cursor-pointer hover:bg-slate-50 p-1.5 rounded-xl transition-colors group/alert"
+                            onClick={() => onToggleFilter?.('internal')}
+                        >
+                            <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600 shadow-sm border border-amber-100 group-hover/alert:scale-110 transition-transform">
+                                <AlertCircle size={20} />
                             </div>
                             <div>
-                                <h4 className="text-2xl font-black text-slate-800">
+                                <h4 className="text-xl font-black text-slate-800">
                                     {groupedData.filter(g => g.assets.some(a => a.details.some(d => d.real > d.budget && d.budget > 0))).length}
                                 </h4>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Desv. Internas</p>
+                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider line-clamp-1">Desv. Internas</p>
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600 shadow-sm border border-indigo-100">
-                                <AlertCircle size={24} />
+                        <div
+                            className="flex items-center gap-3 cursor-pointer hover:bg-slate-50 p-1.5 rounded-xl transition-colors group/alert"
+                            onClick={() => onToggleFilter?.('date')}
+                        >
+                            <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 shadow-sm border border-indigo-100 group-hover/alert:scale-110 transition-transform">
+                                <AlertCircle size={20} />
                             </div>
                             <div>
-                                <h4 className="text-2xl font-black text-slate-800">
+                                <h4 className="text-xl font-black text-slate-800">
                                     {groupedData.filter(g => g.assets.some(a => a.hasDateAlert)).length}
                                 </h4>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Meses Diferentes</p>
+                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider line-clamp-1">Meses Dif.</p>
                             </div>
                         </div>
                     </div>
