@@ -8,6 +8,7 @@ interface TransactionSidePanelProps {
     title: string;
     transactions: GastoConsolidadoRow[];
     formatCurrency: (val: number) => string;
+    totalContextBudget?: number;
 }
 
 export const TransactionSidePanel: React.FC<TransactionSidePanelProps> = ({
@@ -15,7 +16,8 @@ export const TransactionSidePanel: React.FC<TransactionSidePanelProps> = ({
     onClose,
     title,
     transactions,
-    formatCurrency
+    formatCurrency,
+    totalContextBudget
 }) => {
     const [selectedIndices, setSelectedIndices] = useState<Set<number>>(new Set());
 
@@ -41,6 +43,8 @@ export const TransactionSidePanel: React.FC<TransactionSidePanelProps> = ({
     const selectedSum = Array.from(selectedIndices).reduce((acc, idx) => {
         return acc + (transactions[idx]?.costoTrx || 0);
     }, 0);
+
+    const totalTransactionsSum = transactions.reduce((acc, t) => acc + t.costoTrx, 0);
 
     const getGastoStyles = (tipo: string) => {
         const t = (tipo || '').toUpperCase();
@@ -87,7 +91,7 @@ export const TransactionSidePanel: React.FC<TransactionSidePanelProps> = ({
                 <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-white shadow-sm z-10">
                     <div>
                         <h3 className="text-lg font-bold text-slate-800">{title}</h3>
-                        <p className="text-xs text-slate-500">Haz clic en las tarjetas para sumar gastos específicos</p>
+                        <p className="text-xs text-slate-500">Haz clic en las tarjetas para sumar y comparar contra el presupuesto</p>
                     </div>
                     <div className="flex items-center gap-2">
                         {selectedIndices.size > 0 && (
@@ -108,7 +112,7 @@ export const TransactionSidePanel: React.FC<TransactionSidePanelProps> = ({
                 </div>
 
                 {/* Panel Content (Scrollable Table) */}
-                <div className="flex-1 overflow-y-auto p-4 pb-32">
+                <div className="flex-1 overflow-y-auto p-4 pb-48">
                     {transactions.length === 0 ? (
                         <div className="h-full flex flex-col items-center justify-center text-slate-400 italic gap-2">
                             <Info size={40} className="opacity-20" />
@@ -159,10 +163,19 @@ export const TransactionSidePanel: React.FC<TransactionSidePanelProps> = ({
                                                     </div>
                                                 </div>
                                                 <div className="flex flex-col">
+                                                    <span className="text-[9px] text-slate-400 uppercase font-bold">Fecha Programada</span>
+                                                    <span className={`text-xs font-semibold ${trx.alertaFecha === 1 ? 'text-amber-600' : 'text-slate-600'}`}>
+                                                        {trx.fechaOtPro ? new Date(trx.fechaOtPro).toLocaleDateString('es-CL') : 'N/A'}
+                                                    </span>
+                                                </div>
+                                                <div className="flex flex-col">
                                                     <span className="text-[9px] text-slate-400 uppercase font-bold">Fecha Transacción</span>
                                                     <span className="text-xs font-semibold text-slate-600">
                                                         {trx.fechaTrx ? new Date(trx.fechaTrx).toLocaleDateString('es-CL') : 'N/A'}
                                                     </span>
+                                                </div>
+                                                <div className="flex flex-col">
+                                                    {/* Espacio para alinear o un dato extra futuro */}
                                                 </div>
                                                 <div className="flex flex-col col-span-2 bg-slate-50/50 p-2 rounded-lg mt-1">
                                                     <span className="text-[9px] text-slate-400 uppercase font-bold mb-1">Descripción OT</span>
@@ -187,33 +200,77 @@ export const TransactionSidePanel: React.FC<TransactionSidePanelProps> = ({
                 </div>
 
                 {/* Panel Footer bar for selection */}
-                <div className="absolute bottom-0 left-0 right-0 p-4 bg-white/80 backdrop-blur-md border-t border-slate-100">
+                <div className="absolute bottom-0 left-0 right-0 p-4 bg-white/90 backdrop-blur-md border-t border-slate-100 shadow-2xl">
                     {selectedIndices.size > 0 ? (
-                        <div className="bg-slate-900 text-white rounded-2xl p-4 shadow-2xl flex items-center justify-between animate-in slide-in-from-bottom-4 duration-300">
-                            <div className="flex flex-col">
-                                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-400 mb-1">Total Seleccionado</span>
-                                <div className="flex items-baseline gap-2">
+                        <div className="bg-slate-900 text-white rounded-2xl p-4 shadow-2xl flex flex-col gap-3 animate-in slide-in-from-bottom-4 duration-300">
+                            <div className="flex items-center justify-between">
+                                <div className="flex flex-col">
+                                    <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-400 mb-1">Suma Seleccionada</span>
                                     <h4 className="text-2xl font-black tabular-nums">{formatCurrency(selectedSum)}</h4>
-                                    <span className="text-xs text-slate-400 font-medium">({selectedIndices.size} items)</span>
                                 </div>
+                                <button
+                                    onClick={clearSelection}
+                                    className="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-colors border border-slate-700"
+                                >
+                                    Desmarcar
+                                </button>
                             </div>
-                            <button
-                                onClick={clearSelection}
-                                className="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-colors border border-slate-700"
-                            >
-                                Desmarcar
-                            </button>
+
+                            {totalContextBudget !== undefined && (
+                                <div className="space-y-2 border-t border-slate-800 pt-3">
+                                    <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider">
+                                        <span className="text-slate-400">Consumo de Presupuesto ({title})</span>
+                                        <span className={selectedSum > totalContextBudget ? 'text-pf-red' : 'text-emerald-400'}>
+                                            {((selectedSum / (totalContextBudget || 1)) * 100).toFixed(1)}%
+                                        </span>
+                                    </div>
+                                    <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden border border-slate-700">
+                                        <div
+                                            className={`h-full rounded-full transition-all duration-500 ${selectedSum > totalContextBudget ? 'bg-pf-red' : 'bg-emerald-500'}`}
+                                            style={{ width: `${Math.min((selectedSum / (totalContextBudget || 1)) * 100, 100)}%` }}
+                                        />
+                                    </div>
+                                    <div className="flex justify-between items-center text-[10px] text-slate-500 font-medium">
+                                        <span>Presupuesto: {formatCurrency(totalContextBudget)}</span>
+                                        <span className={selectedSum > totalContextBudget ? 'text-pf-red' : 'text-slate-400'}>
+                                            {selectedSum > totalContextBudget ? 'Exceso: ' : 'Resto: '}
+                                            {formatCurrency(Math.abs(totalContextBudget - selectedSum))}
+                                        </span>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     ) : (
-                        <div className="flex items-center justify-between px-2 py-2">
-                            <div className="flex flex-col">
-                                <span className="text-[10px] font-bold text-slate-400 uppercase">Resumen del grupo</span>
-                                <span className="text-xs font-bold text-slate-600">{transactions.length} transacciones en total</span>
+                        <div className="flex flex-col gap-3">
+                            <div className="flex items-center justify-between px-2">
+                                <div className="flex flex-col">
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase">Resumen del grupo</span>
+                                    <span className="text-xs font-bold text-slate-600">{transactions.length} transacciones</span>
+                                </div>
+                                <div className="flex flex-col items-end">
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Suma Total Real</span>
+                                    <span className={`text-lg font-black ${totalContextBudget && totalTransactionsSum > totalContextBudget ? 'text-pf-red' : 'text-slate-800'}`}>
+                                        {formatCurrency(totalTransactionsSum)}
+                                    </span>
+                                </div>
                             </div>
-                            <div className="flex flex-col items-end">
-                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Suma Total</span>
-                                <span className="text-lg font-black text-slate-800">{formatCurrency(transactions.reduce((acc, t) => acc + t.costoTrx, 0))}</span>
-                            </div>
+
+                            {totalContextBudget !== undefined && (
+                                <div className="px-2 space-y-1.5">
+                                    <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
+                                        <div
+                                            className={`h-full rounded-full transition-all duration-500 ${totalTransactionsSum > totalContextBudget ? 'bg-pf-red' : 'bg-emerald-500'}`}
+                                            style={{ width: `${Math.min((totalTransactionsSum / (totalContextBudget || 1)) * 100, 100)}%` }}
+                                        />
+                                    </div>
+                                    <div className="flex justify-between text-[9px] font-black uppercase text-slate-400 tracking-tighter">
+                                        <span>Presupuesto: {formatCurrency(totalContextBudget)}</span>
+                                        <span className={totalTransactionsSum > totalContextBudget ? 'text-pf-red' : 'text-emerald-600'}>
+                                            Ejecución: {((totalTransactionsSum / (totalContextBudget || 1)) * 100).toFixed(1)}%
+                                        </span>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>

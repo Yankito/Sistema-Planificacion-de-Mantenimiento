@@ -7,6 +7,10 @@ interface MonitorFiltersProps {
     onMonthChange: (month: number) => void;
     filterExceededOnly: boolean;
     onToggleExceededOnly: () => void;
+    filterInternalDeviation: boolean;
+    onToggleInternalDeviation: () => void;
+    filterDateAlert: boolean;
+    onToggleDateAlert: () => void;
     itemsPerPage: number;
     onItemsPerPageChange: (items: number) => void;
     searchTerm: string;
@@ -21,6 +25,10 @@ export const MonitorFilters: React.FC<MonitorFiltersProps> = ({
     onMonthChange,
     filterExceededOnly,
     onToggleExceededOnly,
+    filterInternalDeviation,
+    onToggleInternalDeviation,
+    filterDateAlert,
+    onToggleDateAlert,
     itemsPerPage,
     onItemsPerPageChange,
     searchTerm,
@@ -31,27 +39,54 @@ export const MonitorFilters: React.FC<MonitorFiltersProps> = ({
     return (
         <div className="space-y-4">
             {/* Header & Controls */}
-            <div className="flex justify-between items-center mb-4">
-                <div className="flex items-center gap-4">
+            <div className="flex flex-wrap justify-between items-center gap-4 mb-2">
+                <div className="flex flex-wrap items-center gap-3">
                     <select
                         value={currentMonth}
                         onChange={(e) => onMonthChange(Number(e.target.value))}
-                        className="px-4 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                        className="px-4 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm min-w-[140px]"
                     >
                         {months.map(m => (
                             <option key={m.id} value={m.id}>{m.name}</option>
                         ))}
                     </select>
 
+                    <div className="h-6 w-px bg-slate-200 mx-1 hidden md:block"></div>
+
                     <button
                         onClick={onToggleExceededOnly}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${filterExceededOnly
-                            ? 'bg-red-100 text-red-700 border border-red-200'
-                            : 'bg-white text-slate-700 border border-slate-300 hover:bg-slate-50'
+                        className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition-all border uppercase tracking-wider ${filterExceededOnly
+                            ? 'bg-pf-red text-white border-pf-red shadow-md shadow-red-100'
+                            : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
                             }`}
+                        title="Ver solo grupos con presupuesto total excedido"
                     >
-                        <AlertCircle size={16} />
-                        {filterExceededOnly ? 'Mostrando Excedidos' : 'Filtrar por Excedidos'}
+                        <AlertCircle size={14} className={filterExceededOnly ? 'animate-pulse' : ''} />
+                        Total Excedido
+                    </button>
+
+                    <button
+                        onClick={onToggleInternalDeviation}
+                        className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition-all border uppercase tracking-wider ${filterInternalDeviation
+                            ? 'bg-amber-500 text-white border-amber-600 shadow-md shadow-amber-100'
+                            : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                            }`}
+                        title="Ver grupos con mala clasificación interna (ej: exceso en bodega pero no en total)"
+                    >
+                        <AlertCircle size={14} />
+                        Desv. Interna
+                    </button>
+
+                    <button
+                        onClick={onToggleDateAlert}
+                        className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition-all border uppercase tracking-wider ${filterDateAlert
+                            ? 'bg-amber-600 text-white border-amber-700 shadow-md shadow-amber-100'
+                            : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                            }`}
+                        title="Ver grupos con transacciones fuera del periodo programado"
+                    >
+                        <AlertCircle size={14} />
+                        Fecha Dif.
                     </button>
                 </div>
 

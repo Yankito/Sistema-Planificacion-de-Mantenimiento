@@ -19,7 +19,7 @@ interface ExecutionTableProps {
     onSort: (field: SortField) => void;
     formatCurrency: (val: number) => string;
     calculateDeviation: (real: number, budget: number) => number;
-    onShowDetails: (title: string, transactions: GastoConsolidadoRow[]) => void;
+    onShowDetails: (title: string, transactions: GastoConsolidadoRow[], budget?: number) => void;
     getGroupTransactions: (cc: string) => GastoConsolidadoRow[];
     getAssetTransactions: (activo: string, isHito: boolean) => GastoConsolidadoRow[];
     getTypeTransactions: (activo: string, isHito: boolean, type: string) => GastoConsolidadoRow[];
@@ -125,17 +125,21 @@ export const ExecutionTable: React.FC<ExecutionTableProps> = ({
                                                 className="flex items-center justify-end gap-2 hover:text-blue-600 transition-colors group/real"
                                                 onClick={(e) => {
                                                     e.stopPropagation();
-                                                    onShowDetails(`Gastos: ${group.centroCosto}`, getGroupTransactions(group.centroCosto));
+                                                    onShowDetails(`Gastos: ${group.centroCosto}`, getGroupTransactions(group.centroCosto), group.totalBudget);
                                                 }}
                                             >
                                                 {isOver ? (
-                                                    <AlertCircle size={14} className="text-pf-red animate-pulse" title="Presupuesto total excedido" />
+                                                    <div title="Presupuesto total excedido">
+                                                        <AlertCircle size={14} className="text-pf-red animate-pulse" />
+                                                    </div>
                                                 ) : (
                                                     group.assets.some(a =>
                                                         a.details.some(d => d.real > d.budget && d.budget > 0) ||
                                                         (a.totalReal > a.totalBudget && a.totalBudget > 0)
                                                     ) && (
-                                                        <AlertCircle size={14} className="text-amber-500" title="Alerta: Desviación interna en categorías" />
+                                                        <div title="Alerta: Desviación interna en categorías">
+                                                            <AlertCircle size={14} className="text-amber-500" />
+                                                        </div>
                                                     )
                                                 )}
                                                 <span className="border-b border-transparent group-hover/real:border-blue-600 cursor-pointer">
@@ -179,8 +183,19 @@ export const ExecutionTable: React.FC<ExecutionTableProps> = ({
                                                     <td className="px-6 py-3 text-right text-slate-600 font-medium text-xs">
                                                         <div
                                                             className="flex items-center justify-end gap-2 text-xs hover:text-blue-600 transition-colors group/asset"
-                                                            onClick={() => onShowDetails(`Activo: ${asset.activo}`, getAssetTransactions(asset.activo, isHito))}
+                                                            onClick={() => onShowDetails(`Activo: ${asset.activo}`, getAssetTransactions(asset.activo, isHito), asset.totalBudget)}
                                                         >
+                                                            {asset.totalReal > asset.totalBudget && asset.totalBudget > 0 ? (
+                                                                <div title="Presupuesto del activo excedido">
+                                                                    <AlertCircle size={12} className="text-pf-red animate-pulse" />
+                                                                </div>
+                                                            ) : (
+                                                                asset.details.some(d => d.real > d.budget && d.budget > 0) && (
+                                                                    <div title="Alerta: Desviación interna en categorías (ej: Bodega vs Hito)">
+                                                                        <AlertCircle size={12} className="text-amber-500" />
+                                                                    </div>
+                                                                )
+                                                            )}
                                                             {asset.hasDateAlert && (
                                                                 <div title="Gastos fuera de periodo">
                                                                     <AlertCircle size={12} className="text-amber-500" />
@@ -223,7 +238,7 @@ export const ExecutionTable: React.FC<ExecutionTableProps> = ({
                                                             <td className="px-6 py-1 text-right text-slate-600 font-medium">
                                                                 <div
                                                                     className="hover:text-blue-600 transition-colors cursor-pointer inline-block border-b border-transparent hover:border-blue-600"
-                                                                    onClick={() => onShowDetails(`${detail.tipo}: ${asset.activo}`, getTypeTransactions(asset.activo, isHito, detail.tipo))}
+                                                                    onClick={() => onShowDetails(`${detail.tipo}: ${asset.activo}`, getTypeTransactions(asset.activo, isHito, detail.tipo), detail.budget)}
                                                                 >
                                                                     {formatCurrency(detail.real)}
                                                                 </div>

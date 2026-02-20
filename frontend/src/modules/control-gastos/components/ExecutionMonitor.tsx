@@ -27,12 +27,15 @@ export const ExecutionMonitor = ({ selectedYear, selectedPlanta }: ExecutionMoni
     const [sortField, setSortField] = useState<SortField>('centroCosto');
     const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
     const [filterExceededOnly, setFilterExceededOnly] = useState(false);
+    const [filterInternalDeviation, setFilterInternalDeviation] = useState(false);
+    const [filterDateAlert, setFilterDateAlert] = useState(false);
 
     // Detail Panel State
     const [rawMonthlyReal, setRawMonthlyReal] = useState<GastoConsolidadoRow[]>([]);
     const [selectedDetailTransactions, setSelectedDetailTransactions] = useState<GastoConsolidadoRow[]>([]);
     const [isPanelOpen, setIsPanelOpen] = useState(false);
     const [panelTitle, setPanelTitle] = useState('');
+    const [panelBudget, setPanelBudget] = useState<number | undefined>(undefined);
 
     const { getPresupuesto, getGastosConsolidados, loading } = useControlGastos();
 
@@ -208,9 +211,10 @@ export const ExecutionMonitor = ({ selectedYear, selectedPlanta }: ExecutionMoni
         }
     };
 
-    const handleShowDetails = (title: string, transactions: GastoConsolidadoRow[]) => {
+    const handleShowDetails = (title: string, transactions: GastoConsolidadoRow[], budget?: number) => {
         setPanelTitle(title);
         setSelectedDetailTransactions(transactions);
+        setPanelBudget(budget);
         setIsPanelOpen(true);
     };
 
@@ -243,9 +247,17 @@ export const ExecutionMonitor = ({ selectedYear, selectedPlanta }: ExecutionMoni
                 group.assets.some(a => a.activo.toLowerCase().includes(searchTerm.toLowerCase()));
 
             const isExceeded = group.totalReal > group.totalBudget && group.totalBudget > 0;
-            const matchesExceeded = !filterExceededOnly || isExceeded;
+            const hasInternalDeviation = group.assets.some(a =>
+                a.details.some(d => d.real > d.budget && d.budget > 0) ||
+                (a.totalReal > a.totalBudget && a.totalBudget > 0)
+            );
+            const hasDateAlert = group.assets.some(a => a.hasDateAlert);
 
-            return matchesSearch && matchesExceeded;
+            const matchesExceeded = !filterExceededOnly || isExceeded;
+            const matchesInternal = !filterInternalDeviation || hasInternalDeviation;
+            const matchesDate = !filterDateAlert || hasDateAlert;
+
+            return matchesSearch && matchesExceeded && matchesInternal && matchesDate;
         })
         .sort((a, b) => {
             const factor = sortOrder === 'asc' ? 1 : -1;
@@ -265,7 +277,7 @@ export const ExecutionMonitor = ({ selectedYear, selectedPlanta }: ExecutionMoni
 
     useEffect(() => {
         setCurrentPage(1); // Reset to page 1 when filters change
-    }, [searchTerm, filterExceededOnly, sortField, sortOrder, itemsPerPage]);
+    }, [searchTerm, filterExceededOnly, filterInternalDeviation, filterDateAlert, sortField, sortOrder, itemsPerPage]);
 
     const totalPresupuesto = filteredAndSortedData.reduce((acc, g) => acc + g.totalBudget, 0);
     const totalGasto = filteredAndSortedData.reduce((acc, g) => acc + g.totalReal, 0);
@@ -286,6 +298,10 @@ export const ExecutionMonitor = ({ selectedYear, selectedPlanta }: ExecutionMoni
                 onMonthChange={setCurrentMonth}
                 filterExceededOnly={filterExceededOnly}
                 onToggleExceededOnly={() => setFilterExceededOnly(!filterExceededOnly)}
+                filterInternalDeviation={filterInternalDeviation}
+                onToggleInternalDeviation={() => setFilterInternalDeviation(!filterInternalDeviation)}
+                filterDateAlert={filterDateAlert}
+                onToggleDateAlert={() => setFilterDateAlert(!filterDateAlert)}
                 itemsPerPage={itemsPerPage}
                 onItemsPerPageChange={setItemsPerPage}
                 searchTerm={searchTerm}
@@ -330,6 +346,7 @@ export const ExecutionMonitor = ({ selectedYear, selectedPlanta }: ExecutionMoni
                 title={panelTitle}
                 transactions={selectedDetailTransactions}
                 formatCurrency={formatCurrency}
+                totalContextBudget={panelBudget}
             />
         </div>
     );
