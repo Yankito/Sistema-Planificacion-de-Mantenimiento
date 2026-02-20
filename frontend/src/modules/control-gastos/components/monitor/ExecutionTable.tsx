@@ -128,7 +128,16 @@ export const ExecutionTable: React.FC<ExecutionTableProps> = ({
                                                     onShowDetails(`Gastos: ${group.centroCosto}`, getGroupTransactions(group.centroCosto));
                                                 }}
                                             >
-                                                {isOver && <AlertCircle size={14} className="text-pf-red animate-pulse" />}
+                                                {isOver ? (
+                                                    <AlertCircle size={14} className="text-pf-red animate-pulse" title="Presupuesto total excedido" />
+                                                ) : (
+                                                    group.assets.some(a =>
+                                                        a.details.some(d => d.real > d.budget && d.budget > 0) ||
+                                                        (a.totalReal > a.totalBudget && a.totalBudget > 0)
+                                                    ) && (
+                                                        <AlertCircle size={14} className="text-amber-500" title="Alerta: Desviación interna en categorías" />
+                                                    )
+                                                )}
                                                 <span className="border-b border-transparent group-hover/real:border-blue-600 cursor-pointer">
                                                     {formatCurrency(group.totalReal)}
                                                 </span>
@@ -138,9 +147,9 @@ export const ExecutionTable: React.FC<ExecutionTableProps> = ({
                                             {group.deviation.toFixed(1)}%
                                         </td>
                                         <td className="px-6 py-4 w-48">
-                                            <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden border border-slate-200">
+                                            <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden border border-slate-300/50">
                                                 <div
-                                                    className={`h-full rounded-full transition-all duration-500 ${isOver ? 'bg-pf-red' : 'bg-blue-500'}`}
+                                                    className={`h-full rounded-full transition-all duration-500 ${isOver ? 'bg-pf-red' : 'bg-emerald-500'}`}
                                                     style={{ width: `${Math.min((group.totalReal / (group.totalBudget || 1)) * 100, 100)}%` }}
                                                 />
                                             </div>
@@ -186,9 +195,9 @@ export const ExecutionTable: React.FC<ExecutionTableProps> = ({
                                                         {asset.deviation.toFixed(1)}%
                                                     </td>
                                                     <td className="px-6 py-3">
-                                                        <div className="w-32 bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                                                        <div className="w-32 bg-slate-200 rounded-full h-1.5 overflow-hidden border border-slate-300/30">
                                                             <div
-                                                                className={`h-full rounded-full ${asset.totalReal > asset.totalBudget && asset.totalBudget > 0 ? 'bg-red-400' : 'bg-blue-300'}`}
+                                                                className={`h-full rounded-full ${asset.totalReal > asset.totalBudget && asset.totalBudget > 0 ? 'bg-pf-red/70' : 'bg-emerald-400'}`}
                                                                 style={{ width: `${Math.min((asset.totalReal / (asset.totalBudget || 1)) * 100, 100)}%` }}
                                                             />
                                                         </div>
@@ -223,9 +232,9 @@ export const ExecutionTable: React.FC<ExecutionTableProps> = ({
                                                                 {devDetail.toFixed(1)}%
                                                             </td>
                                                             <td className="px-6 py-1 pr-12">
-                                                                <div className="w-24 bg-slate-50 rounded-full h-1 overflow-hidden ml-auto border border-slate-100">
+                                                                <div className="w-24 bg-slate-200 rounded-full h-1 overflow-hidden ml-auto border border-slate-300">
                                                                     <div
-                                                                        className={`h-full rounded-full ${isOverDetail ? 'bg-red-400/60' : 'bg-slate-200'}`}
+                                                                        className={`h-full rounded-full ${isOverDetail ? 'bg-pf-red/50' : 'bg-emerald-400/60'}`}
                                                                         style={{ width: `${progress}%` }}
                                                                     />
                                                                 </div>
