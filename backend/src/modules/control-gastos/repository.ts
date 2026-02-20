@@ -241,8 +241,9 @@ export const ControlGastosRepository = {
                     }
                 }
 
-                // Calcular centro de costo (ultimos 6 caracteres)
-                const centroCosto = row.NRO_ACTIVO ? String(row.NRO_ACTIVO).slice(-6) : '';
+                // Calcular centro de costo (intentamos extraer código entre paréntesis al final, sino últimos 6 caracteres)
+                const matchCC = String(row.NRO_ACTIVO || '').match(/\(([^)]+)\)$/);
+                const centroCosto = matchCC ? matchCC[1] : (row.NRO_ACTIVO ? String(row.NRO_ACTIVO).slice(-6) : '');
                 if (row.NRO_ACTIVO == "PF (M) Horno Alkar (0723)") {
                     console.log(row);
                 }
@@ -368,7 +369,7 @@ export const ControlGastosRepository = {
                 const activo = row.activo || row.ACTIVO;
                 // Intentamos extraer el código entre del final del nombre
                 const match = String(activo || '').match(/\(([^)]+)\)$/);
-                const centroCosto = match ? match[1] : '';
+                const centroCosto = match ? match[1] : (activo ? String(activo).slice(-6) : '');
 
                 return {
                     activo,

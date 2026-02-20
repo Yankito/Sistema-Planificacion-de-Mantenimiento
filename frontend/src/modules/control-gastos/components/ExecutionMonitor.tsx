@@ -1,42 +1,18 @@
-import { useState, useEffect, useRef, Fragment } from 'react';
+import { useState, useEffect } from 'react';
 import { ControlGastosService } from '../services/ControlGastosService';
-import { AlertCircle, CheckCircle2, TrendingUp, Calendar, ChevronDown, ChevronRight, Search, Upload, Loader2, ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useControlGastos } from '../hooks/useControlGastos';
+import { type GastoConsolidadoRow } from '../types';
+import type { AssetExecutionDetail, CostCenterGroup, SortField, SortOrder } from './monitor/types';
+import { KPICards } from './monitor/KPICards';
+import { MonitorFilters } from './monitor/MonitorFilters';
+import { ExecutionTable } from './monitor/ExecutionTable';
+import { TransactionSidePanel } from './monitor/TransactionSidePanel';
 
 interface ExecutionMonitorProps {
     selectedYear: number;
     selectedPlanta: string;
 }
-
-// Internal structures for grouping
-interface AssetExecutionDetail {
-    tipo: string;
-    budget: number;
-    real: number;
-}
-
-interface AssetExecutionGroup {
-    activo: string;
-    tipoFila: string;
-    totalBudget: number;
-    totalReal: number;
-    details: AssetExecutionDetail[];
-    hasDateAlert?: boolean;
-    planta?: string;
-    claseContable?: string;
-    deviation: number;
-}
-
-interface CostCenterGroup {
-    centroCosto: string;
-    assets: AssetExecutionGroup[];
-    totalBudget: number;
-    totalReal: number;
-    deviation: number;
-}
-
-type SortField = 'centroCosto' | 'totalBudget' | 'totalReal' | 'deviation';
-type SortOrder = 'asc' | 'desc';
 
 export const ExecutionMonitor = ({ selectedYear, selectedPlanta }: ExecutionMonitorProps) => {
     const [groupedData, setGroupedData] = useState<CostCenterGroup[]>([]);
@@ -51,6 +27,12 @@ export const ExecutionMonitor = ({ selectedYear, selectedPlanta }: ExecutionMoni
     const [sortField, setSortField] = useState<SortField>('centroCosto');
     const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
     const [filterExceededOnly, setFilterExceededOnly] = useState(false);
+
+    // Detail Panel State
+    const [rawMonthlyReal, setRawMonthlyReal] = useState<GastoConsolidadoRow[]>([]);
+    const [selectedDetailTransactions, setSelectedDetailTransactions] = useState<GastoConsolidadoRow[]>([]);
+    const [isPanelOpen, setIsPanelOpen] = useState(false);
+    const [panelTitle, setPanelTitle] = useState('');
 
     const { getPresupuesto, getGastosConsolidados, loading } = useControlGastos();
 
@@ -79,6 +61,7 @@ export const ExecutionMonitor = ({ selectedYear, selectedPlanta }: ExecutionMoni
 
             const monthlyBudget = budgetData.filter(r => r.mes === currentMonth);
             const monthlyReal = realExpenses.filter(r => r.mes === currentMonth);
+            setRawMonthlyReal(monthlyReal);
 
             const groups: Record<string, CostCenterGroup> = {};
             const consumedRealIndices = new Set<number>();
@@ -183,13 +166,7 @@ export const ExecutionMonitor = ({ selectedYear, selectedPlanta }: ExecutionMoni
             });
 
             setGroupedData(Object.values(groups));
-
-            // Expandir grupos
-            const initialExpanded: Record<string, boolean> = {};
-            // Por defecto expandimos solo si hay pocos, o dejamos que el usuario decida.
-            // Para evitar "lentitud" al renderizar muchos assets, mejor no expandir todos si la lista es grande.
-            // Object.keys(groups).forEach(k => initialExpanded[k] = true);
-            setExpandedGroups(initialExpanded);
+            setExpandedGroups({});
 
         } catch (e) {
             console.error(e);
@@ -231,6 +208,34 @@ export const ExecutionMonitor = ({ selectedYear, selectedPlanta }: ExecutionMoni
         }
     };
 
+    const handleShowDetails = (title: string, transactions: GastoConsolidadoRow[]) => {
+        setPanelTitle(title);
+        setSelectedDetailTransactions(transactions);
+        setIsPanelOpen(true);
+    };
+
+    const getAssetTransactions = (activo: string, isHito: boolean) => {
+        return rawMonthlyReal.filter(g => g.nroActivo === activo && (isHito ? g.esHito : !g.esHito));
+    };
+
+    const getGroupTransactions = (cc: string) => {
+        return rawMonthlyReal.filter(g => g.centroCosto === cc);
+    };
+
+    const getTypeTransactions = (activo: string, isHito: boolean, type: string) => {
+        const typeMap: Record<string, string> = {
+            'Bodega': 'BODEGA',
+            'Serv. Externos': 'SERV_EXT',
+            'Correctivo': 'CORRECTIVO'
+        };
+        const backendType = typeMap[type] || type;
+        return rawMonthlyReal.filter(g =>
+            g.nroActivo === activo &&
+            (isHito ? g.esHito : !g.esHito) &&
+            g.tipoGasto === backendType
+        );
+    };
+
     // Filter & Sort Logic
     const filteredAndSortedData = groupedData
         .filter(group => {
@@ -266,11 +271,6 @@ export const ExecutionMonitor = ({ selectedYear, selectedPlanta }: ExecutionMoni
     const totalGasto = filteredAndSortedData.reduce((acc, g) => acc + g.totalReal, 0);
     const totalAvance = totalPresupuesto > 0 ? (totalGasto / totalPresupuesto) * 100 : 0;
 
-    const renderSortIcon = (field: SortField) => {
-        if (sortField !== field) return <ArrowUpDown size={14} className="ml-1 opacity-30" />;
-        return sortOrder === 'asc' ? <ArrowUp size={14} className="ml-1 text-blue-600" /> : <ArrowDown size={14} className="ml-1 text-blue-600" />;
-    };
-
     return (
         <div className="space-y-6 relative min-h-[400px]">
             {loading && (
@@ -280,343 +280,57 @@ export const ExecutionMonitor = ({ selectedYear, selectedPlanta }: ExecutionMoni
                 </div>
             )}
 
-            {/* Header & Controls */}
-            <div className="flex justify-between items-center mb-4">
-                <div className="flex items-center gap-4">
-                    <select
-                        value={currentMonth}
-                        onChange={(e) => setCurrentMonth(Number(e.target.value))}
-                        className="px-4 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
-                    >
-                        {months.map(m => (
-                            <option key={m.id} value={m.id}>{m.name}</option>
-                        ))}
-                    </select>
+            <MonitorFilters
+                currentMonth={currentMonth}
+                months={months}
+                onMonthChange={setCurrentMonth}
+                filterExceededOnly={filterExceededOnly}
+                onToggleExceededOnly={() => setFilterExceededOnly(!filterExceededOnly)}
+                itemsPerPage={itemsPerPage}
+                onItemsPerPageChange={setItemsPerPage}
+                searchTerm={searchTerm}
+                onSearchChange={setSearchTerm}
+                isUploading={isUploading}
+                onFileUpload={handleFileUpload}
+            />
 
-                    <button
-                        onClick={() => setFilterExceededOnly(!filterExceededOnly)}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${filterExceededOnly
-                            ? 'bg-red-100 text-red-700 border border-red-200'
-                            : 'bg-white text-slate-700 border border-slate-300 hover:bg-slate-50'
-                            }`}
-                    >
-                        <AlertCircle size={16} />
-                        {filterExceededOnly ? 'Mostrando Excedidos' : 'Filtrar por Excedidos'}
-                    </button>
-                </div>
+            <KPICards
+                totalPresupuesto={totalPresupuesto}
+                totalGasto={totalGasto}
+                totalAvance={totalAvance}
+                paginatedDataCount={paginatedData.length}
+                groupedData={groupedData}
+                monthName={months.find(m => m.id === currentMonth)?.name || ''}
+                formatCurrency={formatCurrency}
+            />
 
-                <div className="flex items-center gap-3">
-                    <span className="text-sm text-slate-500 font-medium">Items por hoja:</span>
-                    <select
-                        value={itemsPerPage}
-                        onChange={(e) => setItemsPerPage(Number(e.target.value))}
-                        className="px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
-                    >
-                        <option value={10}>10</option>
-                        <option value={25}>25</option>
-                        <option value={50}>50</option>
-                        <option value={100}>100</option>
-                    </select>
-                </div>
-            </div>
+            <ExecutionTable
+                paginatedData={paginatedData}
+                totalItems={totalItems}
+                currentPage={currentPage}
+                totalPages={totalPages}
+                expandedGroups={expandedGroups}
+                sortField={sortField}
+                sortOrder={sortOrder}
+                onToggleGroup={toggleGroup}
+                onPageChange={setCurrentPage}
+                onSort={handleSort}
+                formatCurrency={formatCurrency}
+                calculateDeviation={calculateDeviation}
+                onShowDetails={handleShowDetails}
+                getGroupTransactions={getGroupTransactions}
+                getAssetTransactions={getAssetTransactions}
+                getTypeTransactions={getTypeTransactions}
+                itemsPerPage={itemsPerPage}
+            />
 
-            {/* KPI Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between relative overflow-hidden group">
-                    <div className="absolute right-0 top-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                        <TrendingUp size={80} className="text-blue-500" />
-                    </div>
-                    <div>
-                        <p className="text-slate-500 text-sm font-medium">Presupuesto Total ({months.find(m => m.id === currentMonth)?.name})</p>
-                        <h3 className="text-3xl font-extrabold text-slate-800 mt-2">{formatCurrency(totalPresupuesto)}</h3>
-                    </div>
-                    <div className="mt-4 flex items-center text-xs font-medium text-emerald-600 bg-emerald-50 w-fit px-2 py-1 rounded">
-                        <CheckCircle2 size={12} className="mr-1" />
-                        Meta definida ({paginatedData.length} grupos en vista)
-                    </div>
-                </div>
-
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between relative overflow-hidden group">
-                    <div className="absolute right-0 top-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                        <AlertCircle size={80} className={totalGasto > totalPresupuesto ? "text-red-500" : "text-emerald-500"} />
-                    </div>
-                    <div>
-                        <p className="text-slate-500 text-sm font-medium">Ejecución Real</p>
-                        <h3 className={`text-3xl font-extrabold mt-2 ${totalGasto > totalPresupuesto ? 'text-pf-red' : 'text-emerald-600'}`}>
-                            {formatCurrency(totalGasto)}
-                        </h3>
-                    </div>
-                    <div className="mt-4 w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                        <div
-                            className={`h-full rounded-full ${totalGasto > totalPresupuesto ? 'bg-pf-red' : 'bg-emerald-500'}`}
-                            style={{ width: `${Math.min((totalGasto / (totalPresupuesto || 1)) * 100, 100)}%` }}
-                        ></div>
-                    </div>
-                    <div className="mt-2 flex justify-between items-center">
-                        <p className="text-xs text-slate-400">{totalAvance.toFixed(1)}% utilizado</p>
-                        <p className={`text-xs font-bold ${totalGasto > totalPresupuesto ? 'text-red-600' : 'text-slate-400'}`}>
-                            Desviación: {totalPresupuesto > 0 ? ((totalGasto - totalPresupuesto) / totalPresupuesto * 100).toFixed(1) : 0}%
-                        </p>
-                    </div>
-                </div>
-
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between">
-                    <div>
-                        <p className="text-slate-500 text-sm font-medium">Grupos con Sobrepresupuesto</p>
-                        <h3 className="text-3xl font-extrabold text-slate-800 mt-2">
-                            {groupedData.filter(g => g.totalReal > g.totalBudget && g.totalBudget > 0).length}
-                        </h3>
-                    </div>
-                    <div className="mt-4">
-                        <p className="text-xs text-slate-500">De un total de {groupedData.length} centros de costo identificados.</p>
-                    </div>
-                </div>
-            </div>
-
-            <div className="flex justify-between items-center">
-                <div className="relative w-96">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={18} />
-                    <input
-                        type="text"
-                        placeholder="Buscar Centro Costo o Activo..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-10 pr-4 py-2 w-full border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
-                    />
-                </div>
-
-                <div className="flex items-center gap-3">
-                    <input
-                        type="file"
-                        id="gastos-upload-monitor"
-                        style={{ display: 'none' }}
-                        onChange={handleFileUpload}
-                        accept=".xlsx,.xls"
-                    />
-                    <label
-                        htmlFor="gastos-upload-monitor"
-                        className={`flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 cursor-pointer transition-colors shadow-sm ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}
-                    >
-                        <Upload size={16} />
-                        {isUploading ? 'Cargando...' : 'Cargar Ejecución'}
-                    </label>
-                </div>
-            </div>
-
-            {/* Grouped Table */}
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                <div className="p-6 border-b border-slate-100 flex justify-between items-center">
-                    <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                        <Calendar size={20} className="text-slate-400" />
-                        Monitoreo de Ejecución
-                    </h2>
-                    <div className="flex items-center gap-2">
-                        <span className="text-xs font-medium px-2 py-1 bg-slate-100 text-slate-500 rounded">Total filtrados: {totalItems}</span>
-                        {totalPages > 1 && (
-                            <span className="text-xs font-medium px-2 py-1 bg-blue-50 text-blue-600 rounded">Pagina {currentPage} de {totalPages}</span>
-                        )}
-                    </div>
-                </div>
-
-                <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                        <thead className="bg-slate-50/50">
-                            <tr>
-                                <th className="px-6 py-4 text-left font-semibold text-slate-600 cursor-pointer hover:text-blue-600 select-none" onClick={() => handleSort('centroCosto')}>
-                                    <div className="flex items-center">Centro Costo / Activo {renderSortIcon('centroCosto')}</div>
-                                </th>
-                                <th className="px-6 py-4 text-right font-semibold text-slate-600 cursor-pointer hover:text-blue-600 select-none" onClick={() => handleSort('totalBudget')}>
-                                    <div className="flex items-center justify-end">Presupuesto {renderSortIcon('totalBudget')}</div>
-                                </th>
-                                <th className="px-6 py-4 text-right font-semibold text-slate-600 cursor-pointer hover:text-blue-600 select-none" onClick={() => handleSort('totalReal')}>
-                                    <div className="flex items-center justify-end">Real {renderSortIcon('totalReal')}</div>
-                                </th>
-                                <th className="px-6 py-4 text-right font-semibold text-slate-600 cursor-pointer hover:text-blue-600 select-none" onClick={() => handleSort('deviation')}>
-                                    <div className="flex items-center justify-end">% Desv. {renderSortIcon('deviation')}</div>
-                                </th>
-                                <th className="px-6 py-4 text-left font-semibold text-slate-600">Progreso</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                            {paginatedData.length === 0 && (
-                                <tr>
-                                    <td colSpan={5} className="text-center py-12">
-                                        <div className="flex flex-col items-center justify-center text-slate-400 italic">
-                                            <Search size={40} className="mb-2 opacity-20" />
-                                            <p>No hay datos que coincidan con los filtros.</p>
-                                        </div>
-                                    </td>
-                                </tr>
-                            )}
-                            {paginatedData.map((group) => {
-                                const isExpanded = expandedGroups[group.centroCosto];
-                                const isOver = group.totalReal > group.totalBudget && group.totalBudget > 0;
-
-                                return (
-                                    <Fragment key={group.centroCosto}>
-                                        {/* Group Header */}
-                                        <tr className={`hover:bg-slate-50 cursor-pointer transition-colors ${isExpanded ? 'bg-slate-50/50' : ''}`} onClick={() => toggleGroup(group.centroCosto)}>
-                                            <td className="px-6 py-4 font-bold text-slate-700">
-                                                <div className="flex items-center gap-3">
-                                                    {isExpanded ? <ChevronDown size={18} className="text-slate-400" /> : <ChevronRight size={18} className="text-slate-400" />}
-                                                    <div className="flex flex-col">
-                                                        <span>{group.centroCosto}</span>
-                                                        <span className="text-[10px] font-normal text-slate-400 uppercase tracking-tighter">Centro de Costo</span>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 text-right font-bold text-slate-700">{formatCurrency(group.totalBudget)}</td>
-                                            <td className="px-6 py-4 text-right font-bold text-slate-700">
-                                                <div className="flex items-center justify-end gap-2">
-                                                    {isOver && <AlertCircle size={14} className="text-pf-red animate-pulse" />}
-                                                    {formatCurrency(group.totalReal)}
-                                                </div>
-                                            </td>
-                                            <td className={`px-6 py-4 text-right font-bold ${isOver ? 'text-pf-red' : group.deviation > 90 ? 'text-amber-600' : 'text-emerald-600'}`}>
-                                                {group.deviation.toFixed(1)}%
-                                            </td>
-                                            <td className="px-6 py-4 w-48">
-                                                <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden border border-slate-200">
-                                                    <div
-                                                        className={`h-full rounded-full transition-all duration-500 ${isOver ? 'bg-pf-red' : 'bg-blue-500'}`}
-                                                        style={{ width: `${Math.min((group.totalReal / (group.totalBudget || 1)) * 100, 100)}%` }}
-                                                    />
-                                                </div>
-                                            </td>
-                                        </tr>
-
-                                        {/* Assets */}
-                                        {isExpanded && group.assets.map((asset, idx) => (
-                                            <Fragment key={`${group.centroCosto}-${asset.activo}-${idx}`}>
-                                                <tr className="bg-white hover:bg-slate-50/80">
-                                                    <td className="px-6 py-3 pl-14 text-slate-800 font-medium">
-                                                        <div className="flex flex-wrap items-center gap-2">
-                                                            <span className="text-xs">{asset.activo}</span>
-                                                            <span className="px-2 py-0.5 rounded text-[9px] bg-slate-100 text-slate-500 border border-slate-200 uppercase tracking-wide">
-                                                                {asset.tipoFila}
-                                                            </span>
-                                                            {asset.planta && (
-                                                                <span className="px-2 py-0.5 rounded text-[9px] bg-blue-50 text-blue-600 border border-blue-100 uppercase tracking-wide">
-                                                                    {asset.planta}
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-6 py-3 text-right text-slate-500 text-xs">{formatCurrency(asset.totalBudget)}</td>
-                                                    <td className="px-6 py-3 text-right text-slate-600 font-medium text-xs">
-                                                        <div className="flex items-center justify-end gap-2 text-xs">
-                                                            {asset.hasDateAlert && (
-                                                                <div title="Gastos fuera de periodo">
-                                                                    <AlertCircle size={12} className="text-amber-500" />
-                                                                </div>
-                                                            )}
-                                                            {formatCurrency(asset.totalReal)}
-                                                        </div>
-                                                    </td>
-                                                    <td className={`px-6 py-3 text-right text-xs font-semibold ${asset.totalReal > asset.totalBudget && asset.totalBudget > 0 ? 'text-pf-red' : 'text-slate-500'}`}>
-                                                        {asset.deviation.toFixed(1)}%
-                                                    </td>
-                                                    <td className="px-6 py-3">
-                                                        <div className="w-32 bg-slate-100 rounded-full h-1.5 overflow-hidden">
-                                                            <div
-                                                                className={`h-full rounded-full ${asset.totalReal > asset.totalBudget && asset.totalBudget > 0 ? 'bg-red-400' : 'bg-blue-300'}`}
-                                                                style={{ width: `${Math.min((asset.totalReal / (asset.totalBudget || 1)) * 100, 100)}%` }}
-                                                            />
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                                {/* Details Breakdown */}
-                                                {asset.details.map((detail, dIdx) => {
-                                                    const progress = Math.min((detail.real / (detail.budget || 1)) * 100, 100);
-                                                    const isOverDetail = detail.real > (detail.budget || 0) && detail.budget > 0;
-                                                    const devDetail = calculateDeviation(detail.real, detail.budget);
-
-                                                    return (
-                                                        <tr key={`${group.centroCosto}-${asset.activo}-${idx}-${dIdx}`} className="text-[10px] bg-slate-50/20">
-                                                            <td className="px-6 py-1 pl-20 text-slate-500 flex items-center gap-2">
-                                                                <div className={`w-1.5 h-1.5 rounded-full ${detail.tipo === 'Bodega' ? 'bg-blue-400' :
-                                                                    detail.tipo === 'Serv. Externos' ? 'bg-emerald-400' :
-                                                                        detail.tipo === 'Correctivo' ? 'bg-pf-red' :
-                                                                            'bg-amber-400'
-                                                                    }`}></div>
-                                                                {detail.tipo}
-                                                            </td>
-                                                            <td className="px-6 py-1 text-right text-slate-400 italic">{formatCurrency(detail.budget)}</td>
-                                                            <td className="px-6 py-1 text-right text-slate-400 font-medium">
-                                                                {formatCurrency(detail.real)}
-                                                            </td>
-                                                            <td className={`px-6 py-1 text-right italic ${isOverDetail ? 'text-red-400' : 'text-slate-400'}`}>
-                                                                {devDetail.toFixed(1)}%
-                                                            </td>
-                                                            <td className="px-6 py-1 pr-12">
-                                                                <div className="w-24 bg-slate-50 rounded-full h-1 overflow-hidden ml-auto border border-slate-100">
-                                                                    <div
-                                                                        className={`h-full rounded-full ${isOverDetail ? 'bg-red-400/60' : 'bg-slate-200'}`}
-                                                                        style={{ width: `${progress}%` }}
-                                                                    />
-                                                                </div>
-                                                            </td>
-                                                        </tr>
-                                                    );
-                                                })}
-                                            </Fragment>
-                                        ))}
-                                    </Fragment>
-                                );
-                            })}
-                        </tbody>
-                    </table>
-                </div>
-
-                {/* Pagination Controls */}
-                {totalPages > 1 && (
-                    <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
-                        <div className="text-sm text-slate-500">
-                            Mostrando <span className="font-semibold text-slate-700">{(currentPage - 1) * itemsPerPage + 1}</span> a <span className="font-semibold text-slate-700">{Math.min(currentPage * itemsPerPage, totalItems)}</span> de <span className="font-semibold text-slate-700">{totalItems}</span> centros de costo
-                        </div>
-                        <div className="flex items-center gap-1">
-                            <button
-                                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                                disabled={currentPage === 1}
-                                className="p-2 rounded-lg border border-slate-300 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                            >
-                                <ChevronLeft size={16} />
-                            </button>
-
-                            {[...Array(totalPages)].map((_, i) => {
-                                const page = i + 1;
-                                // Show first, last, and current +/- 1
-                                if (page === 1 || page === totalPages || (page >= currentPage - 1 && page <= currentPage + 1)) {
-                                    return (
-                                        <button
-                                            key={page}
-                                            onClick={() => setCurrentPage(page)}
-                                            className={`px-3.5 py-1.5 rounded-lg text-sm font-bold transition-all ${currentPage === page
-                                                ? 'bg-blue-600 text-white shadow-md shadow-blue-200'
-                                                : 'bg-white border border-slate-300 text-slate-600 hover:bg-slate-50'
-                                                }`}
-                                        >
-                                            {page}
-                                        </button>
-                                    );
-                                }
-                                if (page === currentPage - 2 || page === currentPage + 2) {
-                                    return <span key={page} className="px-1 text-slate-400">...</span>;
-                                }
-                                return null;
-                            })}
-
-                            <button
-                                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                                disabled={currentPage === totalPages}
-                                className="p-2 rounded-lg border border-slate-300 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                            >
-                                <ChevronRight size={16} />
-                            </button>
-                        </div>
-                    </div>
-                )}
-            </div>
+            <TransactionSidePanel
+                isOpen={isPanelOpen}
+                onClose={() => setIsPanelOpen(false)}
+                title={panelTitle}
+                transactions={selectedDetailTransactions}
+                formatCurrency={formatCurrency}
+            />
         </div>
     );
 };
