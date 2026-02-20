@@ -55,5 +55,6 @@ export interface GastoConsolidadoRow {
     mes: number;
     alertaFecha?: number;
     descripcionOt?: string;
+    estadoTrabajo?: string;
     esHito?: boolean;
 }

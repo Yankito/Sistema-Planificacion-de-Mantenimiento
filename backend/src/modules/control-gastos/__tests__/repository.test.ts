@@ -31,7 +31,6 @@ describe('ControlGastosRepository', () => {
                     NRO_ACTIVO: 'ACT-001',
                     DESCRIP_ARTICULO: 'Rodamiento',
                     FECHA_TRANSACCION: new Date(2026, 1, 15),
-                    FECHA_OT_PRO: new Date(2026, 1, 10),
                     COSTO_TRX: 1000,
                 }
             ];
@@ -59,7 +58,6 @@ describe('ControlGastosRepository', () => {
                     NRO_ACTIVO: 'ACT-002',
                     DESCRIP_ARTICULO: 'Servicio',
                     FECHA_TRANSACCION: new Date(2026, 1, 15),
-                    FECHA_OT_PRO: new Date(2026, 1, 15),
                     COSTO_TRX: 5000,
                 }
             ];
@@ -86,7 +84,6 @@ describe('ControlGastosRepository', () => {
                     TIPO_OT: 'Preventivo',
                     NRO_ACTIVO: 'ACT-001',
                     FECHA_TRANSACCION: new Date(2026, 2, 1), // 1 de Marzo
-                    FECHA_OT_PRO: new Date(2026, 1, 28),    // 28 de Febrero
                     COSTO_TRX: 100,
                 }
             ];

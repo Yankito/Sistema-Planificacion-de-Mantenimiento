@@ -168,12 +168,16 @@ export const TransactionSidePanel: React.FC<TransactionSidePanelProps> = ({
                                                         {trx.tipoOt || 'N/A'}
                                                     </div>
                                                 </div>
-                                                {/* <div className="flex flex-col">
+                                                <div className="flex flex-col">
                                                     <span className="text-[9px] text-slate-400 uppercase font-bold">Estado Trabajo</span>
-                                                    <div className="flex items-center gap-1 text-xs font-semibold text-slate-600">
+                                                    <div className={`flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-md w-fit ${trx.estadoTrabajo === 'LIBERADO' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' :
+                                                        trx.estadoTrabajo === 'Liberado' ? 'bg-blue-50 text-blue-600 border border-blue-100' :
+                                                            trx.estadoTrabajo === 'Finalizar - Sin Cargos' ? 'bg-slate-100 text-slate-600 border border-slate-200' :
+                                                                'bg-white text-slate-600 border border-slate-100'
+                                                        }`}>
                                                         {trx.estadoTrabajo || 'N/A'}
                                                     </div>
-                                                </div> */}
+                                                </div>
                                                 <div className="flex flex-col">
                                                     <span className="text-[9px] text-slate-400 uppercase font-bold">Fecha Programada</span>
                                                     <span className={`text-xs font-semibold ${trx.alertaFecha === 1 ? 'text-indigo-600' : 'text-slate-600'}`}>
@@ -185,9 +189,6 @@ export const TransactionSidePanel: React.FC<TransactionSidePanelProps> = ({
                                                     <span className="text-xs font-semibold text-slate-600">
                                                         {trx.fechaTrx ? new Date(trx.fechaTrx).toLocaleDateString('es-CL') : 'N/A'}
                                                     </span>
-                                                </div>
-                                                <div className="flex flex-col">
-                                                    {/* Espacio para alinear o un dato extra futuro */}
                                                 </div>
                                                 <div className="flex flex-col col-span-2 bg-slate-50/50 p-2 rounded-lg mt-1">
                                                     <span className="text-[9px] text-slate-400 uppercase font-bold mb-1">Descripción OT</span>
@@ -211,7 +212,7 @@ export const TransactionSidePanel: React.FC<TransactionSidePanelProps> = ({
                     )}
                 </div>
 
-                {/* Panel Footer bar for selection */}
+                {/* Panel Footer */}
                 <div className="absolute bottom-0 left-0 right-0 p-4 bg-white/90 backdrop-blur-md border-t border-slate-100 shadow-2xl">
                     {selectedIndices.size > 0 ? (
                         <div className="bg-slate-900 text-white rounded-2xl p-4 shadow-2xl flex flex-col gap-3 animate-in slide-in-from-bottom-4 duration-300">
@@ -290,3 +291,4 @@ export const TransactionSidePanel: React.FC<TransactionSidePanelProps> = ({
         </div>
     );
 };
+

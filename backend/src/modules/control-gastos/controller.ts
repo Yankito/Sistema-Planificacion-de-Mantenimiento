@@ -264,7 +264,6 @@ export class ControlGastosController {
                 if (!numeroOt && !nroActivo && !tipo) continue;
 
                 const fechaTrx = parseDate(getVal(row, ['FECHA_TRANSACCION']));
-                const fechaOtPro = parseDate(getVal(row, ['FECHA_OT_PRO']));
 
                 const rawCost = getVal(row, ['COSTO_TRX']);
                 let costo = rawCost;
@@ -277,7 +276,6 @@ export class ControlGastosController {
                     tipoOt: tipoOt,
                     nroActivo: nroActivo,
                     fechaTrx: fechaTrx,
-                    fechaOtPro: fechaOtPro,
                     descripcionArticulo: descArticulo,
                     costoTrx: costo || 0
                 });

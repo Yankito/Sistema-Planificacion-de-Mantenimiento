@@ -20,7 +20,6 @@ export interface GastoConsolidadoRow {
     tipoOt: string;
     nroActivo: string;
     fechaTrx: Date | string;
-    fechaOtPro: Date | string;
     descripcionArticulo: string;
     costoTrx: number;
     alertaFecha?: number;
@@ -29,47 +28,53 @@ export interface GastoConsolidadoRow {
     anio?: number;
     mes?: number;
     tipoGasto?: string; // BODEGA, SERV_EXT, CORRECTIVO
+    fechaOtPro?: Date | string;
     descripcionOt?: string;
+    estadoTrabajo?: string;
     esHito?: boolean;
+
 }
 
 export const ControlGastosRepository = {
-    getDescripcionOTs: async (ots: string[]): Promise<Map<string, string>> => {
+    getOTDetails: async (ots: string[]): Promise<Map<string, { descripcion: string, fechaProg?: Date, estado?: string }>> => {
         if (ots.length === 0) return new Map();
 
         const uniqueOts = [...new Set(ots)];
-        const map = new Map<string, string>();
+        const map = new Map<string, { descripcion: string, fechaProg?: Date, estado?: string }>();
 
         await withConnection(async (connection) => {
-            // Process in chunks of 1000 to respect Oracle IN clause limit
             for (let i = 0; i < uniqueOts.length; i += 1000) {
                 const chunk = uniqueOts.slice(i, i + 1000);
                 const binds: any = {};
                 chunk.forEach((ot, idx) => binds[`ot${idx}`] = ot);
                 const keys = chunk.map((_, idx) => `:ot${idx}`).join(',');
 
-                const sql = `SELECT PEDIDO_TRABAJO, DESCRIPCION FROM PF_EAM_PEDIDOS WHERE PEDIDO_TRABAJO IN (${keys})`;
+                const sql = `SELECT PEDIDO_TRABAJO, DESCRIPCION, FECHA_INICIAL_PROGRAMADA, ESTADO FROM PF_EAM_PEDIDOS WHERE PEDIDO_TRABAJO IN (${keys})`;
 
-                // execute returns result with rows
                 const result = await connection.execute(sql, binds);
 
                 (result.rows || []).forEach((r: any) => {
                     const ot = r.PEDIDO_TRABAJO || r[0];
                     const desc = r.DESCRIPCION || r[1];
-                    if (ot) map.set(String(ot), desc);
+                    const fProg = r.FECHA_INICIAL_PROGRAMADA || r[2];
+                    const estado = r.ESTADO || r[3];
+                    if (ot) map.set(String(ot).trim(), {
+                        descripcion: desc,
+                        fechaProg: fProg ? new Date(fProg) : undefined,
+                        estado
+                    });
                 });
             }
         });
         return map;
     },
-
     saveGastosConsolidados: async (rows: GastoConsolidadoRow[]) => {
         if (rows.length === 0) return;
 
         await withConnection(async (connection) => {
             const sql = `INSERT INTO PF_EAM_GASTOS_CONSOLIDADOS 
-                (TIPO, PLANTA, CLASE_CONTABLE, NUMERO_OT, TIPO_OT, NRO_ACTIVO, FECHA_OT_PRO, FECHA_TRANSACCION, DESCRIP_ARTICULO, COSTO_TRX)
-                VALUES (:tipo, :planta, :claseContable, :numeroOt, :tipoOt, :nroActivo,  :fechaOtPro, :fechaTrx, :descripcionArticulo, :costoTrx)`;
+                (TIPO, PLANTA, CLASE_CONTABLE, NUMERO_OT, TIPO_OT, NRO_ACTIVO, FECHA_TRANSACCION, DESCRIP_ARTICULO, COSTO_TRX)
+                VALUES (:tipo, :planta, :claseContable, :numeroOt, :tipoOt, :nroActivo,  :fechaTrx, :descripcionArticulo, :costoTrx)`;
 
             const binds = rows.map(r => ({
                 tipo: r.tipo,
@@ -80,7 +85,6 @@ export const ControlGastosRepository = {
                 nroActivo: r.nroActivo,
                 descripcionArticulo: r.descripcionArticulo?.substring(0, 500) || '',
                 fechaTrx: r.fechaTrx,
-                fechaOtPro: r.fechaOtPro || null,
                 costoTrx: r.costoTrx,
             }));
 
@@ -130,10 +134,12 @@ export const ControlGastosRepository = {
                         g.NRO_ACTIVO, 
                         g.DESCRIP_ARTICULO, 
                         g.FECHA_TRANSACCION, 
-                        g.FECHA_OT_PRO, 
+                        p.FECHA_INICIAL_PROGRAMADA as FECHA_PROG,
+                        p.DESCRIPCION as DESC_OT,
+                        p.ESTADO as ESTADO_OT,
                         g.COSTO_TRX, 
-                        EXTRACT(YEAR FROM COALESCE(g.FECHA_OT_PRO, g.FECHA_TRANSACCION)) as ANIO_CALC,
-                        EXTRACT(MONTH FROM COALESCE(g.FECHA_OT_PRO, g.FECHA_TRANSACCION)) as MES_CALC,
+                        EXTRACT(YEAR FROM p.FECHA_INICIAL_PROGRAMADA) as ANIO_CALC,
+                        EXTRACT(MONTH FROM p.FECHA_INICIAL_PROGRAMADA) as MES_CALC,
                         COALESCE(
                             CASE 
                                 WHEN UPPER(g.PLANTA) = UPPER('Mantenimiento Planta I') THEN 'PF1'
@@ -194,7 +200,8 @@ export const ControlGastosRepository = {
                             'OTROS'
                         ) as PLANTA_CALC
                     FROM PF_EAM_GASTOS_CONSOLIDADOS g
-                    WHERE EXTRACT(YEAR FROM g.FECHA_OT_PRO) = :anio
+                    INNER JOIN PF_EAM_PEDIDOS p ON TRIM(g.NUMERO_OT) = TRIM(p.PEDIDO_TRABAJO)
+                    WHERE EXTRACT(YEAR FROM p.FECHA_INICIAL_PROGRAMADA) = :anio
                 )
                 SELECT * FROM DataCalculada
                 WHERE (:plantaFiltro IS NULL OR PLANTA_CALC = :planta)
@@ -203,17 +210,14 @@ export const ControlGastosRepository = {
             const result = await connection.execute(sql, { anio, plantaFiltro: planta || null, planta: planta || null }, { outFormat: 4002 });
             const rows = result.rows || [];
 
-            // Obtener descripciones de OT para clasificación
-            const otNumbers = rows.map((r: any) => r.NUMERO_OT).filter(Boolean);
-            const otDescriptions = await ControlGastosRepository.getDescripcionOTs(otNumbers);
-
             const results: GastoConsolidadoRow[] = [];
 
             for (const row of rows) {
-                const tipo = String(row.TIPO || '').toUpperCase().trim();
+                const tipo = String(row.TIPO || '');
                 const tipoOt = String(row.TIPO_OT || '').trim();
-                const descPedido = (otDescriptions.get(row.NUMERO_OT) || '').toUpperCase().trim();
-
+                const descPedido = (row.DESC_OT || '');
+                const fechaProgPedido = row.FECHA_PROG ? new Date(row.FECHA_PROG) : null;
+                const estadoPedido = row.ESTADO_OT;
                 let tipoGasto = '';
                 // Determinamos si es HITO exclusivamente por la descripción
                 const esHitoValue = descPedido.startsWith('HITO') || descPedido.startsWith('(HITO)');
@@ -230,9 +234,9 @@ export const ControlGastosRepository = {
                 // Si no coincide con ninguna categoria, lo salta
                 if (!tipoGasto) continue;
 
-                // Alerta de fecha incorrecta
+                // Priorizamos la fecha programada del Pedido (Base)
                 const dTrx = row.FECHA_TRANSACCION ? new Date(row.FECHA_TRANSACCION) : null;
-                const dPro = row.FECHA_OT_PRO ? new Date(row.FECHA_OT_PRO) : null;
+                const dPro = fechaProgPedido;
                 let alertaFecha = 0;
 
                 if (dTrx && dPro) {
@@ -244,9 +248,7 @@ export const ControlGastosRepository = {
                 // Calcular centro de costo (intentamos extraer código entre paréntesis al final, sino últimos 6 caracteres)
                 const matchCC = String(row.NRO_ACTIVO || '').match(/\(([^)]+)\)$/);
                 const centroCosto = matchCC ? matchCC[1] : (row.NRO_ACTIVO ? String(row.NRO_ACTIVO).slice(-6) : '');
-                if (row.NRO_ACTIVO == "PF (M) Horno Alkar (0723)") {
-                    console.log(row);
-                }
+
                 results.push({
                     tipo: row.TIPO,
                     planta: row.PLANTA_CALC,
@@ -256,7 +258,7 @@ export const ControlGastosRepository = {
                     nroActivo: row.NRO_ACTIVO,
                     descripcionArticulo: row.DESCRIP_ARTICULO,
                     fechaTrx: row.FECHA_TRANSACCION,
-                    fechaOtPro: row.FECHA_OT_PRO,
+                    fechaOtPro: dPro, // Usamos la fecha programada de base si existe
                     costoTrx: row.COSTO_TRX,
                     tipoGasto,
                     centroCosto,
@@ -264,10 +266,10 @@ export const ControlGastosRepository = {
                     mes: row.MES_CALC,
                     alertaFecha,
                     descripcionOt: descPedido,
+                    estadoTrabajo: estadoPedido,
                     esHito: esHitoValue
                 });
             }
-
             return results;
         });
     },

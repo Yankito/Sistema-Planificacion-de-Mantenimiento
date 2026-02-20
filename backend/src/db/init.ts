@@ -234,7 +234,6 @@ export const initDB = async () => {
           TIPO_OT VARCHAR2(50),
           NRO_ACTIVO VARCHAR2(50),
           FECHA_TRANSACCION DATE,
-          FECHA_OT_PRO DATE,
           DESCRIP_ARTICULO VARCHAR2(500),
           COSTO_TRX NUMBER,
           CREATED_AT DATE DEFAULT SYSDATE
