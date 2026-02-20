@@ -163,8 +163,20 @@ export const TransactionSidePanel: React.FC<TransactionSidePanelProps> = ({
                                                     </div>
                                                 </div>
                                                 <div className="flex flex-col">
+                                                    <span className="text-[9px] text-slate-400 uppercase font-bold">Tipo OT</span>
+                                                    <div className="flex items-center gap-1 text-xs font-semibold text-slate-600">
+                                                        {trx.tipoOt || 'N/A'}
+                                                    </div>
+                                                </div>
+                                                {/* <div className="flex flex-col">
+                                                    <span className="text-[9px] text-slate-400 uppercase font-bold">Estado Trabajo</span>
+                                                    <div className="flex items-center gap-1 text-xs font-semibold text-slate-600">
+                                                        {trx.estadoTrabajo || 'N/A'}
+                                                    </div>
+                                                </div> */}
+                                                <div className="flex flex-col">
                                                     <span className="text-[9px] text-slate-400 uppercase font-bold">Fecha Programada</span>
-                                                    <span className={`text-xs font-semibold ${trx.alertaFecha === 1 ? 'text-amber-600' : 'text-slate-600'}`}>
+                                                    <span className={`text-xs font-semibold ${trx.alertaFecha === 1 ? 'text-indigo-600' : 'text-slate-600'}`}>
                                                         {trx.fechaOtPro ? new Date(trx.fechaOtPro).toLocaleDateString('es-CL') : 'N/A'}
                                                     </span>
                                                 </div>
@@ -186,7 +198,7 @@ export const TransactionSidePanel: React.FC<TransactionSidePanelProps> = ({
                                             </div>
 
                                             {trx.alertaFecha === 1 && (
-                                                <div className="mt-3 flex items-center gap-2 bg-amber-50 text-amber-700 px-3 py-1.5 rounded-lg border border-amber-100 text-[10px] font-medium">
+                                                <div className="mt-3 flex items-center gap-2 bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-lg border border-indigo-100 text-[10px] font-medium">
                                                     <AlertCircle size={12} />
                                                     La fecha de programa no coincide con el periodo de transacción.
                                                 </div>

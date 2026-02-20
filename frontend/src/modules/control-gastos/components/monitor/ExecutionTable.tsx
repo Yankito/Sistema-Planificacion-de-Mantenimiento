@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import type { CostCenterGroup, SortField, SortOrder } from './types';
 import type { GastoConsolidadoRow } from '../../types';
+import { Tooltip } from './Tooltip';
 
 interface ExecutionTableProps {
     paginatedData: CostCenterGroup[];
@@ -102,7 +103,7 @@ export const ExecutionTable: React.FC<ExecutionTableProps> = ({
                             return (
                                 <Fragment key={group.centroCosto}>
                                     {groupIdx > 0 && (
-                                        <tr className="h-6 bg-slate-80/40 select-none">
+                                        <tr className="h-1 bg-slate-80/40 select-none">
                                             <td colSpan={5} className="p-0">
                                                 <div className="w-full h-full border-y border-slate-200"></div>
                                             </td>
@@ -129,18 +130,25 @@ export const ExecutionTable: React.FC<ExecutionTableProps> = ({
                                                 }}
                                             >
                                                 {isOver ? (
-                                                    <div title="Presupuesto total excedido">
+                                                    <Tooltip content="Presupuesto total excedido">
                                                         <AlertCircle size={14} className="text-pf-red animate-pulse" />
-                                                    </div>
+                                                    </Tooltip>
                                                 ) : (
-                                                    group.assets.some(a =>
-                                                        a.details.some(d => d.real > d.budget && d.budget > 0) ||
-                                                        (a.totalReal > a.totalBudget && a.totalBudget > 0)
-                                                    ) && (
-                                                        <div title="Alerta: Desviación interna en categorías">
-                                                            <AlertCircle size={14} className="text-amber-500" />
-                                                        </div>
-                                                    )
+                                                    <>
+                                                        {group.assets.some(a =>
+                                                            a.details.some(d => d.real > d.budget && d.budget > 0) ||
+                                                            (a.totalReal > a.totalBudget && a.totalBudget > 0)
+                                                        ) && (
+                                                                <Tooltip content="Alerta: Desviación interna en categorías">
+                                                                    <AlertCircle size={14} className="text-amber-500" />
+                                                                </Tooltip>
+                                                            )}
+                                                        {group.assets.some(a => a.hasDateAlert) && (
+                                                            <Tooltip content="Alerta: Transacciones en meses fuera de programa">
+                                                                <AlertCircle size={14} className="text-indigo-500" />
+                                                            </Tooltip>
+                                                        )}
+                                                    </>
                                                 )}
                                                 <span className="border-b border-transparent group-hover/real:border-blue-600 cursor-pointer">
                                                     {formatCurrency(group.totalReal)}
@@ -160,106 +168,132 @@ export const ExecutionTable: React.FC<ExecutionTableProps> = ({
                                         </td>
                                     </tr>
 
-                                    {/* Assets */}
-                                    {isExpanded && group.assets.map((asset, assetIdx) => {
-                                        const isHito = asset.tipoFila.toLowerCase().includes('hito');
-                                        return (
-                                            <Fragment key={`${group.centroCosto}-${asset.activo}-${assetIdx}`}>
-                                                <tr className="bg-white hover:bg-slate-50/80">
-                                                    <td className="px-6 py-3 pl-14 text-slate-800 font-medium">
-                                                        <div className="flex flex-wrap items-center gap-2">
-                                                            <span className="text-xs">{asset.activo}</span>
-                                                            <span className="px-2 py-0.5 rounded text-[9px] bg-slate-100 text-slate-500 border border-slate-200 uppercase tracking-wide">
-                                                                {asset.tipoFila}
+                                    {/* Assets grouped by type (Mensual, Hito, etc.) */}
+                                    {isExpanded && (() => {
+                                        const types = Array.from(new Set(group.assets.map(a => a.tipoFila))).sort((a, b) => {
+                                            const aLower = a.toLowerCase();
+                                            const bLower = b.toLowerCase();
+                                            if (aLower.includes('mensual')) return -1;
+                                            if (bLower.includes('mensual')) return 1;
+                                            if (aLower.includes('hito')) return -1;
+                                            if (bLower.includes('hito')) return 1;
+                                            return a.localeCompare(b);
+                                        });
+
+                                        return types.map(type => (
+                                            <Fragment key={`${group.centroCosto}-${type}`}>
+                                                {/* Category Separator Row */}
+                                                <tr className="bg-slate-100/30 border-y border-slate-200/40">
+                                                    <td colSpan={5} className="px-6 py-1.5 pl-10">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="h-px flex-1 bg-slate-200"></div>
+                                                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 whitespace-nowrap px-2">
+                                                                {type}
                                                             </span>
-                                                            {asset.planta && (
-                                                                <span className="px-2 py-0.5 rounded text-[9px] bg-blue-50 text-blue-600 border border-blue-100 uppercase tracking-wide">
-                                                                    {asset.planta}
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-6 py-3 text-right text-slate-500 text-xs">{formatCurrency(asset.totalBudget)}</td>
-                                                    <td className="px-6 py-3 text-right text-slate-600 font-medium text-xs">
-                                                        <div
-                                                            className="flex items-center justify-end gap-2 text-xs hover:text-blue-600 transition-colors group/asset"
-                                                            onClick={() => onShowDetails(`Activo: ${asset.activo}`, getAssetTransactions(asset.activo, isHito), asset.totalBudget)}
-                                                        >
-                                                            {asset.totalReal > asset.totalBudget && asset.totalBudget > 0 ? (
-                                                                <div title="Presupuesto del activo excedido">
-                                                                    <AlertCircle size={12} className="text-pf-red animate-pulse" />
-                                                                </div>
-                                                            ) : (
-                                                                asset.details.some(d => d.real > d.budget && d.budget > 0) && (
-                                                                    <div title="Alerta: Desviación interna en categorías (ej: Bodega vs Hito)">
-                                                                        <AlertCircle size={12} className="text-amber-500" />
-                                                                    </div>
-                                                                )
-                                                            )}
-                                                            {asset.hasDateAlert && (
-                                                                <div title="Gastos fuera de periodo">
-                                                                    <AlertCircle size={12} className="text-amber-500" />
-                                                                </div>
-                                                            )}
-                                                            <span className="border-b border-transparent group-hover/asset:border-blue-600 cursor-pointer">
-                                                                {formatCurrency(asset.totalReal)}
-                                                            </span>
-                                                        </div>
-                                                    </td>
-                                                    <td className={`px-6 py-3 text-right text-xs font-semibold ${asset.totalReal > asset.totalBudget && asset.totalBudget > 0 ? 'text-pf-red' : 'text-slate-500'}`}>
-                                                        {asset.deviation.toFixed(1)}%
-                                                    </td>
-                                                    <td className="px-6 py-3">
-                                                        <div className="w-32 bg-slate-200 rounded-full h-1.5 overflow-hidden border border-slate-300/30">
-                                                            <div
-                                                                className={`h-full rounded-full ${asset.totalReal > asset.totalBudget && asset.totalBudget > 0 ? 'bg-pf-red/70' : 'bg-emerald-400'}`}
-                                                                style={{ width: `${Math.min((asset.totalReal / (asset.totalBudget || 1)) * 100, 100)}%` }}
-                                                            />
+                                                            <div className="h-px flex-1 bg-slate-200"></div>
                                                         </div>
                                                     </td>
                                                 </tr>
-                                                {/* Details Breakdown */}
-                                                {asset.details.map((detail, dIdx) => {
-                                                    const progress = Math.min((detail.real / (detail.budget || 1)) * 100, 100);
-                                                    const isOverDetail = detail.real > (detail.budget || 0) && detail.budget > 0;
-                                                    const devDetail = calculateDeviation(detail.real, detail.budget);
 
+                                                {group.assets.filter(a => a.tipoFila === type).map((asset, assetIdx) => {
+                                                    const isHito = asset.tipoFila.toLowerCase().includes('hito');
                                                     return (
-                                                        <tr key={`${group.centroCosto}-${asset.activo}-${assetIdx}-${dIdx}`} className="text-[12px] bg-slate-50/20">
-                                                            <td className="px-6 py-1 pl-20 text-slate-800 flex items-center gap-2">
-                                                                <div className={`w-1.5 h-1.5 rounded-full ${detail.tipo === 'Bodega' ? 'bg-blue-400' :
-                                                                    detail.tipo === 'Serv. Externos' ? 'bg-emerald-400' :
-                                                                        detail.tipo === 'Correctivo' ? 'bg-pf-red' :
-                                                                            'bg-amber-400'
-                                                                    }`}></div>
-                                                                {detail.tipo}
-                                                            </td>
-                                                            <td className="px-6 py-1 text-right text-slate-600 italic">{formatCurrency(detail.budget)}</td>
-                                                            <td className="px-6 py-1 text-right text-slate-600 font-medium">
-                                                                <div
-                                                                    className="hover:text-blue-600 transition-colors cursor-pointer inline-block border-b border-transparent hover:border-blue-600"
-                                                                    onClick={() => onShowDetails(`${detail.tipo}: ${asset.activo}`, getTypeTransactions(asset.activo, isHito, detail.tipo), detail.budget)}
-                                                                >
-                                                                    {formatCurrency(detail.real)}
-                                                                </div>
-                                                            </td>
-                                                            <td className={`px-6 py-1 text-right italic ${isOverDetail ? 'text-red-400' : 'text-slate-600'}`}>
-                                                                {devDetail.toFixed(1)}%
-                                                            </td>
-                                                            <td className="px-6 py-1 pr-12">
-                                                                <div className="w-24 bg-slate-200 rounded-full h-1 overflow-hidden ml-auto border border-slate-300">
+                                                        <Fragment key={`${group.centroCosto}-${asset.activo}-${assetIdx}`}>
+                                                            <tr className="bg-white hover:bg-slate-50 transition-colors">
+                                                                <td className="px-6 py-3 pl-14 text-slate-800 font-medium">
+                                                                    <div className="flex flex-wrap items-center gap-2">
+                                                                        <span className="text-xs font-bold text-slate-700">{asset.activo}</span>
+                                                                        {asset.planta && (
+                                                                            <span className="px-1.5 py-0.5 rounded text-[8px] font-bold bg-blue-50 text-blue-600 border border-blue-100 uppercase">
+                                                                                {asset.planta}
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                </td>
+                                                                <td className="px-6 py-3 text-right text-slate-500 text-xs font-medium">{formatCurrency(asset.totalBudget)}</td>
+                                                                <td className="px-6 py-3 text-right text-slate-600 font-bold text-xs">
                                                                     <div
-                                                                        className={`h-full rounded-full ${isOverDetail ? 'bg-pf-red/50' : 'bg-emerald-400/60'}`}
-                                                                        style={{ width: `${progress}%` }}
-                                                                    />
-                                                                </div>
-                                                            </td>
-                                                        </tr>
+                                                                        className="flex items-center justify-end gap-2 text-xs hover:text-blue-600 transition-colors group/asset"
+                                                                        onClick={() => onShowDetails(`Activo: ${asset.activo}`, getAssetTransactions(asset.activo, isHito), asset.totalBudget)}
+                                                                    >
+                                                                        {asset.totalReal > asset.totalBudget && asset.totalBudget > 0 ? (
+                                                                            <Tooltip content="Presupuesto del activo excedido">
+                                                                                <AlertCircle size={12} className="text-pf-red animate-pulse" />
+                                                                            </Tooltip>
+                                                                        ) : (
+                                                                            asset.details.some(d => d.real > d.budget && d.budget > 0) && (
+                                                                                <Tooltip content="Alerta: Desviación interna en categorías (ej: Bodega vs Hito)">
+                                                                                    <AlertCircle size={12} className="text-amber-500" />
+                                                                                </Tooltip>
+                                                                            )
+                                                                        )}
+                                                                        {asset.hasDateAlert && (
+                                                                            <Tooltip content="Gastos fuera de periodo">
+                                                                                <AlertCircle size={12} className="text-indigo-500" />
+                                                                            </Tooltip>
+                                                                        )}
+                                                                        <span className="border-b border-dashed border-slate-300 group-hover/asset:border-blue-600 cursor-pointer">
+                                                                            {formatCurrency(asset.totalReal)}
+                                                                        </span>
+                                                                    </div>
+                                                                </td>
+                                                                <td className={`px-6 py-3 text-right text-xs font-black ${asset.totalReal > asset.totalBudget && asset.totalBudget > 0 ? 'text-pf-red' : 'text-slate-600'}`}>
+                                                                    {asset.deviation.toFixed(1)}%
+                                                                </td>
+                                                                <td className="px-6 py-3">
+                                                                    <div className="w-32 bg-slate-200/60 rounded-full h-1.5 overflow-hidden border border-slate-300/30">
+                                                                        <div
+                                                                            className={`h-full rounded-full transition-all duration-700 ${asset.totalReal > asset.totalBudget && asset.totalBudget > 0 ? 'bg-pf-red/70' : 'bg-emerald-400/80'}`}
+                                                                            style={{ width: `${Math.min((asset.totalReal / (asset.totalBudget || 1)) * 100, 100)}%` }}
+                                                                        />
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                            {/* Details Breakdown */}
+                                                            {asset.details.map((detail, dIdx) => {
+                                                                const progress = Math.min((detail.real / (detail.budget || 1)) * 100, 100);
+                                                                const isOverDetail = detail.real > (detail.budget || 0) && detail.budget > 0;
+                                                                const devDetail = calculateDeviation(detail.real, detail.budget);
+
+                                                                return (
+                                                                    <tr key={`${group.centroCosto}-${asset.activo}-${assetIdx}-${dIdx}`} className="text-[11px] bg-slate-50/20 group/detail">
+                                                                        <td className="px-6 py-1.5 pl-20 text-slate-600 font-medium flex items-center gap-2">
+                                                                            <div className={`w-1.5 h-1.5 rounded-full ${detail.tipo === 'Bodega' ? 'bg-blue-400' :
+                                                                                detail.tipo === 'Serv. Externos' ? 'bg-emerald-400' :
+                                                                                    detail.tipo === 'Correctivo' ? 'bg-pf-red' :
+                                                                                        'bg-amber-400'
+                                                                                }`}></div>
+                                                                            {detail.tipo}
+                                                                        </td>
+                                                                        <td className="px-6 py-1.5 text-right text-slate-600 font-medium">{formatCurrency(detail.budget)}</td>
+                                                                        <td className="px-6 py-1.5 text-right text-slate-600 font-bold text-xs">
+                                                                            <div
+                                                                                className="hover:text-blue-600 transition-colors cursor-pointer inline-block border-b border-transparent hover:border-blue-600"
+                                                                                onClick={() => onShowDetails(`${detail.tipo}: ${asset.activo}`, getTypeTransactions(asset.activo, isHito, detail.tipo), detail.budget)}
+                                                                            >
+                                                                                {formatCurrency(detail.real)}
+                                                                            </div>
+                                                                        </td>
+                                                                        <td className={`px-6 py-1.5 text-right font-black ${isOverDetail ? 'text-pf-red/60' : 'text-slate-600'}`}>
+                                                                            {devDetail.toFixed(1)}%
+                                                                        </td>
+                                                                        <td className="px-6 py-1.5 pr-12">
+                                                                            <div className="w-24 bg-slate-200/50 rounded-full h-1 overflow-hidden ml-auto border border-slate-200">
+                                                                                <div
+                                                                                    className={`h-full rounded-full transition-all duration-500 ${isOverDetail ? 'bg-pf-red/40' : 'bg-emerald-400/40'}`}
+                                                                                    style={{ width: `${progress}%` }}
+                                                                                />
+                                                                            </div>
+                                                                        </td>
+                                                                    </tr>
+                                                                );
+                                                            })}
+                                                        </Fragment>
                                                     );
                                                 })}
                                             </Fragment>
-                                        );
-                                    })}
+                                        ));
+                                    })()}
                                 </Fragment>
                             );
                         })}

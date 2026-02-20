@@ -1,5 +1,6 @@
 import React from 'react';
 import { AlertCircle, Search, Upload } from 'lucide-react';
+import { Tooltip } from './Tooltip';
 
 interface MonitorFiltersProps {
     currentMonth: number;
@@ -53,41 +54,44 @@ export const MonitorFilters: React.FC<MonitorFiltersProps> = ({
 
                     <div className="h-6 w-px bg-slate-200 mx-1 hidden md:block"></div>
 
-                    <button
-                        onClick={onToggleExceededOnly}
-                        className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition-all border uppercase tracking-wider ${filterExceededOnly
-                            ? 'bg-pf-red text-white border-pf-red shadow-md shadow-red-100'
-                            : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                            }`}
-                        title="Ver solo grupos con presupuesto total excedido"
-                    >
-                        <AlertCircle size={14} className={filterExceededOnly ? 'animate-pulse' : ''} />
-                        Total Excedido
-                    </button>
+                    <Tooltip content="Ver solo grupos con presupuesto total excedido">
+                        <button
+                            onClick={onToggleExceededOnly}
+                            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition-all border uppercase tracking-wider ${filterExceededOnly
+                                ? 'bg-pf-red text-white border-pf-red shadow-md shadow-red-100'
+                                : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                                }`}
+                        >
+                            <AlertCircle size={14} className={filterExceededOnly ? 'animate-pulse' : ''} />
+                            Total Excedido
+                        </button>
+                    </Tooltip>
 
-                    <button
-                        onClick={onToggleInternalDeviation}
-                        className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition-all border uppercase tracking-wider ${filterInternalDeviation
-                            ? 'bg-amber-500 text-white border-amber-600 shadow-md shadow-amber-100'
-                            : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                            }`}
-                        title="Ver grupos con mala clasificación interna (ej: exceso en bodega pero no en total)"
-                    >
-                        <AlertCircle size={14} />
-                        Desv. Interna
-                    </button>
+                    <Tooltip content="Ver grupos con mala clasificación interna (ej: exceso en bodega pero no en total)">
+                        <button
+                            onClick={onToggleInternalDeviation}
+                            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition-all border uppercase tracking-wider ${filterInternalDeviation
+                                ? 'bg-amber-500 text-white border-amber-600 shadow-md shadow-amber-100'
+                                : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                                }`}
+                        >
+                            <AlertCircle size={14} />
+                            Desv. Interna
+                        </button>
+                    </Tooltip>
 
-                    <button
-                        onClick={onToggleDateAlert}
-                        className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition-all border uppercase tracking-wider ${filterDateAlert
-                            ? 'bg-amber-600 text-white border-amber-700 shadow-md shadow-amber-100'
-                            : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                            }`}
-                        title="Ver grupos con transacciones fuera del periodo programado"
-                    >
-                        <AlertCircle size={14} />
-                        Fecha Dif.
-                    </button>
+                    <Tooltip content="Ver grupos con transacciones fuera del periodo programado">
+                        <button
+                            onClick={onToggleDateAlert}
+                            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition-all border uppercase tracking-wider ${filterDateAlert
+                                ? 'bg-indigo-600 text-white border-indigo-700 shadow-md shadow-indigo-100'
+                                : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                                }`}
+                        >
+                            <AlertCircle size={14} />
+                            Mes Dif.
+                        </button>
+                    </Tooltip>
                 </div>
 
                 <div className="flex items-center gap-3">

@@ -283,6 +283,39 @@ export const ExecutionMonitor = ({ selectedYear, selectedPlanta }: ExecutionMoni
     const totalGasto = filteredAndSortedData.reduce((acc, g) => acc + g.totalReal, 0);
     const totalAvance = totalPresupuesto > 0 ? (totalGasto / totalPresupuesto) * 100 : 0;
 
+    // Plan breakdown for KPIs
+    const totalPlanBudget = filteredAndSortedData.reduce((acc, g) =>
+        acc + g.assets.reduce((aAcc, asset) =>
+            aAcc + asset.details
+                .filter(d => d.tipo === 'Bodega' || d.tipo === 'Serv. Externos')
+                .reduce((dAcc, d) => dAcc + d.budget, 0)
+            , 0)
+        , 0);
+
+    const totalPlanReal = filteredAndSortedData.reduce((acc, g) =>
+        acc + g.assets.reduce((aAcc, asset) =>
+            aAcc + asset.details
+                .filter(d => d.tipo === 'Bodega' || d.tipo === 'Serv. Externos')
+                .reduce((dAcc, d) => dAcc + d.real, 0)
+            , 0)
+        , 0);
+
+    const totalCorrectivoBudget = filteredAndSortedData.reduce((acc, g) =>
+        acc + g.assets.reduce((aAcc, asset) =>
+            aAcc + asset.details
+                .filter(d => d.tipo === 'Correctivo')
+                .reduce((dAcc, d) => dAcc + d.budget, 0)
+            , 0)
+        , 0);
+
+    const totalCorrectivoReal = filteredAndSortedData.reduce((acc, g) =>
+        acc + g.assets.reduce((aAcc, asset) =>
+            aAcc + asset.details
+                .filter(d => d.tipo === 'Correctivo')
+                .reduce((dAcc, d) => dAcc + d.real, 0)
+            , 0)
+        , 0);
+
     return (
         <div className="space-y-6 relative min-h-[400px]">
             {loading && (
@@ -314,7 +347,10 @@ export const ExecutionMonitor = ({ selectedYear, selectedPlanta }: ExecutionMoni
                 totalPresupuesto={totalPresupuesto}
                 totalGasto={totalGasto}
                 totalAvance={totalAvance}
-                paginatedDataCount={paginatedData.length}
+                totalPlanBudget={totalPlanBudget}
+                totalPlanReal={totalPlanReal}
+                totalCorrectivoBudget={totalCorrectivoBudget}
+                totalCorrectivoReal={totalCorrectivoReal}
                 groupedData={groupedData}
                 monthName={months.find(m => m.id === currentMonth)?.name || ''}
                 formatCurrency={formatCurrency}
