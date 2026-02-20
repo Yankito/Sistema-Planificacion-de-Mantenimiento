@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { usePlanificacionManager } from '../usePlanificacionManager';
-import * as PlanificacionService from '../../../../shared/services/PlanificacionService';
+import * as PlanificacionService from '../../services/PlanificacionService';
 import type { ProcesoExcelResponse, PlanResult } from '../../types';
 
 // --- MOCKS ---
-vi.mock('../../../../shared/services/PlanificacionService', () => ({
+vi.mock('../../services/PlanificacionService', () => ({
   ejecutarPlanificacionRemota: vi.fn(), // Cambiado al nuevo método
   getHorarios: vi.fn(),
   actualizarTurnoTecnico: vi.fn(),

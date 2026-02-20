@@ -3,8 +3,8 @@ import type {
   BacklogStats,
   TechStats,
   UploadResponse
-} from "../../modules/seguimiento/types";
-import { API_ENDPOINTS } from "../../shared/api/config";
+} from "../types";
+import { API_ENDPOINTS } from "../../../shared/api/config";
 
 const API_BASE = API_ENDPOINTS.SEGUIMIENTO;
 

@@ -47,7 +47,7 @@ vi.mock('../../../shared/components/ExportButton', () => ({
 }));
 
 // --- MOCK DEL SERVICIO ---
-vi.mock('../../../../shared/services/SeguimientoService', () => ({
+vi.mock('../../services/SeguimientoService', () => ({
   descargarExcel: vi.fn(),
   getPedidos: vi.fn(),
   getAnalytics: vi.fn(),

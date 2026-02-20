@@ -2,11 +2,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useSeguimientoData } from '../useSeguimientoData';
-import * as SeguimientoService from '../../../../shared/services/SeguimientoService';
+import * as SeguimientoService from '../../services/SeguimientoService';
 import type { AtrasoRow, BacklogStats } from '../../types';
 
 // 1. Mock de los servicios incluyendo el nuevo endpoint de analítica
-vi.mock('../../../../shared/services/SeguimientoService', () => ({
+vi.mock('../../services/SeguimientoService', () => ({
   getPedidos: vi.fn(),
   getAnalytics: vi.fn(),
 }));

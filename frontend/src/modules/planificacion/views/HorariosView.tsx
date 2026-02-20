@@ -28,7 +28,7 @@ export const HorariosView = () => {
     }
 
     try {
-      const { uploadHorarios } = await import("../../../shared/services/PlanificacionService");
+      const { uploadHorarios } = await import("../services/PlanificacionService");
       const parts = mesSeleccionado.split('-');
       const anio = Number(parts[0]);
       const mes = Number(parts[1]);

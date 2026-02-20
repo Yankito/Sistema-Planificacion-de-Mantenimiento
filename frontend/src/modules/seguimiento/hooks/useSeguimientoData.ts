@@ -1,6 +1,6 @@
 // src/modules/seguimiento/hooks/useSeguimientoData.ts
 import { useState, useCallback, useEffect } from "react";
-import * as SeguimientoService from "../../../shared/services/SeguimientoService";
+import * as SeguimientoService from "../services/SeguimientoService";
 import type { AtrasoRow, BacklogStats, TechStats } from "../types";
 
 export const useSeguimientoData = () => {

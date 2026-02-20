@@ -1,6 +1,6 @@
 // src/shared/services/FallasService.ts
-import type { FallaRow } from "../../modules/fallas/types";
-import { API_ENDPOINTS } from "../../shared/api/config";
+import type { FallaRow } from "../types";
+import { API_ENDPOINTS } from "../../../shared/api/config";
 
 const API_BASE = API_ENDPOINTS.FALLAS;
 

@@ -1,9 +1,9 @@
 import { useState } from "react";
-import * as SeguimientoService from "../shared/services/SeguimientoService";
+import * as SeguimientoService from "../modules/seguimiento/services/SeguimientoService";
 import type { FallaRow } from "../modules/fallas/types";
-import * as FallasService from "../shared/services/FallasService";
+import * as FallasService from "../modules/fallas/services/FallasService";
 
-import * as PlanificacionService from '../shared/services/PlanificacionService'; // Asumiendo que existe
+import * as PlanificacionService from '../modules/planificacion/services/PlanificacionService'; // Asumiendo que existe
 import type { PlanResult } from "../modules/planificacion/types";
 
 interface ProcessorActions {
@@ -29,12 +29,12 @@ export const useFileProcessor = ({ targetWeek, onPlanLoaded, onFallasLoaded, onS
         const data = await PlanificacionService.procesarExcelEnServidor(file, 'BALANCED');
         if (data)
           onPlanLoaded(data.resultados);
-        else 
+        else
           alert("Error al procesar el archivo de planificación en el servidor.");
-      } 
+      }
       else if (tipo === 'SEGUIMIENTO') {
         await SeguimientoService.uploadExcel(file, targetWeek);
-        
+
         // Si el backend respondió OK, solo avisamos que cargue
         await onSeguimientoLoaded();
       }

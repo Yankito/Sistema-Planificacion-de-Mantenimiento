@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import type { PlanResult, HorarioTecnico } from "../types";
 import type { Tecnico } from "../../../shared/types";
 import { mapDepartamentoAPlanta } from "../utils/excelUtils";
-import * as PlanificacionService from "../../../shared/services/PlanificacionService";
+import * as PlanificacionService from "../services/PlanificacionService";
 import { getMonthOptions } from "../../../shared/utils/dateUtils";
 
 export const usePlanificacionManager = () => {

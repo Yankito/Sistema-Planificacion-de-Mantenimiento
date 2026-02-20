@@ -1,7 +1,7 @@
 import { UploadCloud, CheckCircle2, Download, type LucideIcon } from "lucide-react";
 import { useState, useRef } from "react";
 
-import { descargarPlantilla } from "../../shared/services/SeguimientoService";
+import { descargarPlantilla } from "../../modules/seguimiento/services/SeguimientoService";
 import type { FileType } from "./FileUploader";
 
 

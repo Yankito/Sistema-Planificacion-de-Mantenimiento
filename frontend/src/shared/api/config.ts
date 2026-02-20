@@ -5,4 +5,5 @@ export const API_ENDPOINTS = {
   PLANIFICACION: `${BASE_URL}/planificacion`,
   SEGUIMIENTO: `${BASE_URL}/seguimiento`,
   MASIVO: `${BASE_URL}/masivo`,
+  CONTROL_GASTOS: `${BASE_URL}/control-gastos`,
 };

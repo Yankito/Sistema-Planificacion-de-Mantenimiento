@@ -11,7 +11,7 @@ import { SeguimientoModal } from "../components/SeguimientoModal";
 import { AnalysisDashboard } from "../components/AnalysisDashboard";
 import { EvolutionDashboard } from "../components/EvolutionDashboard";
 import { LoadingOverlay } from "../../../shared/components/ui/LoadingOverlay";
-import * as SeguimientoService from "../../../shared/services/SeguimientoService";
+import * as SeguimientoService from "../services/SeguimientoService";
 
 import { useData } from "../../../context/PlanificacionContext";
 

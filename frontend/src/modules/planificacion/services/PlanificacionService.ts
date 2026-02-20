@@ -1,6 +1,6 @@
 // src/shared/services/PlanificacionService.ts
-import type { PlanResult, ProcesoExcelResponse, HorarioTecnico } from "../../modules/planificacion/types";
-import { API_ENDPOINTS } from "../../shared/api/config";
+import type { PlanResult, ProcesoExcelResponse, HorarioTecnico } from "../types";
+import { API_ENDPOINTS } from "../../../shared/api/config";
 
 const API_BASE = API_ENDPOINTS.PLANIFICACION;
 

@@ -2,13 +2,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useFileProcessor } from '../useFileProcessor';
-import * as SeguimientoService from '../../shared/services/SeguimientoService';
-import * as FallasService from '../../shared/services/FallasService';
+import * as SeguimientoService from '../../modules/seguimiento/services/SeguimientoService';
+import * as FallasService from '../../modules/fallas/services/FallasService';
 import type { FallaRow } from '../../modules/fallas/types';
 
 // 1. Mocks de los servicios
-vi.mock("../../shared/services/SeguimientoService");
-vi.mock("../../shared/services/FallasService");
+vi.mock("../../modules/seguimiento/services/SeguimientoService");
+vi.mock("../../modules/fallas/services/FallasService");
 
 // 2. Factory para Fallas (Evita el 'as any')
 const createMockFalla = (overrides: Partial<FallaRow>): FallaRow => ({
@@ -43,28 +43,28 @@ describe('useFileProcessor Hook - Tipado Estricto', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.stubGlobal('alert', vi.fn());
-    
+
     // Tipamos los retornos de los mocks globalmente
-    vi.mocked(SeguimientoService.uploadExcel).mockResolvedValue({ 
-      actual: [], anterior: [], activos: [] 
+    vi.mocked(SeguimientoService.uploadExcel).mockResolvedValue({
+      actual: [], anterior: [], activos: []
     });
     vi.mocked(FallasService.uploadFallas).mockResolvedValue([]);
   });
 
   it('debería procesar FALLAS con datos 100% tipados', async () => {
     const { result } = renderHook(() => useFileProcessor(mockActions));
-    
+
     // Creamos data real basada en la interfaz FallaRow
     const mockResponseFallas: FallaRow[] = [
       createMockFalla({ equipo: 'Compresor Tornillo', gasto: 125000 })
     ];
-    
+
     // Ya no necesitas 'as any' porque mockResponseFallas cumple con la interfaz
     vi.mocked(FallasService.uploadFallas).mockResolvedValue(mockResponseFallas);
 
     const file = new File([''], 'fallas.xlsx');
-    const event = { 
-      target: { files: [file], value: 'fallas.xlsx' } 
+    const event = {
+      target: { files: [file], value: 'fallas.xlsx' }
     } as unknown as React.ChangeEvent<HTMLInputElement>;
 
     await act(async () => {
@@ -78,11 +78,11 @@ describe('useFileProcessor Hook - Tipado Estricto', () => {
 
   it('debería resetear el input después de un error del servidor', async () => {
     vi.mocked(SeguimientoService.uploadExcel).mockRejectedValue(new Error("Error de Red"));
-    
+
     const { result } = renderHook(() => useFileProcessor(mockActions));
     const file = new File([''], 'test.xlsx');
-    const event = { 
-      target: { files: [file], value: 'archivo_con_error.xlsx' } 
+    const event = {
+      target: { files: [file], value: 'archivo_con_error.xlsx' }
     } as unknown as React.ChangeEvent<HTMLInputElement>;
 
     await act(async () => {

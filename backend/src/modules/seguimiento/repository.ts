@@ -140,8 +140,6 @@ export const SeguimientoRepository = {
     `;
 
     const res = await query(sql);
-    //imprimri ot con numero 603226
-    console.log(res.rows.filter((r: any) => r.OT === '603226'));
 
     if (!res?.rows) return [];
 

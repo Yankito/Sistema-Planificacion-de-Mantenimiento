@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import type { FallaRow } from '../types';
-import * as FallasService from '../../../shared/services/FallasService';
+import * as FallasService from '../services/FallasService';
 
 export const useFallasManager = () => {
     const [data, setData] = useState<FallaRow[]>([]);

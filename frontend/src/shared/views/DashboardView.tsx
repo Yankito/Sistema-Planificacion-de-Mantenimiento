@@ -8,7 +8,7 @@ import { EmptyCard } from "../components/ui/EmptyCard";
 import { getWeekOptions } from "../utils/dateUtils";
 
 // Services & Utils
-import * as SeguimientoService from "../services/SeguimientoService";
+import * as SeguimientoService from "../../modules/seguimiento/services/SeguimientoService";
 import { useData } from "../../context/PlanificacionContext";
 
 interface DashboardProps {
@@ -149,7 +149,7 @@ export const DashboardView = ({
         // Recargar si estamos en la vista de atrasos o dashboard
         seguimiento.cargarReporte(targetUploadWeek);
       } else if (tipo === 'FALLAS') {
-        const { uploadFallas } = await import("../services/FallasService");
+        const { uploadFallas } = await import("../../modules/fallas/services/FallasService");
         await uploadFallas(file);
         fallas.loadData();
       } else if (tipo === 'MASIVO') {
