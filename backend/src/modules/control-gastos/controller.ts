@@ -255,8 +255,6 @@ export class ControlGastosController {
 
                 const tipo = String(getVal(row, ['TIPO']) || '');
                 const numeroOt = String(getVal(row, ['NUMERO_OT']) || '');
-                const planta = String(getVal(row, ['PLANTA']) || '');
-                const claseContable = String(getVal(row, ['CLASE_CONTABLE']) || '');
                 const tipoOt = String(getVal(row, ['TIPO_OT']) || '');
                 const nroActivo = String(getVal(row, ['NRO_ACTIVO']) || '');
                 const descArticulo = String(getVal(row, ['DESCRIP_ARTICULO']) || '');
@@ -271,8 +269,6 @@ export class ControlGastosController {
                 rowsToInsert.push({
                     tipo: tipo,
                     numeroOt: numeroOt,
-                    planta: planta,
-                    claseContable: claseContable,
                     tipoOt: tipoOt,
                     nroActivo: nroActivo,
                     fechaTrx: fechaTrx,

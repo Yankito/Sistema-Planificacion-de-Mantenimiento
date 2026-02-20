@@ -1,3 +1,4 @@
+
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ControlGastosRepository } from '../repository.js';
 import * as dbConfig from '../../../db/config.js';
@@ -22,22 +23,26 @@ describe('ControlGastosRepository', () => {
     });
 
     describe('getGastosConsolidados', () => {
-        it('debe clasificar correctamente un gasto como BODEGA', async () => {
+        it('debe clasificar correctamente un gasto y calcular centro de costo (ultimos 6)', async () => {
             const mockRows = [
                 {
                     TIPO: 'B',
                     NUMERO_OT: 'OT-BOD-1',
                     TIPO_OT: 'Preventivo',
-                    NRO_ACTIVO: 'ACT-001',
+                    NRO_ACTIVO: 'ACT-001 (10001)',
                     DESCRIP_ARTICULO: 'Rodamiento',
                     FECHA_TRANSACCION: new Date(2026, 1, 15),
                     COSTO_TRX: 1000,
+                    DESC_OT: 'Mantenimiento Preventivo',
+                    FECHA_PROG: new Date(2026, 1, 15),
+                    PLANTA_CALC: 'PF1',
+                    CLASE_CONTABLE_ACTIVO: 'Edif Mant',
+                    ANIO_CALC: 2026,
+                    MES_CALC: 2
                 }
             ];
 
-            const mockExecute = vi.fn()
-                .mockResolvedValueOnce({ rows: mockRows })
-                .mockResolvedValueOnce({ rows: [{ PEDIDO_TRABAJO: 'OT-BOD-1', DESCRIPCION: 'Mantenimiento Preventivo' }] });
+            const mockExecute = vi.fn().mockResolvedValue({ rows: mockRows });
 
             vi.mocked(dbConfig.withConnection).mockImplementation(async (callback) => {
                 return await callback({ execute: mockExecute } as any);
@@ -45,26 +50,28 @@ describe('ControlGastosRepository', () => {
 
             const result = await repository.getGastosConsolidados(2026);
 
-            const item = result.find((r: any) => r.numeroOt === 'OT-BOD-1');
-            expect(item?.tipoGasto).toBe('BODEGA');
+            expect(result.length).toBe(1);
+            expect(result[0].tipoGasto).toBe('BODEGA');
+            expect(result[0].centroCosto).toBe('10001)'); // ultimos 6 de "ACT-001 (10001)"
+            expect(result[0].planta).toBe('PF1');
+            expect(result[0].esHito).toBe(false);
         });
 
-        it('debe marcar esHito=true si la descripción de la OT empieza con HITO, manteniendo su categoría real', async () => {
+        it('debe detectar HITO por la descripción de la OT', async () => {
             const mockRows = [
                 {
                     TIPO: 'SER',
                     NUMERO_OT: 'OT-HITO-1',
                     TIPO_OT: 'Preventivo',
-                    NRO_ACTIVO: 'ACT-002',
-                    DESCRIP_ARTICULO: 'Servicio',
-                    FECHA_TRANSACCION: new Date(2026, 1, 15),
+                    NRO_ACTIVO: 'ACT-HITO',
+                    DESC_OT: 'HITO: Entrega Final',
+                    FECHA_PROG: new Date(2026, 1, 15),
                     COSTO_TRX: 5000,
+                    PLANTA_CALC: 'PF2'
                 }
             ];
 
-            const mockExecute = vi.fn()
-                .mockResolvedValueOnce({ rows: mockRows })
-                .mockResolvedValueOnce({ rows: [{ PEDIDO_TRABAJO: 'OT-HITO-1', DESCRIPCION: 'HITO: Entrega Etapa 1' }] });
+            const mockExecute = vi.fn().mockResolvedValue({ rows: mockRows });
 
             vi.mocked(dbConfig.withConnection).mockImplementation(async (callback) => {
                 return await callback({ execute: mockExecute } as any);
@@ -76,29 +83,91 @@ describe('ControlGastosRepository', () => {
             expect(result[0].tipoGasto).toBe('SERV_EXT');
         });
 
-        it('debe marcar alertaFecha = 1 si los meses no coinciden', async () => {
+        it('debe marcar alertaFecha = 1 si meses de trx y prog no coinciden', async () => {
             const mockRows = [
                 {
                     TIPO: 'B',
                     NUMERO_OT: 'OT-1',
                     TIPO_OT: 'Preventivo',
                     NRO_ACTIVO: 'ACT-001',
-                    FECHA_TRANSACCION: new Date(2026, 2, 1), // 1 de Marzo
+                    FECHA_TRANSACCION: new Date(2026, 2, 1), // Marzo
+                    FECHA_PROG: new Date(2026, 1, 15),        // Febrero
+                    DESC_OT: 'Test OT',
                     COSTO_TRX: 100,
+                    PLANTA_CALC: 'PF1'
                 }
             ];
 
-            const mockExecute = vi.fn()
-                .mockResolvedValueOnce({ rows: mockRows })
-                .mockResolvedValueOnce({ rows: [{ PEDIDO_TRABAJO: 'OT-1', DESCRIPCION: 'Test' }] });
+            const mockExecute = vi.fn().mockResolvedValue({ rows: mockRows });
 
             vi.mocked(dbConfig.withConnection).mockImplementation(async (callback) => {
                 return await callback({ execute: mockExecute } as any);
             });
 
             const result = await repository.getGastosConsolidados(2026);
-
             expect(result[0].alertaFecha).toBe(1);
+        });
+    });
+
+    describe('saveGastosConsolidados', () => {
+        it('debe llamar a executeMany con los campos correctos', async () => {
+            const mockRows = [
+                {
+                    tipo: 'B',
+                    numeroOt: 'OT1',
+                    tipoOt: 'Preventivo',
+                    nroActivo: 'ACT1',
+                    descripcionArticulo: 'Desc 1',
+                    fechaTrx: new Date(),
+                    costoTrx: 100,
+                    planta: 'PF1', // No se guarda
+                    claseContable: 'CL1' // No se guarda
+                }
+            ];
+
+            const mockExecuteMany = vi.fn().mockResolvedValue({ rowsAffected: 1 });
+
+            vi.mocked(dbConfig.withConnection).mockImplementation(async (callback) => {
+                return await callback({ executeMany: mockExecuteMany } as any);
+            });
+
+            await repository.saveGastosConsolidados(mockRows);
+
+            expect(mockExecuteMany).toHaveBeenCalled();
+            const binds = mockExecuteMany.mock.calls[0][1];
+            expect(binds[0]).toHaveProperty('tipo', 'B');
+            expect(binds[0]).toHaveProperty('numeroOt', 'OT1');
+            expect(binds[0]).not.toHaveProperty('planta');
+            expect(binds[0]).not.toHaveProperty('claseContable');
+        });
+    });
+
+    describe('getPresupuesto', () => {
+        it('debe obtener presupuesto y calcular centro de costo correctamente', async () => {
+            const mockRows = [
+                {
+                    ACTIVO: 'ACTIVO DE PRUEBA (20002)',
+                    TIPOFILA: 'P',
+                    MES: 1,
+                    ANIO: 2026,
+                    MONTOBODEGA: 100,
+                    MONTOSERVEXT: 200,
+                    MONTOCORRECTIVO: 300,
+                    PLANTA_CALC: 'PF1'
+                }
+            ];
+
+            const mockExecute = vi.fn().mockResolvedValue({ rows: mockRows });
+
+            vi.mocked(dbConfig.withConnection).mockImplementation(async (callback) => {
+                return await callback({ execute: mockExecute } as any);
+            });
+
+            const result = await repository.getPresupuesto(2026);
+
+            expect(result.length).toBe(1);
+            expect(result[0].centroCosto).toBe('20002)');
+            expect(result[0].montoBodega).toBe(100);
         });
     });
 });

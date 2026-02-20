@@ -14,8 +14,6 @@ export interface PresupuestoRow {
 
 export interface GastoConsolidadoRow {
     tipo: string;
-    planta: string;
-    claseContable: string;
     numeroOt: string;
     tipoOt: string;
     nroActivo: string;
@@ -32,6 +30,8 @@ export interface GastoConsolidadoRow {
     descripcionOt?: string;
     estadoTrabajo?: string;
     esHito?: boolean;
+    planta?: string;
+    claseContable?: string;
 
 }
 
@@ -73,13 +73,11 @@ export const ControlGastosRepository = {
 
         await withConnection(async (connection) => {
             const sql = `INSERT INTO PF_EAM_GASTOS_CONSOLIDADOS 
-                (TIPO, PLANTA, CLASE_CONTABLE, NUMERO_OT, TIPO_OT, NRO_ACTIVO, FECHA_TRANSACCION, DESCRIP_ARTICULO, COSTO_TRX)
-                VALUES (:tipo, :planta, :claseContable, :numeroOt, :tipoOt, :nroActivo,  :fechaTrx, :descripcionArticulo, :costoTrx)`;
+                (TIPO, NUMERO_OT, TIPO_OT, NRO_ACTIVO, FECHA_TRANSACCION, DESCRIP_ARTICULO, COSTO_TRX)
+                VALUES (:tipo, :numeroOt, :tipoOt, :nroActivo, :fechaTrx, :descripcionArticulo, :costoTrx)`;
 
             const binds = rows.map(r => ({
                 tipo: r.tipo,
-                planta: r.planta,
-                claseContable: r.claseContable,
                 numeroOt: r.numeroOt,
                 tipoOt: r.tipoOt,
                 nroActivo: r.nroActivo,
@@ -127,8 +125,6 @@ export const ControlGastosRepository = {
                 WITH DataCalculada AS (
                     SELECT 
                         g.TIPO, 
-                        g.PLANTA as PLANTA_ORIG, 
-                        g.CLASE_CONTABLE, 
                         g.NUMERO_OT, 
                         g.TIPO_OT, 
                         g.NRO_ACTIVO, 
@@ -140,67 +136,63 @@ export const ControlGastosRepository = {
                         g.COSTO_TRX, 
                         EXTRACT(YEAR FROM p.FECHA_INICIAL_PROGRAMADA) as ANIO_CALC,
                         EXTRACT(MONTH FROM p.FECHA_INICIAL_PROGRAMADA) as MES_CALC,
+                        a.clase_contable as CLASE_CONTABLE_ACTIVO,
                         COALESCE(
                             CASE 
-                                WHEN UPPER(g.PLANTA) = UPPER('Mantenimiento Planta I') THEN 'PF1'
-                                WHEN UPPER(g.PLANTA) = UPPER('Mantenimiento Planta II') THEN 'PF2'
-                                WHEN UPPER(g.PLANTA) = UPPER('Mantenimiento Centro de Distribucion Santiago') THEN 'MPS'
-                                ELSE NULL
-                            END,
-                            (
-                                SELECT CASE 
-                                    WHEN a.organizacion = 'MP1' THEN 'PF1'
-                                    WHEN a.organizacion = 'MP2' THEN 'PF2'
-                                    WHEN a.organizacion = 'MPS' THEN 'MPS'
-                                    ELSE CASE a.clase_contable
-                                        WHEN 'Edif ElabC' THEN 'PF3'
-                                        WHEN 'Edif Mant' THEN 'PF3'
-                                        WHEN 'Higiene P3' THEN 'PF3'
-                                        WHEN 'Infra ElaC' THEN 'PF3'
-                                        WHEN 'Infra Mant' THEN 'PF3'
-                                        WHEN 'Mant AMB' THEN 'PF3'
-                                        WHEN 'Rack ElabC' THEN 'PF3'
-                                        WHEN 'Edif Jamon' THEN 'PF4'
-                                        WHEN 'Higiene P4' THEN 'PF4'
-                                        WHEN 'Infra Jam' THEN 'PF4'
-                                        WHEN 'Mant Jamon' THEN 'PF4'
-                                        WHEN 'Rack Jam' THEN 'PF4'
-                                        WHEN 'Edif Pizza' THEN 'PF5'
-                                        WHEN 'Higiene P5' THEN 'PF5'
-                                        WHEN 'Infra Pizz' THEN 'PF5'
-                                        WHEN 'Mant Pizza' THEN 'PF5'
-                                        WHEN 'Rack Pizz' THEN 'PF5'
-                                        WHEN 'Higiene P6' THEN 'PF6'
-                                        WHEN 'Infra Plat' THEN 'PF6'
-                                        WHEN 'Mant Plato' THEN 'PF6'
-                                        WHEN 'Rack Plato' THEN 'PF6'
-                                        WHEN 'Redes Plat' THEN 'PF6'
-                                        WHEN 'Edif PR Ad' THEN 'OTROS'
-                                        WHEN 'Edif PR PF' THEN 'OTROS'
-                                        WHEN 'Equipo PF' THEN 'OTROS'
-                                        WHEN 'Gerencia' THEN 'OTROS'
-                                        WHEN 'Infra Lomb' THEN 'OTROS'
-                                        WHEN 'Edif CDT' THEN 'CDT'
-                                        WHEN 'Infra CDT' THEN 'CDT'
-                                        WHEN 'Mant CDT' THEN 'CDT'
-                                        WHEN 'Rack CDT' THEN 'CDT'
-                                        WHEN 'Edif DataC' THEN 'DC'
-                                        WHEN 'Infra DatC' THEN 'DC'
-                                        WHEN 'Mant DataC' THEN 'DC'
-                                        WHEN 'Edif Vent' THEN 'VENTAS'
-                                        WHEN 'Infra Vent' THEN 'VENTAS'
-                                        WHEN 'Mant Vent' THEN 'VENTAS'
-                                        ELSE NULL
-                                    END
+                                WHEN a.organizacion = 'MP1' THEN 'PF1'
+                                WHEN a.organizacion = 'MP2' THEN 'PF2'
+                                WHEN a.organizacion = 'MPS' THEN 'MPS'
+                                ELSE CASE a.clase_contable
+                                    WHEN 'Edif ElabC' THEN 'PF3'
+                                    WHEN 'Edif Mant' THEN 'PF3'
+                                    WHEN 'Higiene P3' THEN 'PF3'
+                                    WHEN 'Infra ElaC' THEN 'PF3'
+                                    WHEN 'Infra Mant' THEN 'PF3'
+                                    WHEN 'Mant AMB' THEN 'PF3'
+                                    WHEN 'Rack ElabC' THEN 'PF3'
+                                    WHEN 'Edif Jamon' THEN 'PF4'
+                                    WHEN 'Higiene P4' THEN 'PF4'
+                                    WHEN 'Infra Jam' THEN 'PF4'
+                                    WHEN 'Mant Jamon' THEN 'PF4'
+                                    WHEN 'Rack Jam' THEN 'PF4'
+                                    WHEN 'Edif Pizza' THEN 'PF5'
+                                    WHEN 'Higiene P5' THEN 'PF5'
+                                    WHEN 'Infra Pizz' THEN 'PF5'
+                                    WHEN 'Mant Pizza' THEN 'PF5'
+                                    WHEN 'Rack Pizz' THEN 'PF5'
+                                    WHEN 'Higiene P6' THEN 'PF6'
+                                    WHEN 'Infra Plat' THEN 'PF6'
+                                    WHEN 'Mant Plato' THEN 'PF6'
+                                    WHEN 'Rack Plato' THEN 'PF6'
+                                    WHEN 'Redes Plat' THEN 'PF6'
+                                    WHEN 'Edif PR Ad' THEN 'OTROS'
+                                    WHEN 'Edif PR PF' THEN 'OTROS'
+                                    WHEN 'Gerencia' THEN 'OTROS'
+                                    WHEN 'Infra Lomb' THEN 'OTROS'
+                                    WHEN 'Edif CDT' THEN 'CDT'
+                                    WHEN 'Infra CDT' THEN 'CDT'
+                                    WHEN 'Mant CDT' THEN 'CDT'
+                                    WHEN 'Rack CDT' THEN 'CDT'
+                                    WHEN 'Edif DataC' THEN 'DC'
+                                    WHEN 'Infra DatC' THEN 'DC'
+                                    WHEN 'Mant DataC' THEN 'DC'
+                                    WHEN 'Edif Vent' THEN 'VENTAS'
+                                    WHEN 'Infra Vent' THEN 'VENTAS'
+                                    WHEN 'Mant Vent' THEN 'VENTAS'
+                                    WHEN 'Equipo PF' THEN 
+                                        CASE 
+                                            WHEN a.nro_de_activo LIKE '%(1%' THEN 'PF1'
+                                            WHEN a.nro_de_activo LIKE '%(2%' THEN 'PF2'
+                                            ELSE 'OTROS'
+                                        END
+                                    ELSE 'OTROS'
                                 END
-                                FROM PF_EAM_ACTIVOS a 
-                                WHERE TRIM(UPPER(a.nro_de_activo)) = TRIM(UPPER(g.NRO_ACTIVO)) AND ROWNUM = 1
-                            ),
-                            g.PLANTA,
+                            END,
                             'OTROS'
                         ) as PLANTA_CALC
                     FROM PF_EAM_GASTOS_CONSOLIDADOS g
                     INNER JOIN PF_EAM_PEDIDOS p ON TRIM(g.NUMERO_OT) = TRIM(p.PEDIDO_TRABAJO)
+                    LEFT JOIN PF_EAM_ACTIVOS a ON TRIM(UPPER(g.NRO_ACTIVO)) = TRIM(UPPER(a.nro_de_activo))
                     WHERE EXTRACT(YEAR FROM p.FECHA_INICIAL_PROGRAMADA) = :anio
                 )
                 SELECT * FROM DataCalculada
@@ -245,14 +237,13 @@ export const ControlGastosRepository = {
                     }
                 }
 
-                // Calcular centro de costo (intentamos extraer código entre paréntesis al final, sino últimos 6 caracteres)
-                const matchCC = String(row.NRO_ACTIVO || '').match(/\(([^)]+)\)$/);
-                const centroCosto = matchCC ? matchCC[1] : (row.NRO_ACTIVO ? String(row.NRO_ACTIVO).slice(-6) : '');
+                // Calcular centro de costo (usamos últimos 6 caracteres)
+                const centroCosto = row.NRO_ACTIVO ? String(row.NRO_ACTIVO).slice(-6) : '';
 
                 results.push({
                     tipo: row.TIPO,
                     planta: row.PLANTA_CALC,
-                    claseContable: row.CLASE_CONTABLE,
+                    claseContable: row.CLASE_CONTABLE_ACTIVO,
                     numeroOt: row.NUMERO_OT,
                     tipoOt: row.TIPO_OT,
                     nroActivo: row.NRO_ACTIVO,
@@ -327,7 +318,6 @@ export const ControlGastosRepository = {
                                         WHEN 'Redes Plat' THEN 'PF6'
                                         WHEN 'Edif PR Ad' THEN 'OTROS'
                                         WHEN 'Edif PR PF' THEN 'OTROS'
-                                        WHEN 'Equipo PF' THEN 'OTROS'
                                         WHEN 'Gerencia' THEN 'OTROS'
                                         WHEN 'Infra Lomb' THEN 'OTROS'
                                         WHEN 'Edif CDT' THEN 'CDT'
@@ -340,7 +330,13 @@ export const ControlGastosRepository = {
                                         WHEN 'Edif Vent' THEN 'VENTAS'
                                         WHEN 'Infra Vent' THEN 'VENTAS'
                                         WHEN 'Mant Vent' THEN 'VENTAS'
-                                        ELSE NULL
+                                        WHEN 'Equipo PF' THEN 
+                                            CASE 
+                                                WHEN a.nro_de_activo LIKE '%(1%' THEN 'PF1'
+                                                WHEN a.nro_de_activo LIKE '%(2%' THEN 'PF2'
+                                                ELSE 'OTROS'
+                                            END
+                                        ELSE 'OTROS'
                                     END
                                 END
                                 FROM PF_EAM_ACTIVOS a 
@@ -369,9 +365,8 @@ export const ControlGastosRepository = {
 
             return (result.rows || []).map((row: any) => {
                 const activo = row.activo || row.ACTIVO;
-                // Intentamos extraer el código entre del final del nombre
-                const match = String(activo || '').match(/\(([^)]+)\)$/);
-                const centroCosto = match ? match[1] : (activo ? String(activo).slice(-6) : '');
+                // Usamos los últimos 6 caracteres para el centro de costo
+                const centroCosto = activo ? String(activo).slice(-6) : '';
 
                 return {
                     activo,
