@@ -14,22 +14,22 @@ export const HorariosView = () => {
     setPlantaHorarios,
     cargandoPlan,
     handleCambioTurno,
-    mesSeleccionado,
-    setMesSeleccionado
+    periodoSeleccionado,
+    setPeriodoSeleccionado
   } = manager;
 
   const handleUploadHorarios = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!confirm(`¿Cargar horarios para ${mesSeleccionado}?\n(Requiere plantilla Horarios)`)) {
+    if (!confirm(`¿Cargar horarios para ${periodoSeleccionado}?\n(Requiere plantilla Horarios)`)) {
       e.target.value = '';
       return;
     }
 
     try {
       const { uploadHorarios } = await import("../services/PlanificacionService");
-      const parts = mesSeleccionado.split('-');
+      const parts = periodoSeleccionado.split('-');
       const anio = Number(parts[0]);
       const mes = Number(parts[1]);
 
@@ -87,8 +87,8 @@ export const HorariosView = () => {
               <CalendarDays size={12} /> Mes
             </label>
             <select
-              value={mesSeleccionado}
-              onChange={(e) => setMesSeleccionado(e.target.value)}
+              value={periodoSeleccionado}
+              onChange={(e) => setPeriodoSeleccionado(e.target.value)}
               className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-pf-red/20 transition-all"
             >
               {mesOpts.map(opt => (

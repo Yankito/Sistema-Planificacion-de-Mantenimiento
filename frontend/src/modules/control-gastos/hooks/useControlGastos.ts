@@ -21,7 +21,7 @@ export const useControlGastos = () => {
         }
     };
 
-    const getPresupuesto = async (anio: number = 2026, planta?: string) => {
+    const getPresupuesto = async (anio: number, planta?: string) => {
         setLoadingCount(prev => prev + 1);
         setError(null);
         try {
@@ -34,7 +34,7 @@ export const useControlGastos = () => {
         }
     };
 
-    const getGastosConsolidados = async (anio: number = 2026, planta?: string) => {
+    const getGastosConsolidados = async (anio: number, planta?: string) => {
         setLoadingCount(prev => prev + 1);
         setError(null);
         try {

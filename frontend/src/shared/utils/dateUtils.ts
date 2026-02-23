@@ -158,4 +158,16 @@ export const getMonthOptions = () => {
   }
 
   return { options, default: `${today.getFullYear()}-${(today.getMonth() + 1).toString().padStart(2, '0')}` };
-};  
+};
+
+/**
+ * Genera una lista de años dinámicamente alrededor del año actual
+ */
+export const getYearOptions = (back = 2, forward = 2) => {
+  const currentYear = new Date().getFullYear();
+  const years = [];
+  for (let i = currentYear - back; i <= currentYear + forward; i++) {
+    years.push(i);
+  }
+  return years;
+};

@@ -26,7 +26,7 @@ describe('Componente Calendario', () => {
     mostrarSoloVacantes: false,
     setMostrarSoloVacantes: vi.fn(),
     handleSugerirTodo: vi.fn(),
-    mesSeleccionado: '2026-02'
+    periodoSeleccionado: '2026-02'
   };
 
   it('debe renderizar el mes y el año correctamente basado en los datos', () => {

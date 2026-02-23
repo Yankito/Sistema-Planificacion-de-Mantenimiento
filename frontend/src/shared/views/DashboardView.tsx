@@ -16,7 +16,7 @@ interface DashboardProps {
   seguimientoResult: AtrasoRow[];
   seguimientoPrevio: AtrasoRow[];
   fallasResult: FallaRow[];
-  onEjecutarPlan: (modo: 'STRICT' | 'BALANCED') => void;
+  onEjecutarPlan: (modo: 'STRICT' | 'BALANCED', periodo: string) => Promise<boolean>;
   setActiveTab: (tab: string) => void;
   archivoCargado: boolean;
   reporteActual: string;
@@ -35,6 +35,7 @@ export const DashboardView = ({
   const [targetUploadWeek, setTargetUploadWeek] = useState(getWeekOptions().default);
   const [highlightedModule, setHighlightedModule] = useState<FileType | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  console.log("Reporte actual", reporteActual);
 
   const handleUploadRequest = (tipo: FileType) => {
     setHighlightedModule(tipo);
@@ -203,8 +204,8 @@ export const DashboardView = ({
             )}
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <ActionButton label="Prioridad Noche" sublabel="Estricto" icon={PlayCircle} onClick={() => onEjecutarPlan('STRICT')} primary />
-            <ActionButton label="Balanceado" sublabel="Equilibrado" icon={Scale} onClick={() => onEjecutarPlan('BALANCED')} />
+            <ActionButton label="Prioridad Noche" sublabel="Estricto" icon={PlayCircle} onClick={() => onEjecutarPlan('STRICT', reporteActual)} primary />
+            <ActionButton label="Balanceado" sublabel="Equilibrado" icon={Scale} onClick={() => onEjecutarPlan('BALANCED', reporteActual)} />
           </div>
         </div>
 

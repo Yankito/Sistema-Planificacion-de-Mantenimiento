@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { getYearOptions } from '../../../shared/utils/dateUtils';
 import { BudgetConfig } from '../components/BudgetConfig';
 import { ExecutionMonitor } from '../components/ExecutionMonitor';
 import { ExpenseBreakdown } from '../components/ExpenseBreakdown';
-import { Settings, Activity, PieChart, Info } from 'lucide-react';
+import { Settings, Activity, PieChart } from 'lucide-react';
 
 export const ControlGastosView = () => {
     const [activeTab, setActiveTab] = useState<'monitor' | 'config' | 'breakdown'>('monitor');
@@ -10,6 +11,7 @@ export const ControlGastosView = () => {
     const [selectedPlanta, setSelectedPlanta] = useState<string>('PF1');
 
     const plantas = ["PF1", "PF2", "PF3", "PF4", "PF5", "PF6", "MPS", "CDT", "DC", "VENTAS", "OTROS"];
+    const years = useMemo<number[]>(() => getYearOptions(2, 2), []);
 
     return (
         <div className="space-y-6 animate-fade-in-up">
@@ -37,10 +39,9 @@ export const ControlGastosView = () => {
                             onChange={(e) => setSelectedYear(Number(e.target.value))}
                             className="px-4 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
                         >
-                            <option value={2024}>2024</option>
-                            <option value={2025}>2025</option>
-                            <option value={2026}>2026</option>
-                            <option value={2027}>2027</option>
+                            {years.map((year: number) => (
+                                <option key={year} value={year}>{year}</option>
+                            ))}
                         </select>
                     </div>
                 </div>

@@ -13,15 +13,17 @@ export const PlanificacionView = () => {
     planResult, setPlanResult, plantaPlan, setPlantaPlan,
     cargandoPlan,
     tecnicosMap, mapaHorariosActual,
-    mesSeleccionado, setMesSeleccionado,
+    periodoSeleccionado, setPeriodoSeleccionado,
     planFiltrado, sinAsignarFiltrado,
     cargarPlanificacion
   } = planning;
   console.log("cargandoPlan", cargandoPlan);
 
   useEffect(() => {
-    cargarPlanificacion(mesSeleccionado, plantaPlan);
-  }, [cargarPlanificacion, mesSeleccionado, plantaPlan]);
+    const mes = periodoSeleccionado.split('-')[1];
+    const anio = periodoSeleccionado.split('-')[0];
+    cargarPlanificacion(Number(mes), Number(anio), plantaPlan);
+  }, [cargarPlanificacion, periodoSeleccionado, plantaPlan]);
 
   const [idOrdenEditando, setIdOrdenEditando] = useState<string | null>(null);
 
@@ -78,8 +80,8 @@ export const PlanificacionView = () => {
               <CalendarDays size={12} /> Mes de Planificación
             </label>
             <select
-              value={mesSeleccionado}
-              onChange={(e) => setMesSeleccionado(e.target.value)}
+              value={periodoSeleccionado}
+              onChange={(e) => setPeriodoSeleccionado(e.target.value)}
               className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 font-bold text-slate-700 outline-none"
             >
               {monthOpts.map(opt => (
@@ -114,7 +116,7 @@ export const PlanificacionView = () => {
             {...logic}
             planResult={planFiltrado}
             isNocheValid={() => true}
-            mesSeleccionado={mesSeleccionado}
+            periodoSeleccionado={periodoSeleccionado}
             cargandoPlan={logic.cargandoPlan}
           />
         </div>

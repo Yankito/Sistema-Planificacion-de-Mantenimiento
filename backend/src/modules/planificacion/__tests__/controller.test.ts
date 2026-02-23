@@ -68,14 +68,14 @@ describe('PlanificacionController', () => {
         });
 
         it('debe llamar al repositorio para guardar', async () => {
-            const req = { body: { datos: [{ nroOrden: 'OT1', tecnicos: [], periodo: '2026-10' }] } };
+            const req = { body: { datos: [{ nroOrden: 'OT1', tecnicos: [], mes: 1, anio: 2026 }] } };
             const res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
 
             const saveSpy = vi.spyOn(PlanificacionRepository, 'guardarPlanificacion').mockResolvedValue(undefined as any);
 
             await PlanificacionController.guardarPlanificacion(req, res);
 
-            expect(saveSpy).toHaveBeenCalledWith([{ ot: 'OT1', tecnicos: [], periodo: '2026-10' }]);
+            expect(saveSpy).toHaveBeenCalledWith([{ ot: 'OT1', tecnicos: [], mes: 1, anio: 2026 }]);
             expect(res.json).toHaveBeenCalledWith({ success: true, count: 1 });
         });
     });
@@ -121,14 +121,14 @@ describe('PlanificacionController', () => {
 
     describe('listarHorarios', () => {
         it('debe llamar al repositorio', async () => {
-            const req = { query: { periodo: '2025-10' } };
+            const req = { query: { mes: 10, anio: 2025 } };
             const res = { json: vi.fn() };
 
             vi.spyOn(PlanificacionRepository, 'getHorarios').mockResolvedValue([]);
 
             await PlanificacionController.listarHorarios(req, res);
 
-            expect(PlanificacionRepository.getHorarios).toHaveBeenCalledWith('2025-10', null);
+            expect(PlanificacionRepository.getHorarios).toHaveBeenCalledWith(10, 2025, null);
             expect(res.json).toHaveBeenCalled();
         });
     });

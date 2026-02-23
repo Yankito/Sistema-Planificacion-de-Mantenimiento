@@ -34,10 +34,10 @@ describe('usePlanificacionManager', () => {
     const { result } = renderHook(() => usePlanificacionManager());
 
     await act(async () => {
-      await result.current.ejecutarPlanificacion('STRICT', '2026-02');
+      await result.current.ejecutarPlanificacion('STRICT', '2026-04');
     });
 
-    expect(mockedEjecutar).toHaveBeenCalledWith('STRICT', '2026-02', 'PF3');
+    expect(mockedEjecutar).toHaveBeenCalledWith('STRICT', 4, 2026, 'PF3');
     expect(result.current.planResult).toHaveLength(1);
     expect(result.current.tecnicosMap.has("JUAN")).toBe(true);
   });
@@ -49,11 +49,11 @@ describe('usePlanificacionManager', () => {
 
     // Simulamos que ya hay una semana cargada para disparar el useEffect
     await act(async () => {
-      result.current.setMesSeleccionado('2026-02');
-      result.current.setPlanResult([{ mes: '2026-02' }] as PlanResult[]);
+      result.current.setPeriodoSeleccionado('2026-01');
+      result.current.setPlanResult([{ mes: '2026-01' }] as PlanResult[]);
       result.current.setPlantaHorarios('PF4');
     });
 
-    expect(mockedGetHorarios).toHaveBeenCalledWith('2026-02', 'PF4');
+    expect(mockedGetHorarios).toHaveBeenCalledWith(1, 2026, 'PF4');
   });
 });

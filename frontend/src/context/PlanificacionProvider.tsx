@@ -11,7 +11,7 @@ export const PlanificacionProvider = ({ children }: { children: React.ReactNode 
     const fallas = useFallasManager();
 
     // Podemos derivar la semana actual de las opciones disponibles o de planning
-    const semanaActual = planning.mesSeleccionado || getMonthOptions().default;
+    const semanaActual = planning.periodoSeleccionado || getMonthOptions().default;
 
     const value = useMemo(() => ({
         planning,

@@ -20,7 +20,7 @@ describe('PlanificacionRepository', () => {
             (dbConfig.query as any).mockResolvedValue({ rows: [] });
 
             const asignaciones = [
-                { ot: 'OT1', tecnicos: [], periodo: '2026-02' }
+                { ot: 'OT1', tecnicos: [], mes: 2, anio: 2026 }
             ];
 
             await PlanificacionRepository.guardarPlanificacion(asignaciones);
@@ -43,7 +43,7 @@ describe('PlanificacionRepository', () => {
             ];
             (dbConfig.query as any).mockResolvedValue({ rows: mockRows });
 
-            const result = await PlanificacionRepository.getHorarios('2026-02', 'PF3');
+            const result = await PlanificacionRepository.getHorarios(2, 2026, 'PF3');
 
             expect(dbConfig.query).toHaveBeenCalledWith(
                 expect.stringContaining('WHERE h.anio = :anio AND h.mes = :mes'),
@@ -69,7 +69,7 @@ describe('PlanificacionRepository', () => {
             const mockRows = [{ OT: '123', descripcion: 'Test' }];
             (dbConfig.query as any).mockResolvedValue({ rows: mockRows });
 
-            const result = await PlanificacionRepository.getDataParaPlanificar('2026-02');
+            const result = await PlanificacionRepository.getDataParaPlanificar(2, 2026);
 
             expect(dbConfig.query).toHaveBeenCalledWith(
                 expect.stringContaining('NOT LIKE \'OM%\''),

@@ -9,11 +9,11 @@ export const PlanificacionController = {
   // NUEVO: Ejecuta el algoritmo usando datos ya existentes en Oracle
   ejecutarPlanificacion: async (req: any, res: any) => {
     try {
-      const { periodo, modo, planta } = req.body; // 'periodo' en formato YYYY-MM
-      if (!periodo) return res.status(400).json({ error: "Periodo (Mes) no especificado" });
+      const { mes, anio, modo, planta } = req.body; // 'periodo' en formato YYYY-MM
+      if (!mes || !anio) return res.status(400).json({ error: "Periodo (Mes y Año) no especificado" });
 
       // 1. Obtener datos crudos de las tablas (filtrando por planta si se especifica)
-      const { ots, empleados } = await PlanificacionRepository.getDataParaPlanificar(periodo, planta);
+      const { ots, empleados } = await PlanificacionRepository.getDataParaPlanificar(mes, anio, planta);
 
       if (ots.length === 0) {
         return res.status(404).json({ error: `No hay OTs cargadas para esta semana en Seguimiento${planta ? ' para la planta ' + planta : ''}.` });
@@ -53,11 +53,11 @@ export const PlanificacionController = {
 
   obtenerPlanificacion: async (req: any, res: any) => {
     try {
-      const { periodo, planta } = req.query;
-      console.log(`Petición obtenerPlanificacion para periodo: ${periodo}, planta: ${planta || 'TODAS'}`);
-      const data = await PlanificacionRepository.getPlanificacion(String(periodo), planta ? String(planta) : undefined);
+      const { mes, anio, planta } = req.query;
+      console.log(`Petición obtenerPlanificacion para periodo: ${mes}-${anio}, planta: ${planta || 'TODAS'}`);
+      const data = await PlanificacionRepository.getPlanificacion(Number(mes), Number(anio), planta ? String(planta) : undefined);
       if (!data) {
-        console.error(`obtenerPlanificacion: Error al obtener datos para periodo ${periodo}`);
+        console.error(`obtenerPlanificacion: Error al obtener datos para periodo ${mes}-${anio}`);
         return res.json({ resultados: [], sinAsignar: [] });
       }
 
@@ -75,7 +75,7 @@ export const PlanificacionController = {
           ? JSON.parse(ot.DETALLES_TECNICOS)
           : (ot.DETALLES_TECNICOS || []),
         estado: ot.ESTADO,
-        periodo: ot.PERIODO || periodo
+        periodo: ot.PERIODO
       }));
 
       // Separar asignados de sin asignar para el frontend
@@ -104,15 +104,14 @@ export const PlanificacionController = {
       if (!req.file) return res.status(400).json({ error: "Archivo requerido" });
       const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
       const modo = req.body.modo || 'STRICT';
-      const periodoBody = req.body.periodo || req.body.semana;
       const mesBody = req.body.mes ? Number(req.body.mes) : undefined;
       const anioBody = req.body.anio ? Number(req.body.anio) : undefined;
 
       console.log("Iniciando procesamiento de Excel...");
       const resultado = processExcelData(workbook.Sheets, modo);
-      console.log("Excel procesado en memoria. Determinando periodo...", { periodoBody, mesBody, anioBody });
+      console.log("Excel procesado en memoria. Determinando periodo...", { mesBody, anioBody });
 
-      const periodo = periodoBody || (resultado.resultados as any[])[0]?.periodo || (resultado.sinAsignar as any[])[0]?.periodo || "2026-02";
+      const periodo = mesBody + "-" + anioBody;
 
       console.log(`Periodo determinado: ${periodo}. Sincronizando con snapshots...`);
 
@@ -143,7 +142,7 @@ export const PlanificacionController = {
         // 3. Guardar horarios
         if (resultado.horariosCompletos && resultado.horariosCompletos.length > 0) {
           console.log(`Guardando ${resultado.horariosCompletos.length} registros de horarios...`);
-          await PlanificacionRepository.guardarHorarios(periodo, resultado.horariosCompletos, anioBody, mesBody);
+          await PlanificacionRepository.guardarHorarios(resultado.horariosCompletos, mesBody, anioBody);
         } else {
           console.warn("ADVERTENCIA: No se encontraron horarios en el Excel (hoja 'HORARIOS' vacía o no encontrada).");
         }
@@ -184,7 +183,8 @@ export const PlanificacionController = {
       const asignaciones = datos.map((d: any) => ({
         ot: d.nroOrden || d.OT,
         tecnicos: d.tecnicos,
-        periodo: d.periodo || d.semana // Soportar ambos en la transición
+        mes: d.mes,
+        anio: d.anio
       }));
 
       await PlanificacionRepository.guardarPlanificacion(asignaciones);
@@ -199,10 +199,10 @@ export const PlanificacionController = {
 
   listarHorarios: async (req: any, res: any) => {
     try {
-      const { periodo, planta } = req.query;
-      console.log(`Petición listarHorarios para periodo: ${periodo}, planta: ${planta || 'TODAS'}`);
-      const data = await PlanificacionRepository.getHorarios(String(periodo), planta ? String(planta) : null);
-      res.json({ periodo, count: data.length, data });
+      const { mes, anio, planta } = req.query;
+      console.log(`Petición listarHorarios para periodo: ${mes}-${anio}, planta: ${planta || 'TODAS'}`);
+      const data = await PlanificacionRepository.getHorarios(Number(mes), Number(anio), planta ? String(planta) : null);
+      res.json({ periodo: `${mes}-${anio}`, count: data.length, data });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
@@ -210,8 +210,8 @@ export const PlanificacionController = {
 
   actualizarTurno: async (req: any, res: any) => {
     try {
-      const { nombre, turnos, periodo } = req.body;
-      await PlanificacionRepository.upsertHorarioManual(periodo, nombre, turnos);
+      const { nombre, turnos, mes, anio } = req.body;
+      await PlanificacionRepository.upsertHorarioManual(mes, anio, nombre, turnos);
       res.json({ success: true });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -271,7 +271,7 @@ export const PlanificacionController = {
           });
 
           if (horariosParaGuardar.length > 0) {
-            await PlanificacionRepository.guardarHorarios(null, horariosParaGuardar, anioHorario, mesHorario);
+            await PlanificacionRepository.guardarHorarios(horariosParaGuardar, anioHorario, mesHorario);
             counts.horarios = horariosParaGuardar.length;
             console.log(`[HORARIOS] 📅 ${counts.horarios} horarios guardados.`);
           }

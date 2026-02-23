@@ -8,7 +8,6 @@ const API_BASE = API_ENDPOINTS.PLANIFICACION;
 export async function procesarExcelEnServidor(
     archivo: File,
     modo: 'STRICT' | 'BALANCED',
-    semana?: string,
     mes?: number,
     anio?: number
 ): Promise<ProcesoExcelResponse | null> {
@@ -16,13 +15,12 @@ export async function procesarExcelEnServidor(
         const formData = new FormData();
         formData.append('file', archivo);
         formData.append('modo', modo);
-        if (semana) formData.append('semana', semana);
-        if (mes) formData.append('mes', String(mes));
-        if (anio) formData.append('anio', String(anio));
+        formData.append('mes', String(mes));
+        formData.append('anio', String(anio));
 
         const response = await fetch(`${API_BASE}/procesar`, {
             method: 'POST',
-            body: formData, // El navegador configura automáticamente el boundary para archivos
+            body: formData,
         });
 
         if (!response.ok) {
@@ -40,10 +38,11 @@ export async function procesarExcelEnServidor(
 /**
  * Obtiene los horarios (matriz de turnos) desde la base de datos.
  */
-export async function getHorarios(periodo: string, planta?: string): Promise<{ data: HorarioTecnico[] } | null> {
+export async function getHorarios(mes: number, anio: number, planta?: string): Promise<{ data: HorarioTecnico[] } | null> {
     try {
         const url = new URL(`${API_BASE}/horarios`);
-        url.searchParams.append('periodo', periodo);
+        url.searchParams.append('mes', String(mes));
+        url.searchParams.append('anio', String(anio));
         if (planta) url.searchParams.append('planta', planta);
 
         const response = await fetch(url.toString());
@@ -108,10 +107,11 @@ export async function actualizarTurnoTecnico(
 /**
  * Obtiene los resultados de planificación (OTs asignadas) desde la DB.
  */
-export async function getResultadosPlanificacion(periodo: string, planta?: string): Promise<ProcesoExcelResponse | null> {
+export async function getResultadosPlanificacion(mes: number, anio: number, planta?: string): Promise<ProcesoExcelResponse | null> {
     try {
         const url = new URL(`${API_BASE}/resultados`);
-        url.searchParams.append('periodo', periodo);
+        url.searchParams.append('mes', String(mes));
+        url.searchParams.append('anio', String(anio));
         if (planta) url.searchParams.append('planta', planta);
 
         const response = await fetch(url.toString());
@@ -126,14 +126,15 @@ export async function getResultadosPlanificacion(periodo: string, planta?: strin
 
 export async function ejecutarPlanificacionRemota(
     modo: 'STRICT' | 'BALANCED',
-    periodo: string,
+    mes: number,
+    anio: number,
     planta?: string
 ): Promise<ProcesoExcelResponse | null> {
     try {
         const response = await fetch(`${API_BASE}/ejecutar`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ modo, periodo, planta }),
+            body: JSON.stringify({ modo, mes, anio, planta }),
         });
 
         if (!response.ok) throw new Error("Error en la ejecución remota");

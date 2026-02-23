@@ -57,16 +57,18 @@ const crearHojaSimple = (wb: XLSX.WorkBook, columnas: string[], nombreHoja: stri
 const generarHojaHorarios = (): XLSX.WorkSheet => {
   const diasDelMes = Array.from({ length: 31 }, (_, i) => i + 1);
   const diasSemana = Array.from({ length: 31 }, (_, i) => ["L", "M", "M", "J", "V", "S", "D"][i % 7]);
+  const anioActual = new Date().getFullYear();
+  const mes = new Date().getMonth() + 1;
 
   const data = [
     ["PF3"],
-    ["", "ENERO 2026", ...Array(30).fill(null)],
+    ["", `${mes} ${anioActual}`, ...Array(30).fill(null)],
     ["", ...diasDelMes],
     ["", ...diasSemana],
     ["JUAN PEREZ", ...Array(31).fill("M")],
     [],
     ["PF4"],
-    ["", "ENERO 2026"],
+    ["", `${mes} ${anioActual}`],
     ["", ...diasDelMes],
     ["", ...diasSemana],
     ["MARIA GOMEZ", ...Array(31).fill("T")]

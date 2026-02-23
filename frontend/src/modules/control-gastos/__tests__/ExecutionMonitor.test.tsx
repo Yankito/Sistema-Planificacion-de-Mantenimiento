@@ -45,12 +45,13 @@ describe('ExecutionMonitor Component', () => {
     });
 
     it('debe filtrar por término de búsqueda', async () => {
+        const mesActual = new Date().getMonth() + 1;
         const cc1 = 'ALFA';
         const cc2 = 'BETA';
 
         mockGetPresupuesto.mockResolvedValue([
-            { activo: 'ACT-1', centroCosto: cc1, mes: 1, montoBodega: 100 },
-            { activo: 'ACT-2', centroCosto: cc2, mes: 1, montoBodega: 100 }
+            { activo: 'ACT-1', centroCosto: cc1, mes: mesActual, montoBodega: 100 },
+            { activo: 'ACT-2', centroCosto: cc2, mes: mesActual, montoBodega: 100 }
         ]);
         mockGetGastosConsolidados.mockResolvedValue([]);
 
@@ -69,10 +70,11 @@ describe('ExecutionMonitor Component', () => {
     });
 
     it('debe detectar desviaciones y mostrar alertas críticas', async () => {
+        const mesActual = new Date().getMonth() + 1;
         const cc = 'CRIT';
 
         mockGetPresupuesto.mockResolvedValue([
-            { activo: 'ACT-CRIT', centroCosto: cc, mes: 1, montoBodega: 100 }
+            { activo: 'ACT-CRIT', centroCosto: cc, mes: mesActual, montoBodega: 100 }
         ]);
 
         mockGetGastosConsolidados.mockResolvedValue([
@@ -80,7 +82,7 @@ describe('ExecutionMonitor Component', () => {
                 nroActivo: 'ACT-CRIT',
                 tipoGasto: 'BODEGA',
                 costoTrx: 150,
-                mes: 1,
+                mes: mesActual,
                 centroCosto: cc,
                 estadoTrabajo: 'Liberado'
             }
@@ -88,11 +90,15 @@ describe('ExecutionMonitor Component', () => {
 
         render(<ExecutionMonitor selectedYear={2026} selectedPlanta="PF1" />);
 
-        // 50% de desviación
-        await waitFor(() => expect(screen.queryByText('50.0%')).not.toBeNull(), { timeout: 3000 });
+        // 50% de desviación (aparece en KPIs y en la tabla)
+        await waitFor(() => {
+            const elements = screen.getAllByText('50.0%');
+            expect(elements.length).toBeGreaterThan(0);
+        }, { timeout: 3000 });
     });
 
     it('debe manejar gastos no presupuestados correctamente', async () => {
+        const mesActual = new Date().getMonth() + 1;
         const cc = 'EXTRA';
 
         mockGetPresupuesto.mockResolvedValue([]);
@@ -101,7 +107,7 @@ describe('ExecutionMonitor Component', () => {
                 nroActivo: 'ACT-NUEVO',
                 tipoGasto: 'CORRECTIVO',
                 costoTrx: 300,
-                mes: 1,
+                mes: mesActual,
                 centroCosto: cc,
                 claseContable: 'MANT'
             }

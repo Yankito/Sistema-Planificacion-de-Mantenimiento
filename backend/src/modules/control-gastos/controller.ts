@@ -308,7 +308,7 @@ export class ControlGastosController {
      */
     async getGastosConsolidados(req: Request, res: Response) {
         try {
-            const anio = Number(req.query.anio) || 2026;
+            const anio = Number(req.query.anio);
             const planta = req.query.planta as string;
             const data = await ControlGastosRepository.getGastosConsolidados(anio, planta);
             res.json(data);

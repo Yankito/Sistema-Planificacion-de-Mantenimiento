@@ -2,21 +2,24 @@ import { useMemo, useState } from "react";
 import type { PlanResult, CargaTecnico, CeldaCargaSeleccionada } from "../types.js";
 
 export const useTecnicosCarga = (planResult: PlanResult[], plantaSel: string) => {
-    
+
     const [busqueda, setBusqueda] = useState("");
     const [celdaSeleccionada, setCeldaSeleccionada] = useState<CeldaCargaSeleccionada | null>(null);
 
     const { datosTecnicos, diasMes } = useMemo(() => {
         const mapaTecnicos = new Map<string, { rol: string, carga: Record<string, PlanResult[]> }>();
-        
+
         if (!planResult || planResult.length === 0) return { datosTecnicos: [], diasMes: [] };
 
-        let mes = 1, anio = 2026;
+        const today = new Date();
+        let mes = today.getMonth() + 1;
+        let anio = today.getFullYear();
+
         const primeraConFecha = planResult.find(p => p.fechaSugerida && p.fechaSugerida.includes('/'));
-        
+
         if (primeraConFecha) {
             const parts = primeraConFecha.fechaSugerida.split('/');
-            if(parts.length === 3) {
+            if (parts.length === 3) {
                 mes = parseInt(parts[1]);
                 anio = parseInt(parts[2]);
             }
@@ -58,14 +61,14 @@ export const useTecnicosCarga = (planResult: PlanResult[], plantaSel: string) =>
             carga: data.carga
         }));
 
-        return { 
-          datosTecnicos: lista.sort((a, b) => a.nombre.localeCompare(b.nombre)), 
-          diasMes: dias 
+        return {
+            datosTecnicos: lista.sort((a, b) => a.nombre.localeCompare(b.nombre)),
+            diasMes: dias
         };
     }, [planResult, plantaSel]);
 
     const tecnicosFiltrados = useMemo(() => {
-        return datosTecnicos.filter(t => 
+        return datosTecnicos.filter(t =>
             !busqueda || t.nombre.toUpperCase().includes(busqueda.toUpperCase())
         );
     }, [datosTecnicos, busqueda]);

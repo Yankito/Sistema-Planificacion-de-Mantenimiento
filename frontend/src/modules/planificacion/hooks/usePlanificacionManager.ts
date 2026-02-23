@@ -16,7 +16,7 @@ export const usePlanificacionManager = () => {
   const [mapaHorariosActual, setMapaHorariosActual] = useState<Map<string, string[]>>(new Map());
 
   // --- ESTADO UI ---
-  const [mesSeleccionado, setMesSeleccionado] = useState(getMonthOptions().default);
+  const [periodoSeleccionado, setPeriodoSeleccionado] = useState(getMonthOptions().default);
   const [loadingPlan, setLoadingPlan] = useState(false);
   const [loadingHorarios, setLoadingHorarios] = useState(false);
   const [loadingAction, setLoadingAction] = useState(false);
@@ -53,7 +53,7 @@ export const usePlanificacionManager = () => {
     // 4. Cambiar semana si el servidor la especifica o si el primer resultado tiene una distinta
     const primeraSemana = data.semana || data.resultados?.[0]?.semana || data.sinAsignar?.[0]?.semana;
     if (primeraSemana) {
-      setMesSeleccionado(primeraSemana);
+      setPeriodoSeleccionado(primeraSemana);
     }
 
   }, []);
@@ -65,16 +65,18 @@ export const usePlanificacionManager = () => {
 
   // Cálculo del mes para cabeceras
   const mes = (() => {
-    if (!mesSeleccionado) return "Mes Desconocido";
+    if (!periodoSeleccionado) return "Mes Desconocido";
     try {
-      if (/^\d{4}-\d{2}$/.test(mesSeleccionado)) {
-        const [y, m] = mesSeleccionado.split('-').map(Number);
+      if (/^\d{4}-\d{2}$/.test(periodoSeleccionado)) {
+        const [y, m] = periodoSeleccionado.split('-').map(Number);
         const d = new Date(y, m - 1, 1);
         return d.toLocaleString('es-ES', { month: 'long', year: 'numeric' });
       }
+      console.log("usePlanificacionManager: Mes seleccionado no válido:", periodoSeleccionado);
       // Fallback para formato antiguo de semanas
-      return mesSeleccionado;
+      return periodoSeleccionado;
     } catch (e) {
+      console.error("usePlanificacionManager: Error al calcular mes:", e);
       return "Mes Desconocido";
     }
   })();
@@ -84,7 +86,8 @@ export const usePlanificacionManager = () => {
     setLoadingHorarios(true);
     try {
       console.log("Cargando horarios para periodo:", periodo, "planta:", planta);
-      const resp = await PlanificacionService.getHorarios(periodo, planta);
+      const [anio, mes] = periodo.split('-').map(Number);
+      const resp = await PlanificacionService.getHorarios(mes, anio, planta);
       if (resp && resp.data) {
         setHorariosResult(resp.data);
       }
@@ -95,10 +98,10 @@ export const usePlanificacionManager = () => {
     }
   }, []);
 
-  const cargarPlanificacion = useCallback(async (periodo: string, planta: string) => {
+  const cargarPlanificacion = useCallback(async (mes: number, anio: number, planta: string) => {
     setLoadingPlan(true);
     try {
-      const data = await PlanificacionService.getResultadosPlanificacion(periodo, planta);
+      const data = await PlanificacionService.getResultadosPlanificacion(mes, anio, planta);
       if (data && data.resultados) {
         // Helper inline o reusado (mejor inline aquí para no romper deps del useCallback)
         const normalizePlan = (plan: any[]) => plan.map(ot => ({
@@ -134,8 +137,9 @@ export const usePlanificacionManager = () => {
 
   // Efecto principal: Cargar horarios al cambiar filtros
   useEffect(() => {
-    cargarHorarios(mesSeleccionado, plantaHorarios);
-  }, [mesSeleccionado, plantaHorarios, cargarHorarios]);
+    console.log("usePlanificacionManager: Cargando horarios para periodo", periodoSeleccionado, "y planta", plantaHorarios);
+    cargarHorarios(periodoSeleccionado, plantaHorarios);
+  }, [periodoSeleccionado, plantaHorarios, cargarHorarios]);
 
   // --- ACCIONES PRINCIPALES ---
 
@@ -143,11 +147,11 @@ export const usePlanificacionManager = () => {
   /**
    * Ejecución remota: Llama al algoritmo en el servidor usando datos de Oracle.
    */
-  const ejecutarPlanificacion = async (modo: 'STRICT' | 'BALANCED', periodo?: string): Promise<boolean> => {
+  const ejecutarPlanificacion = async (modo: 'STRICT' | 'BALANCED', periodo: string): Promise<boolean> => {
     setLoadingAction(true);
     try {
-      const periodoTarget = periodo || mesSeleccionado;
-      const data = await PlanificacionService.ejecutarPlanificacionRemota(modo, periodoTarget, plantaPlan);
+      const [anio, mes] = periodo.split('-').map(Number);
+      const data = await PlanificacionService.ejecutarPlanificacionRemota(modo, mes, anio, plantaPlan);
 
       if (data) {
         actualizarDesdeRespuesta(data);
@@ -171,7 +175,7 @@ export const usePlanificacionManager = () => {
     setLoadingAction(true);
     try {
       console.log("Llamando a PlanificacionService.procesarExcelEnServidor...", { mes, anio });
-      const data = await PlanificacionService.procesarExcelEnServidor(file, 'STRICT', mesSeleccionado, mes, anio);
+      const data = await PlanificacionService.procesarExcelEnServidor(file, 'STRICT', mes, anio);
       console.log("Respuesta de servidor recibida:", data ? "CON DATOS" : "NULL");
       if (data) {
         actualizarDesdeRespuesta(data);
@@ -207,7 +211,7 @@ export const usePlanificacionManager = () => {
     ));
 
     // Persistir MERGE en Oracle (usando SEGUNDA)
-    await PlanificacionService.actualizarTurnoTecnico(nombreTecnico, nuevosTurnos, mesSeleccionado);
+    await PlanificacionService.actualizarTurnoTecnico(nombreTecnico, nuevosTurnos, periodoSeleccionado);
   };
 
   /**
@@ -273,12 +277,12 @@ export const usePlanificacionManager = () => {
 
     // UI State
     cargandoPlan,
-    mesSeleccionado,
+    periodoSeleccionado,
     plantaPlan,
     setPlantaPlan,
     plantaHorarios,
     setPlantaHorarios,
-    setMesSeleccionado,
+    setPeriodoSeleccionado,
     fechaFoco,
     setFechaFoco,
 

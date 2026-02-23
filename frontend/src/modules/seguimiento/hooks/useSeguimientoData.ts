@@ -19,13 +19,7 @@ export const useSeguimientoData = () => {
   const cargarDatos = useCallback(async () => {
     setIsLoading(true);
     try {
-      console.log("Cargando datos actuales de seguimiento...");
       const data = await SeguimientoService.getPedidos();
-      for (let i = 0; i < data.length; i++) {
-        if (data[i].ot === '603961') {
-          console.log(data[i]);
-        }
-      }
       setDataActual(data);
       try {
         const stats = await SeguimientoService.getAnalytics("ACTUAL", "ANTERIOR");

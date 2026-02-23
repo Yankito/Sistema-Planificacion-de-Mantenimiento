@@ -33,7 +33,7 @@ describe('PlanificacionView', () => {
     setOrdenEditando: vi.fn(),
     setModalTecnicoOpen: vi.fn(),
     fechaFoco: null,
-    mesSeleccionado: '2024-02',
+    periodoSeleccionado: '2024-02',
     setMesSeleccionado: vi.fn(),
     planFiltrado: [],
     sinAsignarFiltrado: [],

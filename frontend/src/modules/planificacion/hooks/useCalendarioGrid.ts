@@ -5,20 +5,29 @@ import type { PlanResult, SemanaCalendario } from "../types";
 export const useCalendarioGrid = (
   planResult: PlanResult[],
   ordenesPorDia: Record<string, PlanResult[]>,
-  mesSeleccionado?: string
+  periodoSeleccionado?: string
 ) => {
   return useMemo(() => {
     let fechaBase: Date | null = null;
 
-    if (mesSeleccionado && /^\d{4}-\d{2}$/.test(mesSeleccionado)) {
-      const [y, m] = mesSeleccionado.split('-').map(Number);
+    if (periodoSeleccionado && /^\d{4}-\d{2}$/.test(periodoSeleccionado)) {
+      const [y, m] = periodoSeleccionado.split('-').map(Number);
       fechaBase = new Date(y, m - 1, 1);
     } else {
-      const base = planResult[0]?.fechaSugerida || "01/02/2026";
+      const today = new Date();
+      const base = planResult[0]?.fechaSugerida || `${today.getDate().toString().padStart(2, '0')}/${(today.getMonth() + 1).toString().padStart(2, '0')}/${today.getFullYear()}`;
       fechaBase = parseDDMMYYYY(base);
     }
 
-    if (!fechaBase) return { semanas: [], nombreMes: "", totalOrdenesMes: 0, anioActual: 2026 };
+    if (!fechaBase) {
+      const today = new Date();
+      return {
+        semanas: [],
+        nombreMes: "",
+        totalOrdenesMes: 0,
+        anioActual: today.getFullYear()
+      };
+    }
 
     const mes = fechaBase.getMonth() + 1;
     const anio = fechaBase.getFullYear();
@@ -71,5 +80,5 @@ export const useCalendarioGrid = (
       totalOrdenesMes: totalMes,
       anioActual: anio
     };
-  }, [planResult, ordenesPorDia, mesSeleccionado]);
+  }, [planResult, ordenesPorDia, periodoSeleccionado]);
 };

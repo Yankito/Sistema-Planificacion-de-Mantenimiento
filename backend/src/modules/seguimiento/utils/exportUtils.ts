@@ -13,7 +13,7 @@ const DEFINICION_GRUPOS = {
 // ESTILOS VISUALES
 const BORDER_ALL = { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } };
 // Nuevo estilo para la separación de años
-const BORDER_2025_RIGHT = { ...BORDER_ALL, right: { style: "medium" } };
+const BORDER_BOUNDARY_RIGHT = { ...BORDER_ALL, right: { style: "medium" } };
 
 const STYLE_HEADER_MAIN = {
   fill: { fgColor: { rgb: "FFFF00" } },
@@ -47,7 +47,7 @@ const getColLetter = (colIndex: number) => {
   return letter;
 };
 
-// Helpers de Conteo - ACTUALIZADO para filtrar por 2026 en totales
+// Helpers de Conteo - ACTUALIZADO para filtrar por año en totales
 const count = (data: AtrasoRow[], planta: string | string[], esOB: boolean, periodo: string, cat?: string) => {
   return data.filter(d => {
     const matchPlanta = Array.isArray(planta) ? planta.includes(d.planta) : d.planta === planta;
@@ -174,11 +174,12 @@ export const generarExcelReporte = async (
     );
 
     // Labels Dinámicos
+    const anioAnterior = (parseInt(anioFull) - 1).toString();
     const headersLabels = [
       `REPORTE ${modoVista}`,
       ...columnasPeriodos,
       `TOTAL ${anioFull}`,
-      `TOTAL ${anioFull} S/A`,
+      `TOTAL ${anioAnterior}`,
       "DELTA"
     ];
 
@@ -193,7 +194,7 @@ export const generarExcelReporte = async (
     const headerRow = headersLabels.map((label, idx) => {
       // El índice en headersLabels es idx. La columna de datos empieza en 1.
       const isFrontera = (idx - 1 === idxUltimoAnioAnterior);
-      return { v: label, t: 's', s: isFrontera ? { ...STYLE_HEADER_MAIN, border: BORDER_2025_RIGHT } : STYLE_HEADER_MAIN };
+      return { v: label, t: 's', s: isFrontera ? { ...STYLE_HEADER_MAIN, border: BORDER_BOUNDARY_RIGHT } : STYLE_HEADER_MAIN };
     });
 
     const matrix: any[][] = [];
@@ -237,7 +238,7 @@ export const generarExcelReporte = async (
             valTotalAntActual += antVal;
           }
 
-          const extraStyle = (colIdx === idxUltimoAnioAnterior) ? BORDER_2025_RIGHT : BORDER_ALL;
+          const extraStyle = (colIdx === idxUltimoAnioAnterior) ? BORDER_BOUNDARY_RIGHT : BORDER_ALL;
           const style = getTrafficLightStyle(curVal, antVal, grupo.isAgrupado, extraStyle);
 
           if (grupo.isAgrupado) {
@@ -289,7 +290,7 @@ export const generarExcelReporte = async (
               catTotalAnt += aVal;
             }
 
-            const extraStyle = (cIdx === idxUltimoAnioAnterior) ? BORDER_2025_RIGHT : BORDER_ALL;
+            const extraStyle = (cIdx === idxUltimoAnioAnterior) ? BORDER_BOUNDARY_RIGHT : BORDER_ALL;
             filaCat.push({ v: cVal, t: 'n', s: getTrafficLightStyle(cVal, aVal, false, extraStyle) });
           });
 

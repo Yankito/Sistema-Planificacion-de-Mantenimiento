@@ -19,7 +19,7 @@ interface CalendarioProps {
   setMostrarSoloVacantes: (v: boolean) => void;
   mensajeExito?: string;
   handleSugerirTodo: () => void;
-  mesSeleccionado: string;
+  periodoSeleccionado: string;
   cargandoPlan?: boolean;
 }
 
@@ -39,12 +39,12 @@ export const Calendario = ({
   setMostrarSoloVacantes,
   mensajeExito = "Planificación Actualizada",
   handleSugerirTodo,
-  mesSeleccionado,
+  periodoSeleccionado,
   cargandoPlan
 }: CalendarioProps) => {
 
   // USAMOS EL HOOK (Lógica de Fechas extraída)
-  const { semanas, nombreMes, totalOrdenesMes, anioActual } = useCalendarioGrid(planResult, ordenesPorDia, mesSeleccionado);
+  const { semanas, nombreMes, totalOrdenesMes, anioActual } = useCalendarioGrid(planResult, ordenesPorDia, periodoSeleccionado);
 
   return (
     <div className="flex-1 space-y-6 relative">

@@ -3,8 +3,7 @@ import { getMonthFromWeekId } from './utils/dateHelpers.js';
 
 export const PlanificacionRepository = {
 
-  getDataParaPlanificar: async (periodo: string, planta?: string) => {
-    const { anio, mes } = getMonthFromWeekId(periodo);
+  getDataParaPlanificar: async (mes: number, anio: number, planta?: string) => {
 
     // Consulta unificada a tablas EAM y Planificación
     // Prioridad Detalles Técnicos: PF_IM_PLANIFICACION -> PF_EAM_CUMPLIMIENTO -> NULL
@@ -91,7 +90,7 @@ export const PlanificacionRepository = {
                                       'planta' VALUE pt.planta,
                                       'opFinalizada' VALUE 'N'
                                   )
-                                  RETURNING CLOB
+                                  RETURNING VARCHAR2(4000)
                               )
                               FROM PF_IM_PLANIFICACION_TECNICOS pt
                               WHERE pt.ot = p.pedido_trabajo 
@@ -102,19 +101,22 @@ export const PlanificacionRepository = {
                       )
                   ELSE
                       -- Si no hay plan, usamos cumplimiento (real)
-                      (
-                          SELECT JSON_ARRAYAGG(
-                              JSON_OBJECT(
-                                  'nombre' VALUE c.empleado, 
-                                  'rol' VALUE COALESCE(t.rol, 'MECANICO'),
-                                  'planta' VALUE COALESCE(t.planta, 'PF3'),
-                                  'opFinalizada' VALUE c.op_finalizada
-                              )
-                              RETURNING CLOB
-                          ) 
-                          FROM PF_EAM_CUMPLIMIENTO c 
-                          LEFT JOIN PF_IM_TECNICOS t ON TRIM(UPPER(c.empleado)) = TRIM(UPPER(t.nombre))
-                          WHERE c.nro_ot = p.pedido_trabajo AND c.empleado IS NOT NULL
+                      COALESCE(
+                          (
+                              SELECT JSON_ARRAYAGG(
+                                  JSON_OBJECT(
+                                      'nombre' VALUE c.empleado, 
+                                      'rol' VALUE COALESCE(t.rol, 'MECANICO'),
+                                      'planta' VALUE COALESCE(t.planta, 'PF3'),
+                                      'opFinalizada' VALUE c.op_finalizada
+                                  )
+                                  RETURNING VARCHAR2(4000)
+                              ) 
+                              FROM PF_EAM_CUMPLIMIENTO c 
+                              LEFT JOIN PF_IM_TECNICOS t ON TRIM(UPPER(c.empleado)) = TRIM(UPPER(t.nombre))
+                              WHERE c.nro_ot = p.pedido_trabajo AND c.empleado IS NOT NULL
+                          ),
+                          '[]'
                       )
               END as "DETALLES_TECNICOS_RAW"
 
@@ -154,7 +156,8 @@ export const PlanificacionRepository = {
       return {
         ...r,
         DETALLES_TECNICOS: tecnicos,
-        periodo // Devolvemos el periodo (mes) solicitado como contexto
+        mes,
+        anio
       };
     });
 
@@ -164,14 +167,13 @@ export const PlanificacionRepository = {
     };
   },
 
-  getPlanificacion: async (periodo: string, planta?: string) => {
+  getPlanificacion: async (mes: number, anio: number, planta?: string) => {
     // Reutilizamos la misma lógica centralizada (ahora basada en Mes/Anio)
-    const data = await PlanificacionRepository.getDataParaPlanificar(periodo, planta);
+    const data = await PlanificacionRepository.getDataParaPlanificar(mes, anio, planta);
     return data.ots;
   },
 
-  getHorarios: async (periodo: string, planta: string | null) => {
-    const { anio, mes } = getMonthFromWeekId(periodo);
+  getHorarios: async (mes: number, anio: number, planta: string | null) => {
     const sql = `
       SELECT h.empleado_nombre, e.rol, e.planta, h.turnos
       FROM PF_IM_HORARIOS h
@@ -196,11 +198,8 @@ export const PlanificacionRepository = {
     }));
   },
 
-  guardarPlanificacion: async (asignaciones: { ot: string, tecnicos: any[], periodo?: string }[]) => {
+  guardarPlanificacion: async (asignaciones: { ot: string, tecnicos: any[], mes: number, anio: number }[]) => {
     for (const asignacion of asignaciones) {
-      if (!asignacion.periodo) continue;
-
-      const { anio, mes } = getMonthFromWeekId(asignacion.periodo);
 
       // 1. Upsert Header (PF_IM_PLANIFICACION)
       // Mantenemos detalles_tecnicos como [] por compatibilidad con NOT NULL actual
@@ -213,13 +212,13 @@ export const PlanificacionRepository = {
           INSERT (anio, mes, ot, detalles_tecnicos, fecha_asignacion) 
           VALUES (:anio, :mes, :ot, '[]', CURRENT_TIMESTAMP)
       `;
-      await query(sqlMergeHeader, { anio, mes, ot: asignacion.ot });
+      await query(sqlMergeHeader, { anio: asignacion.anio, mes: asignacion.mes, ot: asignacion.ot });
 
       // 2. Reemplazar Detalles (PF_IM_PLANIFICACION_TECNICOS)
       // Borrar anteriores
       await query(
         `DELETE FROM PF_IM_PLANIFICACION_TECNICOS WHERE anio = :anio AND mes = :mes AND ot = :ot`,
-        { anio, mes, ot: asignacion.ot }
+        { anio: asignacion.anio, mes: asignacion.mes, ot: asignacion.ot }
       );
 
       // Insertar nuevos
@@ -231,8 +230,8 @@ export const PlanificacionRepository = {
 
         const binds = asignacion.tecnicos.map((t: any) => ({
           ot: asignacion.ot,
-          anio,
-          mes,
+          anio: asignacion.anio,
+          mes: asignacion.mes,
           nombre: t.nombre,
           rol: t.rol || 'MECANICO',
           planta: t.planta || 'PF3'
@@ -271,21 +270,11 @@ export const PlanificacionRepository = {
     return new Set(nombres);
   },
 
-  guardarHorarios: async (periodo: string | null, horarios: { nombre: string, turnos: string[] }[], anioArg?: number, mesArg?: number) => {
+  guardarHorarios: async (horarios: { nombre: string, turnos: string[] }[], mes?: number, anio?: number) => {
     if (horarios.length === 0) return;
 
-    let anio: number;
-    let mes: number;
-
-    if (anioArg !== undefined && mesArg !== undefined) {
-      anio = anioArg;
-      mes = mesArg;
-    } else if (periodo) {
-      const fecha = getMonthFromWeekId(periodo);
-      anio = fecha.anio;
-      mes = fecha.mes;
-    } else {
-      throw new Error("Se requiere periodo (YYYY-MM) o (anio, mes)");
+    if (anio === undefined || mes === undefined) {
+      throw new Error("Se requiere periodo (anio, mes)");
     }
     const sql = `
       MERGE INTO PF_IM_HORARIOS hor
@@ -306,8 +295,7 @@ export const PlanificacionRepository = {
 
   // Borramos guardarPedidos ya que ya no existe la tabla destino ni se usa
 
-  upsertHorarioManual: async (periodo: string, nombre: string, turnos: string[]) => {
-    const { anio, mes } = getMonthFromWeekId(periodo);
+  upsertHorarioManual: async (mes: number, anio: number, nombre: string, turnos: string[]) => {
     const sql = `
       MERGE INTO PF_IM_HORARIOS hor
       USING DUAL ON (hor.anio = :anio AND hor.mes = :mes AND hor.empleado_nombre = :nombre)

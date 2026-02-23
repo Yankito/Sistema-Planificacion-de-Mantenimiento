@@ -1,18 +1,9 @@
-import { useMemo } from "react"; 
+import { useMemo } from "react";
 import { X, Info, Calendar } from "lucide-react";
 import { TarjetaOrden } from "./ui/TarjetaOrden";
 import type { PlanResult } from "../types";
+import { getWeekNumber, parseDDMMYYYY } from "../../../shared/utils/dateUtils";
 
-const getWeekNumber = (d: Date): number => {
-  const inicioSemana1 = new Date(2026, 0, 5); 
-  const fechaActual = new Date(d);
-  fechaActual.setHours(0, 0, 0, 0);
-  inicioSemana1.setHours(0, 0, 0, 0);
-  const diffTime = fechaActual.getTime() - inicioSemana1.getTime();
-  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-  if (diffDays < 0) return 0;
-  return Math.floor(diffDays / 7) + 1;
-};
 
 interface PanelLateralProps {
   diaSeleccionado: string | null;
@@ -40,17 +31,18 @@ export const PanelLateral = ({
 
   const ordenesVisualizadas = useMemo((): PlanResult[] => {
     if (!diaSeleccionado) return [];
-    
+
     let listaFiltrada: PlanResult[] = [];
 
     if (diaSeleccionado.startsWith("WEEK-")) {
       const semanaNum = parseInt(diaSeleccionado.split("-")[1]);
       Object.keys(ordenesPorDia).forEach((fecha) => {
-        const [d, m, y] = fecha.split("/").map(Number);
-        const fechaObj = new Date(y, m - 1, d);
-        const semanaDeLaOrden = getWeekNumber(fechaObj);
-        if (semanaDeLaOrden === semanaNum) {
-          listaFiltrada.push(...ordenesPorDia[fecha]);
+        const fechaObj = parseDDMMYYYY(fecha);
+        if (fechaObj) {
+          const semanaDeLaOrden = getWeekNumber(fechaObj);
+          if (semanaDeLaOrden === semanaNum) {
+            listaFiltrada.push(...ordenesPorDia[fecha]);
+          }
         }
       });
     } else {
@@ -58,9 +50,9 @@ export const PanelLateral = ({
     }
 
     if (mostrarSoloVacantes) {
-        return listaFiltrada.filter(ot => 
-            ot.tecnicos.some((t) => t.nombre === 'VACANTE')
-        );
+      return listaFiltrada.filter(ot =>
+        ot.tecnicos.some((t) => t.nombre === 'VACANTE')
+      );
     }
 
     return listaFiltrada;
@@ -81,14 +73,14 @@ export const PanelLateral = ({
               {tituloPanel}
             </h4>
             <p className="text-[10px] font-bold text-slate-200 uppercase mt-1">
-              {diaSeleccionado 
-                ? `${ordenesVisualizadas.length} Órdenes ${mostrarSoloVacantes ? 'Incompletas' : 'Asignadas'}` 
+              {diaSeleccionado
+                ? `${ordenesVisualizadas.length} Órdenes ${mostrarSoloVacantes ? 'Incompletas' : 'Asignadas'}`
                 : "Sin turno de noche"}
             </p>
           </div>
           {diaSeleccionado && (
-            <button 
-              onClick={() => setDiaSeleccionado(null)} 
+            <button
+              onClick={() => setDiaSeleccionado(null)}
               className="p-2 hover:bg-white/10 rounded-full transition-colors"
             >
               <X size={20} />
@@ -100,35 +92,35 @@ export const PanelLateral = ({
           {diaSeleccionado ? (
             ordenesVisualizadas.length > 0 ? (
               ordenesVisualizadas.map((orden, i) => (
-                <TarjetaOrden 
-                  key={`${orden.nroOrden}-${i}`} 
-                  orden={orden} 
-                  handleDragStart={handleDragStart} 
-                  handleDragEnd={handleDragEnd} 
+                <TarjetaOrden
+                  key={`${orden.nroOrden}-${i}`}
+                  orden={orden}
+                  handleDragStart={handleDragStart}
+                  handleDragEnd={handleDragEnd}
                   esAsignada={true}
                   onEditTecnicos={onEditTecnicos}
                 />
               ))
             ) : (
               <div className="flex flex-col items-center justify-center py-12 text-slate-400 opacity-60">
-                  <Calendar size={40} className="mb-2 stroke-1" />
-                  <span className="text-xs font-bold uppercase tracking-wider text-center">
-                    {mostrarSoloVacantes 
-                        ? "Todas las órdenes completas" 
-                        : "Sin órdenes esta semana"}
-                  </span>
+                <Calendar size={40} className="mb-2 stroke-1" />
+                <span className="text-xs font-bold uppercase tracking-wider text-center">
+                  {mostrarSoloVacantes
+                    ? "Todas las órdenes completas"
+                    : "Sin órdenes esta semana"}
+                </span>
               </div>
             )
           ) : (
             planResultSinAsignar.map((ot, i) => (
-              <TarjetaOrden 
-                key={ot.nroOrden || i} 
+              <TarjetaOrden
+                key={ot.nroOrden || i}
                 orden={{
                   ...ot,
                   planta: ot.planta || plantaSeleccionada,
-                }} 
-                handleDragStart={handleDragStart} 
-                handleDragEnd={handleDragEnd} 
+                }}
+                handleDragStart={handleDragStart}
+                handleDragEnd={handleDragEnd}
                 esAsignada={false}
                 onEditTecnicos={onEditTecnicos}
               />
