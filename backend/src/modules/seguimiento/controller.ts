@@ -12,6 +12,7 @@ export const SeguimientoController = {
     try {
       const { tipo } = req.query;
       const semanas = await SeguimientoRepository.getSemanas(tipo as string);
+      console.log(semanas);
       res.json(semanas);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -20,7 +21,13 @@ export const SeguimientoController = {
 
   getPedidos: async (req: any, res: any) => {
     try {
-      const data = await SeguimientoRepository.getPedidos();
+      const { fechaInicio, fechaFin } = req.query;
+
+      if (!fechaInicio || !fechaFin) {
+        return res.status(400).json({ error: "Parámetros fechaInicio y fechaFin son obligatorios (formato YYYY-MM-DD)" });
+      }
+
+      const data = await SeguimientoRepository.getPedidos(fechaInicio as string, fechaFin as string);
       res.json(data);
     } catch (error: any) {
       console.error("Error en /pedidos:", error);
@@ -30,14 +37,14 @@ export const SeguimientoController = {
 
   getDashboardStats: async (req: any, res: any) => {
     try {
-      const { actual, anterior } = req.params;
+      const { fechaInicio, fechaFin } = req.query;
+      // Si no vienen en el dashboard, usamos un rango amplio por defecto para no romper el análisis
+      const start = (fechaInicio as string) || "2024-01-01";
+      const end = (fechaFin as string) || new Date().toISOString().split('T')[0];
 
-      // 1. Recuperamos los datos de PostgreSQL
-      // Nota: Actualmente getPedidos devuelve los datos actuales.
-      // Si se implementa histórico, se deberían usar los parámetros 'actual' y 'anterior'.
       const [dataActual, dataAnterior] = await Promise.all([
-        SeguimientoRepository.getPedidos(),
-        SeguimientoRepository.getPedidos() // TODO: Implementar getPedidos histórico si es necesario
+        SeguimientoRepository.getPedidos(start, end),
+        SeguimientoRepository.getPedidos(start, end)
       ]);
 
       // 2. Ejecutamos la lógica de análisis en el servidor
@@ -60,14 +67,18 @@ export const SeguimientoController = {
 
   descargarReporte: async (req: any, res: any) => {
     try {
-      const { semana, modo, semanaAnt } = req.query;
+      const { semana, modo, semanaAnt, fechaInicio, fechaFin } = req.query;
+
+      // Usamos el rango proporcionado o uno por defecto
+      const start = (fechaInicio as string);
+      const end = (fechaFin as string);
 
       // 1. Obtener datos desde Postgres
-      const dataActual = await SeguimientoRepository.getPedidos();
+      const dataActual = await SeguimientoRepository.getPedidos(start, end);
 
       let dataAnterior: any[] = [];
       if (semanaAnt) {
-        dataAnterior = await SeguimientoRepository.getPedidos();
+        dataAnterior = await SeguimientoRepository.getPedidos(start, end);
       }
 
       // 2. Generar el Buffer del Excel

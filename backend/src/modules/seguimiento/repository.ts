@@ -9,7 +9,24 @@ export const SeguimientoRepository = {
 
   // Obtiene los datos ACTUALES directos de la base
   // Ignora el parámetro 'semana' ya que siempre lee en tiempo real
-  getPedidos: async (): Promise<AtrasoRow[]> => {
+  getPedidos: async (fechaInicio: string, fechaFin: string): Promise<AtrasoRow[]> => {
+    if (!fechaInicio || !fechaFin) {
+      throw new Error("El rango de fechas (fechaInicio y fechaFin) es obligatorio.");
+    }
+
+    const params: any = { fechaInicio, fechaFin };
+    const whereClause = `
+      WHERE (
+          UPPER(p.estado) = 'LIBERADO'
+          OR (
+            UPPER(p.estado) IN ('FINALIZADO', 'FINALIZAR - SIN CARGOS')
+            AND UPPER(p.descripcion) NOT LIKE 'MOB%'
+          )
+        )
+        AND p.fecha_inicial_programada >= TO_DATE(:fechaInicio, 'YYYY-MM-DD')
+        AND p.fecha_inicial_programada <= TO_DATE(:fechaFin, 'YYYY-MM-DD')
+    `;
+
     const sql = `
        WITH ActivosUnicos AS (
           SELECT nro_de_activo, clase_contable, organizacion,
@@ -40,6 +57,7 @@ export const SeguimientoRepository = {
             p.descripcion as "DESCRIPCION",
             p.estado as "ESTADO",
             CASE
+                WHEN UPPER(p.estado) IN ('FINALIZADO', 'FINALIZAR - SIN CARGOS') THEN 'CUMPLIDA'
                 WHEN ta.has_pending_tech = 1 THEN 'TECNICO / SERVICIO'
                 WHEN m.numero IS NULL THEN 'OC / OTRO'
                 WHEN m.rmd = 'NO' OR m.rse = 'NO' THEN 'OC / OTRO'
@@ -135,11 +153,10 @@ export const SeguimientoRepository = {
        LEFT JOIN TecnicosAgg ta ON ta.nro_ot = TRIM(p.pedido_trabajo)
 
        LEFT JOIN PF_EAM_MASIVO m ON p.pedido_trabajo = m.numero
-       -- Filtramos ESTATUS CERRADOS para mejorar rendimiento (Backlog real)
-       WHERE UPPER(p.estado) = 'LIBERADO'
+       ${whereClause}
     `;
 
-    const res = await query(sql);
+    const res = await query(sql, params);
 
     if (!res?.rows) return [];
 
@@ -175,7 +192,7 @@ export const SeguimientoRepository = {
         clasificacion: r.CLASIFICACION,
         esOB: r.ES_OB === 1,
         periodo: r.PERIODO,
-        semana: r.SEMANA || 'ACTUAL',
+        semana: r.SEMANA,
         detallesTecnicos: detalles,
         fecha: r.FECHA,
         rmd: r.RMD,

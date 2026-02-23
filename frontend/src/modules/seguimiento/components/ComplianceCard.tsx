@@ -10,7 +10,7 @@ interface ComplianceCardProps {
 
 export const ComplianceCard = ({ planta, esOB, dataSemanaActual, onClick }: ComplianceCardProps) => {
   const universoRaw = dataSemanaActual.filter(d => d.planta === planta && d.esOB === esOB);
-  const universoKPI = universoRaw.filter(d => !d.descripcion.toUpperCase().startsWith("MOB:"));
+  const universoKPI = universoRaw.filter(d => !d.descripcion.toUpperCase().startsWith("MOB"));
 
   const total = universoKPI.length;
   const cumplidas = universoKPI.filter(d => d.clasificacion === "CUMPLIDA").length;
@@ -35,7 +35,7 @@ export const ComplianceCard = ({ planta, esOB, dataSemanaActual, onClick }: Comp
   if (total === 0) return null;
 
   return (
-    <div 
+    <div
       role="button"
       tabIndex={0}
       onClick={onClick}

@@ -9,6 +9,7 @@ interface UseSeguimientoModalProps {
   viewDetail: { id: string; esOB: boolean; cat?: string; isGlobal?: boolean; periodo?: string };
   PLANTAS_COMPLEJO: string[];
   PLANTAS_PF_ALIMENTOS: string[];
+  modoVista?: "ATRASOS" | "CUMPLIDAS";
 }
 
 export const useSeguimientoModal = ({
@@ -16,7 +17,8 @@ export const useSeguimientoModal = ({
   dataAnterior,
   viewDetail,
   PLANTAS_COMPLEJO,
-  PLANTAS_PF_ALIMENTOS
+  PLANTAS_PF_ALIMENTOS,
+  modoVista = "ATRASOS"
 }: UseSeguimientoModalProps) => {
 
   // --- ESTADOS DE FILTROS ---
@@ -48,11 +50,17 @@ export const useSeguimientoModal = ({
   const { filteredGeneral, estadosDisponibles } = useMemo(() => {
     // Filtrar por el contexto del clic en la tabla de resumen
     const base = dataModo.filter(d => {
+      // EXCLUSIÓN DE MOB (Mobiliario/Muebles)
+      if (d.descripcion.toUpperCase().startsWith("MOB")) return false;
+
       const matchPlanta = viewDetail.isGlobal
         ? (viewDetail.id === "COMPLEJO" ? PLANTAS_COMPLEJO.includes(d.planta) : PLANTAS_PF_ALIMENTOS.includes(d.planta))
         : d.planta === viewDetail.id;
 
       const matchOB = d.esOB === viewDetail.esOB;
+
+      // Si hay una categoría específica (ej: desde Tabla de Atrasos), filtramos. 
+      // Si no (ej: desde Tablero de Cumplimiento), mostramos el universo completo (OK + Pendientes)
       const matchCat = viewDetail.cat ? d.clasificacion === viewDetail.cat : true;
       const matchPeriodo = viewDetail.periodo ? d.periodo === viewDetail.periodo : true;
 

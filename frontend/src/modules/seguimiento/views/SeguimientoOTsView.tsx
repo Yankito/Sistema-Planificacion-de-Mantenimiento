@@ -1,9 +1,13 @@
-
 import { useState, useMemo, useCallback } from "react";
-import type { AtrasoRow } from "../types";
-import { BarChart3, PieChart, Factory, FileText } from "lucide-react";
+import type { AtrasoRow, BacklogStats, TechStats } from "../types";
+import { BarChart3, PieChart, Factory, FileText, Search, Calendar as CalendarIcon, RotateCcw } from "lucide-react";
 import { ResumenTable } from "../components/ResumenTable";
 import { ExportButton } from "../../../shared/components/ExportButton";
+import {
+  toISODate,
+  getStartOfPreviousYear,
+  getCurrentDate
+} from "../../../shared/utils/dateUtils";
 
 import { SeguimientoHeader } from "../components/SeguimientoHeader";
 import { ComplianceCard } from "../components/ComplianceCard";
@@ -37,6 +41,9 @@ export const SeguimientoOTsView = () => {
   const [showAnalysis, setShowAnalysis] = useState(false);
   const [selectedYear, setSelectedYear] = useState<string>("TODOS");
   const [selectedSemana, setSelectedSemana] = useState("TODAS");
+
+  const [fechaInicio, setFechaInicio] = useState<string>(toISODate(getStartOfPreviousYear()));
+  const [fechaFin, setFechaFin] = useState<string>(toISODate(getCurrentDate()));
 
   // NORMALIZACIÓN DE PERIODOS: Comprime años anteriores en una sola columna
   const normalizeData = useCallback((data: AtrasoRow[]) => {
@@ -100,9 +107,25 @@ export const SeguimientoOTsView = () => {
   }, [dataAnteriorNorm, semanaComparar, filtrarDataset]);
 
   // HANDLERS
+  const handleBuscarPorFecha = () => {
+    seguimientoData.cargarDatos(fechaInicio || undefined, fechaFin || undefined);
+  };
+
+  const handleResetFiltros = () => {
+    const start = toISODate(getStartOfPreviousYear());
+    const end = toISODate(getCurrentDate());
+    setFechaInicio(start);
+    setFechaFin(end);
+    seguimientoData.cargarDatos(start, end);
+  };
+
   const handleExportarExcelCompleto = async () => {
     if (!reporteActual) return;
     try {
+      console.log("Exportando Excel completo...");
+      console.log("Reporte actual:", reporteActual);
+      console.log("Modo vista:", modoVista);
+      console.log("Semana comparar:", semanaComparar);
       await SeguimientoService.descargarExcel(reporteActual, modoVista, semanaComparar || "");
     } catch (error) {
       console.error("Error exportando", error);
@@ -114,13 +137,62 @@ export const SeguimientoOTsView = () => {
   const yearsInRows = useMemo(() => {
     const aniosUnicos = Array.from(new Set(dataActual.map(d => d.semana.split('-')[0])));
     aniosUnicos.sort((a, b) => b.localeCompare(a, undefined, { numeric: true }));
-    return ["TODAS", ...aniosUnicos];
+    return ["TODOS", ...aniosUnicos];
   }, [dataActual]);
 
   const semanasInRows = useMemo(() => {
     const filas = selectedYear === "TODOS" ? dataActual : dataActual.filter(d => d.semana.startsWith(selectedYear));
     return ["TODAS", ...Array.from(new Set(filas.map(d => d.semana))).sort((a, b) => b.localeCompare(a))];
   }, [dataActual, selectedYear]);
+
+  // --- ANALÍTICA FILTRADA PARA EL CENTRO DE ANÁLISIS ---
+  const filteredAnalysisStats = useMemo(() => {
+    if (!serverStats.flowStats || !serverStats.techStats) return { flow: null, tech: [] };
+
+    // Si no hay filtros aplicados (AÑO=TODOS y SEMANA=TODAS), usamos los del servidor
+    if (selectedYear === "TODOS" && selectedSemana === "TODAS") {
+      return { flow: serverStats.flowStats, tech: serverStats.techStats };
+    }
+
+    // 1. Filtrar Flow Stats (Evolución)
+    // Conservamos solo los movimientos de OTs que están en el dataset filtrado actual
+    const otsVisibles = new Set(dataDashboard.map(d => d.ot));
+    const filteredFlow: BacklogStats = {
+      nuevas: serverStats.flowStats.nuevas.filter(ot => otsVisibles.has(ot.ot)),
+      finalizadas: serverStats.flowStats.finalizadas.filter(ot => otsVisibles.has(ot.ot)),
+      sinCambios: serverStats.flowStats.sinCambios.filter(ot => otsVisibles.has(ot.ot)),
+      conAvance: serverStats.flowStats.conAvance.filter(ot => otsVisibles.has(ot.ot)),
+      desaparecidas: serverStats.flowStats.desaparecidas.filter(ot => otsVisibles.has(ot.ot)),
+    };
+
+    // 2. Recalcular Tech Stats (Técnicos)
+    // Es mucho más preciso recalcularlos desde los datos visibles que filtrar los agregados del servidor
+    const techMap = new Map<string, TechStats>();
+    dataDashboard.forEach(row => {
+      row.detallesTecnicos?.forEach(det => {
+        const name = det.tecnico.nombre;
+        if (!techMap.has(name)) {
+          techMap.set(name, {
+            nombre: name, totalAsignado: 0, finalizadas: 0, pendientes: 0, efectividad: 0, plantas: []
+          });
+        }
+        const stat = techMap.get(name)!;
+        stat.totalAsignado++;
+        if (det.opFinalizada || row.clasificacion === 'CUMPLIDA') stat.finalizadas++;
+        else stat.pendientes++;
+        if (!stat.plantas.includes(row.planta)) stat.plantas.push(row.planta);
+      });
+    });
+
+    const filteredTech = Array.from(techMap.values())
+      .map(s => ({
+        ...s,
+        efectividad: s.totalAsignado > 0 ? Math.round((s.finalizadas / s.totalAsignado) * 100) : 0
+      }))
+      .sort((a, b) => b.totalAsignado - a.totalAsignado);
+
+    return { flow: filteredFlow, tech: filteredTech };
+  }, [serverStats, dataDashboard, selectedYear, selectedSemana]);
 
   return (
     <div className="relative p-6 h-full overflow-y-auto bg-slate-50/50 flex flex-col gap-4">
@@ -154,7 +226,49 @@ export const SeguimientoOTsView = () => {
           </button>
         </div>
 
-        {/* NIVEL 2: FILTROS Y EXPORTACIÓN */}
+        {/* NIVEL 2: FILTROS DE FECHA (CALENDARIO Y ATAJOS) */}
+        <div className="flex flex-wrap items-end gap-6 pb-2 border-b border-slate-50">
+          <div className="flex items-center gap-4">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                <CalendarIcon size={12} className="text-pf-red" /> Fecha Inicio
+              </label>
+              <input
+                type="date"
+                value={fechaInicio}
+                onChange={(e) => setFechaInicio(e.target.value)}
+                className="bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold rounded-xl px-3 py-2 outline-none focus:border-pf-red focus:ring-1 focus:ring-pf-red/20 transition-all"
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                <CalendarIcon size={12} className="text-pf-red" /> Fecha Fin
+              </label>
+              <input
+                type="date"
+                value={fechaFin}
+                onChange={(e) => setFechaFin(e.target.value)}
+                className="bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold rounded-xl px-3 py-2 outline-none focus:border-pf-red focus:ring-1 focus:ring-pf-red/20 transition-all"
+              />
+            </div>
+            <button
+              onClick={handleBuscarPorFecha}
+              className="mt-auto bg-slate-800 text-white p-2.5 rounded-xl hover:bg-black transition-colors shadow-sm active:scale-95"
+              title="Buscar"
+            >
+              <Search size={16} />
+            </button>
+            <button
+              onClick={handleResetFiltros}
+              className="mt-auto bg-slate-100 text-slate-500 p-2.5 rounded-xl hover:bg-slate-200 transition-colors shadow-sm active:scale-95 border border-slate-200"
+              title="Limpiar Filtros"
+            >
+              <RotateCcw size={16} />
+            </button>
+          </div>
+        </div>
+
+        {/* NIVEL 3: FILTROS INTERNOS Y EXPORTACIÓN */}
         <div className="flex justify-between items-center">
           <SeguimientoHeader
             modoVista={modoVista}
@@ -280,11 +394,11 @@ export const SeguimientoOTsView = () => {
       <AnalysisDashboard
         isOpen={showAnalysis}
         onClose={() => setShowAnalysis(false)}
-        periodoLabel={`${semanaComparar || 'Inicio'} -> ${reporteActual}`}
-        flowStats={serverStats.flowStats}
-        techStats={serverStats.techStats}
+        periodoLabel={`${selectedSemana === 'TODAS' ? (selectedYear === 'TODOS' ? 'Histórico' : selectedYear) : selectedSemana}`}
+        flowStats={filteredAnalysisStats.flow}
+        techStats={filteredAnalysisStats.tech}
         plantasDisponibles={LISTA_PLANTAS_INDIVIDUALES}
-        currentData={dataActual}
+        currentData={dataDashboard}
       />
 
       {viewDetail && (

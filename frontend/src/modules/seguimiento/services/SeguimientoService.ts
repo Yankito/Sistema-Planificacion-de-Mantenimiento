@@ -16,19 +16,37 @@ export const getSemanas = async (tipo: string = 'SEGUIMIENTO'): Promise<string[]
 };
 
 // Obtener los datos brutos de una semana
-export const getPedidos = async (): Promise<AtrasoRow[]> => {
-  const res = await fetch(`${API_BASE}/pedidos`);
+export const getPedidos = async (fechaInicio?: string, fechaFin?: string): Promise<AtrasoRow[]> => {
+  let url = `${API_BASE}/pedidos`;
+  const params = new URLSearchParams();
+  if (fechaInicio) params.append('fechaInicio', fechaInicio);
+  if (fechaFin) params.append('fechaFin', fechaFin);
+
+  if (params.toString()) {
+    url += `?${params.toString()}`;
+  }
+
+  const res = await fetch(url);
   if (!res.ok) throw new Error("Error al cargar pedidos");
   return res.json();
 };
 
-// Obtener Analítica procesada (Llamada al nuevo endpoint del backend)
-export const getAnalytics = async (actual: string, anterior: string): Promise<{
+// Obtener Analítica procesada
+export const getAnalytics = async (actual: string, anterior: string, fechaInicio?: string, fechaFin?: string): Promise<{
   flowStats: BacklogStats,
   techStats: TechStats[],
   metadata: Record<string, unknown>
 }> => {
-  const res = await fetch(`${API_BASE}/dashboard-stats/${actual}/${anterior}`);
+  let url = `${API_BASE}/dashboard-stats/${actual}/${anterior}`;
+  const params = new URLSearchParams();
+  if (fechaInicio) params.append('fechaInicio', fechaInicio);
+  if (fechaFin) params.append('fechaFin', fechaFin);
+
+  if (params.toString()) {
+    url += `?${params.toString()}`;
+  }
+
+  const res = await fetch(url);
   if (!res.ok) {
     const err = await res.json();
     throw new Error(err.error || "Error al procesar analítica");

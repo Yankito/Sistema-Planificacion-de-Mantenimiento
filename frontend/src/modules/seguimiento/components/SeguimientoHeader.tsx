@@ -29,17 +29,15 @@ export const SeguimientoHeader = ({
             <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200 shadow-inner">
                 <button
                     onClick={() => { setModoVista("ATRASOS"); resetViewDetail(); }}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-black transition-all ${
-                        modoVista === 'ATRASOS' ? 'bg-white text-pf-red shadow-sm' : 'text-slate-400 hover:text-slate-600'
-                    }`}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-black transition-all ${modoVista === 'ATRASOS' ? 'bg-white text-pf-red shadow-sm' : 'text-slate-400 hover:text-slate-600'
+                        }`}
                 >
                     <Clock size={14} /> ATRASOS
                 </button>
                 <button
                     onClick={() => { setModoVista("CUMPLIDAS"); resetViewDetail(); }}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-black transition-all ${
-                        modoVista === 'CUMPLIDAS' ? 'bg-white text-green-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'
-                    }`}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-black transition-all ${modoVista === 'CUMPLIDAS' ? 'bg-white text-green-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'
+                        }`}
                 >
                     <CheckCircle size={14} /> CUMPLIDAS
                 </button>
@@ -62,15 +60,16 @@ export const SeguimientoHeader = ({
                 </div>
 
                 {/* FILTRO SEMANA */}
-                <div className="flex flex-col gap-1">
+                <div className={`flex flex-col gap-1 transition-opacity ${selectedYear === "TODOS" ? "opacity-40" : "opacity-100"}`}>
                     <span className="text-[9px] font-black text-slate-400 uppercase flex items-center gap-1">
                         <Filter size={10} /> Semana
                     </span>
                     <div className="flex items-center gap-3">
                         <select
+                            disabled={selectedYear === "TODOS"}
                             value={selectedSemana}
                             onChange={(e) => setSelectedSemana(e.target.value)}
-                            className="text-xs font-bold bg-white border border-slate-200 px-3 py-1.5 rounded-xl outline-none text-slate-700 cursor-pointer shadow-sm min-w-[90px] hover:border-slate-300 transition-colors"
+                            className="text-xs font-bold bg-white border border-slate-200 px-3 py-1.5 rounded-xl outline-none text-slate-700 cursor-pointer shadow-sm min-w-[90px] hover:border-slate-300 transition-colors disabled:cursor-not-allowed"
                         >
                             {semanasInRows.map((sem: string) => <option key={sem} value={sem}>{formatLabel(sem)}</option>)}
                         </select>

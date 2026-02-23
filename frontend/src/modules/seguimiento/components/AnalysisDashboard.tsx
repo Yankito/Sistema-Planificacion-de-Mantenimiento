@@ -114,18 +114,38 @@ export const AnalysisDashboard = ({
     const techName = currentView.data.nombre;
     const allOrders = currentData.filter(d => d.detallesTecnicos?.some(t => t.tecnico.nombre === techName));
 
-    // Filtrado dinámico para la vista de perfil
-    const filtered = allOrders.filter(o => {
+    // 1. Filtrado para Estadísticas (Planta + Periodo + Search)
+    const baseFiltered = allOrders.filter(o => {
       const matchPlanta = techFilters.planta === "TODAS" || o.planta === techFilters.planta;
       const matchPeriodo = techFilters.periodo === "TODOS" || o.periodo === techFilters.periodo;
       const matchSearch = !techSearch || o.ot.toLowerCase().includes(techSearch.toLowerCase()) || o.descripcion.toLowerCase().includes(techSearch.toLowerCase());
       return matchPlanta && matchPeriodo && matchSearch;
     });
 
+    // 2. Filtrado final para la lista (incluye CUMPLIMIENTO)
+    const listFiltered = baseFiltered.filter(o => {
+      const techStatus = o.detallesTecnicos?.find(t => t.tecnico.nombre === techName);
+      if (techFilters.cumplimiento === "CUMPLIDAS") return techStatus?.opFinalizada === true;
+      if (techFilters.cumplimiento === "PENDIENTES") return techStatus?.opFinalizada === false;
+      return true;
+    });
+
+    // 3. Recalcular Stats para este set filtrado
+    const totalAsignado = baseFiltered.length;
+    const finalizadas = baseFiltered.filter(o => o.detallesTecnicos?.find(t => t.tecnico.nombre === techName)?.opFinalizada).length;
+    const pendientes = totalAsignado - finalizadas;
+    const efectividad = totalAsignado > 0 ? Math.round((finalizadas / totalAsignado) * 100) : 0;
+
     return {
       techName,
-      orders: filtered,
-      stats: currentView.data, // Usamos las stats base que vienen del servidor
+      orders: listFiltered,
+      stats: {
+        ...currentView.data,
+        totalAsignado,
+        finalizadas,
+        pendientes,
+        efectividad
+      },
       activePlants: Array.from(new Set(allOrders.map(o => o.planta))).sort(),
       activePeriods: Array.from(new Set(allOrders.map(o => o.periodo))).sort(),
     };

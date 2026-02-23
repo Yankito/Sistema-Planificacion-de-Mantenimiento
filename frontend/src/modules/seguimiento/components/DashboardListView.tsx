@@ -1,4 +1,4 @@
-import { Search, ChevronLeft, ChevronRight, TrendingUp, User, ArrowRight, Plus, Factory, CheckCircle2, X } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, TrendingUp, User, ArrowRight, Plus, Factory, CheckCircle2, X, ArrowUpDown } from "lucide-react";
 import { useDashboardList } from "../hooks/useDashboardList";
 import type { OTFlowResult, TechStats, BacklogStats } from "../types";
 
@@ -27,6 +27,7 @@ export const DashboardListView = ({
     subTabFlow, setSubTabFlow,
     searchTerm, setSearchTerm,
     filterPlanta, setFilterPlanta,
+    sortConfig, setSortConfig,
     page, setPage,
     paginatedList,
     totalPages
@@ -49,7 +50,7 @@ export const DashboardListView = ({
           <button onClick={() => setActiveTab("FLOW")} className={`flex-1 py-2 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-2 ${activeTab === 'FLOW' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>
             <TrendingUp size={14} /> EVOLUCIÓN
           </button>
-          <button onClick={() => setActiveTab("TECNICOS")} className={`flex-1 py-2 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-2 ${activeTab === 'TECNICOS' ? 'bg-white text-red-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>          
+          <button onClick={() => setActiveTab("TECNICOS")} className={`flex-1 py-2 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-2 ${activeTab === 'TECNICOS' ? 'bg-white text-red-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>
             <User size={14} /> TÉCNICOS
           </button>
         </div>
@@ -63,11 +64,30 @@ export const DashboardListView = ({
           </div>
         )}
 
+        {/* SUBTABS TECNICOS (SORTING) */}
+        {activeTab === "TECNICOS" && (
+          <div className="flex gap-2 mb-4 overflow-x-auto pb-1 no-scrollbar">
+            <button
+              onClick={() => setSortConfig("nombre")}
+              className={`px-3 py-1 rounded-full text-[10px] font-bold border transition-colors flex items-center gap-1 ${sortConfig?.key === 'nombre' ? 'bg-purple-50 text-purple-600 border-purple-200' : 'bg-white text-slate-400 border-slate-200'}`}
+            >
+              <ArrowUpDown size={12} /> NOMBRE {sortConfig?.key === 'nombre' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
+            </button>
+            <button
+              onClick={() => setSortConfig("efectividad")}
+              className={`px-3 py-1 rounded-full text-[10px] font-bold border transition-colors flex items-center gap-1 ${sortConfig?.key === 'efectividad' ? 'bg-indigo-50 text-indigo-600 border-indigo-200' : 'bg-white text-slate-400 border-slate-200'}`}
+            >
+              <ArrowUpDown size={12} /> CUMPLIMIENTO {sortConfig?.key === 'efectividad' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
+            </button>
+          </div>
+        )}
+
         {/* FILTROS */}
         <div className="flex gap-2">
           <div className="relative min-w-[120px]">
             <Factory className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
             <select value={filterPlanta} onChange={(e) => setFilterPlanta(e.target.value)} className="w-full pl-9 pr-2 py-2 bg-slate-100 rounded-xl text-xs font-bold text-slate-700 outline-none border border-slate-200 focus:border-blue-200 cursor-pointer appearance-none">
+              <option value="TODAS">TODAS</option>
               {plantasDisponibles.map(p => (<option key={p} value={p}>{p}</option>))}
             </select>
           </div>
@@ -91,11 +111,11 @@ export const DashboardListView = ({
             if (activeTab === "FLOW") {
               const otItem = item as OTFlowResult;
               return (
-                <div 
-                  key={otItem.ot} 
+                <div
+                  key={otItem.ot}
                   role="button"
                   tabIndex={0}
-                  onClick={() => onSelectOT(otItem)} 
+                  onClick={() => onSelectOT(otItem)}
                   className="bg-white p-3 rounded-xl border border-slate-200 hover:border-blue-300 hover:shadow-md cursor-pointer transition-all flex justify-between items-start group"
                 >
                   <div className="flex-1 min-w-0 pr-2">
@@ -117,11 +137,11 @@ export const DashboardListView = ({
             } else {
               const techItem = item as TechStats;
               return (
-                <div 
-                  key={techItem.nombre} 
+                <div
+                  key={techItem.nombre}
                   role="button"
                   tabIndex={0}
-                  onClick={() => onSelectTech(techItem, filterPlanta)} 
+                  onClick={() => onSelectTech(techItem, filterPlanta)}
                   className="bg-white p-3 rounded-xl border border-slate-200 hover:border-purple-300 hover:shadow-md cursor-pointer transition-all flex items-center justify-between group"
                 >
                   <div className="flex items-center gap-3 flex-1">

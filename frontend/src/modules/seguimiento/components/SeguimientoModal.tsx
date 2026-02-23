@@ -35,7 +35,8 @@ export const SeguimientoModal = ({
     dataAnterior,
     viewDetail,
     PLANTAS_COMPLEJO,
-    PLANTAS_PF_ALIMENTOS
+    PLANTAS_PF_ALIMENTOS,
+    modoVista
   });
 
   return (

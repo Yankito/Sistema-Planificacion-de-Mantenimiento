@@ -171,3 +171,20 @@ export const getYearOptions = (back = 2, forward = 2) => {
   }
   return years;
 };
+
+/**
+ * Formatea una fecha a YYYY-MM-DD (Local)
+ */
+export const toISODate = (d: Date) => {
+  const year = d.getFullYear();
+  const month = (d.getMonth() + 1).toString().padStart(2, '0');
+  const day = d.getDate().toString().padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+/**
+ * Atajos de fechas
+ */
+export const getStartOfPreviousYear = () => new Date(new Date().getFullYear() - 1, 0, 1);
+export const getStartOfCurrentYear = () => new Date(new Date().getFullYear(), 0, 1);
+export const getCurrentDate = () => new Date();

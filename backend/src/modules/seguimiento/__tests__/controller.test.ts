@@ -54,7 +54,7 @@ describe('SeguimientoController', () => {
 
     describe('getPedidos', () => {
         it('debe retornar datos si existen', async () => {
-            const req = {}; // No params needed anymore
+            const req = { query: { fechaInicio: '2025-01-01', fechaFin: '2025-01-31' } };
             const res = { json: vi.fn() };
 
             const mockData = [{ id: 1 }];
@@ -68,7 +68,7 @@ describe('SeguimientoController', () => {
 
     describe('getDashboardStats', () => {
         it('debe calcular estadísticas de flujo y técnicos', async () => {
-            const req = { params: { actual: '2025-W10', anterior: '2025-W09' } };
+            const req = { query: { actual: { mes: 10, anio: 2025 }, anterior: { mes: 9, anio: 2025 } } };
             const res = { json: vi.fn() };
 
             vi.spyOn(SeguimientoRepository, 'getPedidos').mockResolvedValue([]);
@@ -89,7 +89,7 @@ describe('SeguimientoController', () => {
 
     describe('descargarReporte', () => {
         it('debe generar y descargar reporte excel', async () => {
-            const req = { query: { semana: '2025-W10', modo: 'ATRASOS', semanaAnt: '2025-W09' } };
+            const req = { query: { fechaInicio: '2025-01-01', fechaFin: '2025-01-31', modo: 'ATRASOS', semanaAnt: '2025-W09' } };
             const res = {
                 setHeader: vi.fn(),
                 send: vi.fn()
