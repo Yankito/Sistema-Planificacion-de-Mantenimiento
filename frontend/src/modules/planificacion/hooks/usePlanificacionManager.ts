@@ -22,7 +22,6 @@ export const usePlanificacionManager = () => {
   const [loadingAction, setLoadingAction] = useState(false);
   const cargandoPlan = loadingPlan || loadingHorarios || loadingAction;
   const [plantaPlan, setPlantaPlan] = useState("PF3");
-  const [plantaHorarios, setPlantaHorarios] = useState("PF3");
   const [fechaFoco, setFechaFoco] = useState<string | null>(null);
 
   /**
@@ -50,11 +49,6 @@ export const usePlanificacionManager = () => {
     if (data.tecnicosMap) setTecnicosMap(new Map(Object.entries(data.tecnicosMap)));
     if (data.mapaHorarios) setMapaHorariosActual(new Map(Object.entries(data.mapaHorarios)));
 
-    // 4. Cambiar semana si el servidor la especifica o si el primer resultado tiene una distinta
-    const primeraSemana = data.semana || data.resultados?.[0]?.semana || data.sinAsignar?.[0]?.semana;
-    if (primeraSemana) {
-      setPeriodoSeleccionado(primeraSemana);
-    }
 
   }, []);
 
@@ -136,10 +130,17 @@ export const usePlanificacionManager = () => {
   }, [horariosResult]);
 
   // Efecto principal: Cargar horarios al cambiar filtros
+  // Cargamos horarios tanto si cambia la planta del Gantt como si cambia la de Planificación
   useEffect(() => {
-    console.log("usePlanificacionManager: Cargando horarios para periodo", periodoSeleccionado, "y planta", plantaHorarios);
-    cargarHorarios(periodoSeleccionado, plantaHorarios);
-  }, [periodoSeleccionado, plantaHorarios, cargarHorarios]);
+    console.log("usePlanificacionManager: Cargando horarios para periodo", periodoSeleccionado, "y planta", { plantaPlan });
+    // Cargamos para plantaPlan (vista Gantt)
+    cargarHorarios(periodoSeleccionado, plantaPlan);
+
+    // Y si es distinta, también para plantaPlan (vista Planificación) para el Magic Wand
+    if (plantaPlan !== plantaPlan) {
+      cargarHorarios(periodoSeleccionado, plantaPlan);
+    }
+  }, [periodoSeleccionado, plantaPlan, cargarHorarios]);
 
   // --- ACCIONES PRINCIPALES ---
 
@@ -269,6 +270,7 @@ export const usePlanificacionManager = () => {
     setPlanResult,
     planFiltrado,
     planResultSinAsignar,
+    setPlanResultSinAsignar,
     sinAsignarFiltrado,
     horariosResult,
     tecnicosMap,
@@ -280,8 +282,6 @@ export const usePlanificacionManager = () => {
     periodoSeleccionado,
     plantaPlan,
     setPlantaPlan,
-    plantaHorarios,
-    setPlantaHorarios,
     setPeriodoSeleccionado,
     fechaFoco,
     setFechaFoco,
@@ -299,6 +299,7 @@ export const usePlanificacionManager = () => {
     handleAsignarTecnico,
     handleModificarCupos,
     procesarArchivo,
+    guardarPlanificacion: PlanificacionService.guardarPlanificacion,
 
     reset: () => {
       setPlanResult([]);

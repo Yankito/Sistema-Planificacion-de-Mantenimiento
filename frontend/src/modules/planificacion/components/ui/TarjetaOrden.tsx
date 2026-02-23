@@ -96,6 +96,13 @@ export const TarjetaOrden = ({ orden, handleDragStart, handleDragEnd, esAsignada
             <span>Última vez: {orden.fechaAnterior}</span>
           </div>
         )}
+
+        {orden.fechaSugerida && (
+          <div className="flex items-center gap-1 text-[9px] font-black text-slate-600 bg-slate-100 px-2 py-1 rounded-lg w-fit mt-1">
+            <Calendar size={10} />
+            <span>Prog: {orden.fechaSugerida}</span>
+          </div>
+        )}
       </div>
     </div>
   );

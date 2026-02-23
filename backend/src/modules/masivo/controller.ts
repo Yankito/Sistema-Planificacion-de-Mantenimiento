@@ -100,7 +100,7 @@ export const MassiveController = {
             const counts = { empleados: 0, horarios: 0, activos: 0, pedidos: 0, fallas: 0 };
 
             // DETECCIÓN DE SIMULACIÓN EAM
-            const hojasPedidosPosibles = ['PF1', 'PF2', 'MP3', 'MPS', 'PEDIDO DE TRABAJO', 'PEDIDOS'];
+            const hojasPedidosPosibles = ['PF1', 'PF2', 'MP3', 'MPS'];
             const hojasPedidosEncontradas = sheetNames.filter(s => hojasPedidosPosibles.includes(s.trim().toUpperCase()));
             const hojaActivos = sheetNames.find(s => s.trim().toUpperCase() === 'ACTIVOS');
 
@@ -113,6 +113,7 @@ export const MassiveController = {
                 // 1. Cargar PEDIDOS (Múltiples hojas)
                 let totalPedidos = 0;
                 for (const hojaNombre of hojasPedidosEncontradas) {
+                    console.log(`[MASIVO] 📊 Procesando hoja ${hojaNombre} con pedidos...`);
                     const pedidosRaw = XLSX.utils.sheet_to_json(workbook.Sheets[hojaNombre]);
                     const pedidosMapped = pedidosRaw.map((r: any) => ({
                         pedido_trabajo: String(r['Pedido de Trabajo'] || r['PEDIDO_DE_TRABAJO'] || '').trim(),

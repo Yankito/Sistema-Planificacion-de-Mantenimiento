@@ -1,7 +1,6 @@
 import { Moon, CheckCircle2, UserX, Users, Wand2, Loader2 } from "lucide-react";
 import { useCalendarioGrid } from "../hooks/useCalendarioGrid";
 import { type PlanResult } from "../types";
-import { type Tecnico } from "../../../shared/types";
 
 interface CalendarioProps {
   planResult: PlanResult[];
@@ -11,7 +10,7 @@ interface CalendarioProps {
   handleDragEnter: (e: React.DragEvent, fecha: string) => void;
   handleDragOver: (e: React.DragEvent) => void;
   handleDrop: (e: React.DragEvent, fecha: string) => void;
-  isNocheValid: (tecnicos: Tecnico[], fecha: string) => boolean;
+  isNocheValid: (tecnicos: any[], fecha: string, mapaHorarios: Map<string, string[]>) => boolean;
   showSuccess: boolean;
   dragOverDate: string | null;
   ordenesPorDia: Record<string, PlanResult[]>; // Tipado para el objeto de agrupación
@@ -20,6 +19,7 @@ interface CalendarioProps {
   mensajeExito?: string;
   handleSugerirTodo: () => void;
   periodoSeleccionado: string;
+  mapaHorarios: Map<string, string[]>;
   cargandoPlan?: boolean;
 }
 
@@ -40,6 +40,7 @@ export const Calendario = ({
   mensajeExito = "Planificación Actualizada",
   handleSugerirTodo,
   periodoSeleccionado,
+  mapaHorarios,
   cargandoPlan
 }: CalendarioProps) => {
 
@@ -144,7 +145,7 @@ export const Calendario = ({
                     const hasAnyVacancy = vacantesCount > 0;
 
                     const diaNum = parseInt(fecha.split('/')[0]);
-                    const esNocheOk = draggingOT && isNocheValid(draggingOT.tecnicos.map(t => ({ ...t, planta: draggingOT.planta })), fecha);
+                    const esNocheOk = draggingOT && isNocheValid(draggingOT.tecnicos, fecha, mapaHorarios);
                     const isHovered = dragOverDate === fecha;
                     const isDaySelected = diaSeleccionado === fecha;
 

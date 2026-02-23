@@ -20,6 +20,8 @@ interface UsePlanificacionProps {
   mapaHorarios: Map<string, string[]>;
   cargandoPlan?: boolean;
   itemsVisualizados?: PlanResult[];
+  planResultSinAsignar?: PlanResult[];
+  setPlanResultSinAsignar?: (data: PlanResult[]) => void;
 }
 
 export const usePlanificacionLogic = ({
@@ -29,7 +31,9 @@ export const usePlanificacionLogic = ({
   tecnicosMap,
   mapaHorarios,
   cargandoPlan = false,
-  itemsVisualizados
+  itemsVisualizados,
+  planResultSinAsignar = [],
+  setPlanResultSinAsignar
 }: UsePlanificacionProps) => {
 
   const [diaSeleccionado, setDiaSeleccionado] = useState<string | null>(null);
@@ -140,11 +144,36 @@ export const usePlanificacionLogic = ({
     e.preventDefault();
     if (!draggingOT) return;
 
-    const nuevoPlan = planResult.map((p) =>
-      p.nroOrden === draggingOT.nroOrden ? { ...p, fechaSugerida: fechaDestino } : p
-    );
+    // 1. Verificar si la orden ya estaba en el plan actual
+    const estaEnPlan = planResult.find(p => p.nroOrden === draggingOT.nroOrden);
 
-    setPlanResult(nuevoPlan);
+    if (estaEnPlan) {
+      // Caso A: Ya estaba asignada, solo cambiamos la fecha
+      const nuevoPlan = planResult.map((p) =>
+        p.nroOrden === draggingOT.nroOrden ? { ...p, fechaSugerida: fechaDestino } : p
+      );
+      setPlanResult(nuevoPlan);
+    } else {
+      // Caso B: Viene de 'Pendientes' (sin asignar)
+      const nuevaOT = {
+        ...draggingOT,
+        fechaSugerida: fechaDestino,
+        tecnicos: draggingOT.tecnicos && draggingOT.tecnicos.length > 0
+          ? draggingOT.tecnicos
+          : [{ nombre: 'VACANTE', rol: 'M' }]
+      };
+
+      // La añadimos al plan activo
+      setPlanResult([...planResult, nuevaOT]);
+
+      // La removemos de la lista de sin asignar
+      if (setPlanResultSinAsignar) {
+        setPlanResultSinAsignar(planResultSinAsignar.filter(p => p.nroOrden !== draggingOT.nroOrden));
+      }
+    }
+
+    setDraggingOT(null);
+    setDragOverDate(null);
   };
 
   const handleDragEnd = () => {

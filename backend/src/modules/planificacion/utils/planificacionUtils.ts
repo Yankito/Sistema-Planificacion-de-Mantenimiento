@@ -2,14 +2,19 @@ export const PLANTAS_CI = ["PF3", "PF4", "PF5", "PF6", "CDT"];
 export const ROLES_NO_VALIDAN_TURNO = ["SUPERVISOR", "SE"]; // SE = Servicio Externo
 
 // Valida si la planta del tecnico sirve para la OT
-export const esPlantaCompatible = (plantaTecnico: string, plantaOT: string) => {
+export const esPlantaCompatible = (plantaTecnico: string, plantaOT: string, rol?: string) => {
   const emp = (plantaTecnico || "").toUpperCase().trim();
   const ot = (plantaOT || "").toUpperCase().trim();
+  const r = String(rol || "").trim().toUpperCase();
 
-  if (emp === ot) return true;
-  if (emp === "CI" && PLANTAS_CI.includes(ot)) return true; // Lógica CI
-  if (ot === "OTROS") return true; // Flexibilidad para planta OTROS
-  
+  // Los técnicos de "CI" son compatibles con cualquier planta en PLANTAS_CI
+  const esCICompatible = emp === "CI" && PLANTAS_CI.includes(ot);
+
+  if (emp === ot || esCICompatible || ot === "OTROS") return true;
+
+  // Supervisores y Servicio Externo son globales para cualquier planta
+  if (r === 'SUPERVISOR' || r === 'SE') return true;
+
   return false;
 };
 
@@ -17,7 +22,7 @@ export const esPlantaCompatible = (plantaTecnico: string, plantaOT: string) => {
 export const rolesCoinciden = (rolRequerido: string, rolTecnico: string) => {
   const req = String(rolRequerido || "").trim().toUpperCase();
   const emp = String(rolTecnico || "").trim().toUpperCase();
-  
+
   // Comparación estricta para roles especiales
   return req === emp;
 };

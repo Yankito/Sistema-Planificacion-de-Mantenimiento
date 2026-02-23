@@ -51,7 +51,7 @@ describe('usePlanificacionManager', () => {
     await act(async () => {
       result.current.setPeriodoSeleccionado('2026-01');
       result.current.setPlanResult([{ mes: '2026-01' }] as PlanResult[]);
-      result.current.setPlantaHorarios('PF4');
+      result.current.setPlantaPlan('PF4');
     });
 
     expect(mockedGetHorarios).toHaveBeenCalledWith(1, 2026, 'PF4');

@@ -46,7 +46,7 @@ describe('PlanificacionRepository', () => {
             const result = await PlanificacionRepository.getHorarios(2, 2026, 'PF3');
 
             expect(dbConfig.query).toHaveBeenCalledWith(
-                expect.stringContaining('WHERE h.anio = :anio AND h.mes = :mes'),
+                expect.stringContaining('AND h.anio = :anio AND h.mes = :mes'),
                 expect.objectContaining({
                     anio: 2026,
                     mes: 2,

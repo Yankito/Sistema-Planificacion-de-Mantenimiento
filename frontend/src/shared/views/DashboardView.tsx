@@ -3,7 +3,7 @@ import type { AtrasoRow } from "../../modules/seguimiento/types";
 import type { PlanResult } from "../../modules/planificacion/types";
 import type { FallaRow } from "../../modules/fallas/types";
 import { FileUploader, type FileType, type UploadEvent } from "../components/FileUploader";
-import { PlayCircle, Scale, CalendarCheck, Clock, AlertTriangle, ArrowRight, BarChart2, Factory } from "lucide-react";
+import { CalendarCheck, Clock, AlertTriangle, ArrowRight, BarChart2, Factory } from "lucide-react";
 import { EmptyCard } from "../components/ui/EmptyCard";
 import { getWeekOptions } from "../utils/dateUtils";
 
@@ -14,18 +14,15 @@ import { useData } from "../../context/PlanificacionContext";
 interface DashboardProps {
   planResult: PlanResult[];
   seguimientoResult: AtrasoRow[];
-  seguimientoPrevio: AtrasoRow[];
   fallasResult: FallaRow[];
-  onEjecutarPlan: (modo: 'STRICT' | 'BALANCED', periodo: string) => Promise<boolean>;
   setActiveTab: (tab: string) => void;
   archivoCargado: boolean;
   reporteActual: string;
-  semanaComparar: string;
 }
 
 export const DashboardView = ({
   planResult, seguimientoResult, fallasResult,
-  onEjecutarPlan, setActiveTab, archivoCargado,
+  setActiveTab, archivoCargado,
   reporteActual
 }: DashboardProps) => {
 
@@ -128,13 +125,6 @@ export const DashboardView = ({
     </div>
   );
 
-  const ActionButton = ({ label, sublabel, icon: Icon, onClick, primary }: any) => (
-    <button onClick={onClick} className={`py-3 rounded-xl flex flex-col items-center justify-center transition-all transform active:scale-95 cursor-pointer ${primary ? 'bg-slate-900 text-white hover:bg-slate-800 shadow-lg' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
-      <Icon size={18} className={`mb-1 ${primary ? 'text-pf-red' : ''}`} />
-      <span className="text-[9px] font-bold uppercase">{label}</span>
-      {sublabel && <span className="text-[8px] opacity-60 font-medium">{sublabel}</span>}
-    </button>
-  );
 
   const handleFileProcess = async (e: UploadEvent, tipo: FileType, extraData?: { mes?: number, anio?: number }) => {
     const file = (e as any).target?.files?.[0];
@@ -202,10 +192,6 @@ export const DashboardView = ({
                 <p className="text-xs text-slate-400 mt-1 cursor-pointer hover:text-pf-red" onClick={() => handleUploadRequest('PLAN')}>Subir archivo de planificación...</p>
               </div>
             )}
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <ActionButton label="Prioridad Noche" sublabel="Estricto" icon={PlayCircle} onClick={() => onEjecutarPlan('STRICT', reporteActual)} primary />
-            <ActionButton label="Balanceado" sublabel="Equilibrado" icon={Scale} onClick={() => onEjecutarPlan('BALANCED', reporteActual)} />
           </div>
         </div>
 

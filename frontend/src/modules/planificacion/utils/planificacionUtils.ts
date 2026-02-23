@@ -8,13 +8,18 @@ export const ROLES_NO_VALIDAN_TURNO: string[] = ["SUPERVISOR", "SE"];
  * Lógica de compatibilidad de plantas:
  * Los tecnicos de "CI" pueden trabajar en cualquier planta de la lista PLANTAS_CI.
  */
-export const esPlantaCompatible = (plantaTecnico: string, plantaOT: string): boolean => {
+export const esPlantaCompatible = (plantaTecnico: string, plantaOT: string, rol?: string): boolean => {
   const emp = (plantaTecnico || "").toUpperCase().trim();
   const ot = (plantaOT || "").toUpperCase().trim();
+  const r = String(rol || "").trim().toUpperCase();
 
-  if (emp === ot) return true;
-  if (emp === "CI" && PLANTAS_CI.includes(ot)) return true;
-  if (ot === "OTROS") return true;
+  // Los técnicos de "CI" son compatibles con cualquier planta en PLANTAS_CI
+  const esCICompatible = emp === "CI" && PLANTAS_CI.includes(ot);
+
+  if (emp === ot || esCICompatible || ot === "OTROS") return true;
+
+  // Supervisores y Servicio Externo son globales para cualquier planta
+  if (r === 'SUPERVISOR' || r === 'SE') return true;
 
   return false;
 };

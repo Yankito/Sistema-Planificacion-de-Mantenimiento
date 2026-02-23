@@ -128,8 +128,7 @@ export const PlanificacionRepository = {
           AND p.pedido_trabajo NOT LIKE 'OB%'
           AND NOT EXISTS (
               SELECT 1 FROM PF_EAM_CUMPLIMIENTO c 
-              WHERE c.nro_ot = p.pedido_trabajo 
-              AND (c.tipo IN ('OB', 'OM'))
+              WHERE c.nro_ot = p.pedido_trabajo
           )
       )
       SELECT * FROM DataCalculada
@@ -167,6 +166,35 @@ export const PlanificacionRepository = {
     };
   },
 
+  getHistoricoPedidos: async (mes: number, anio: number) => {
+    const sql = `
+      SELECT 
+        numero_activo as "NUMERO DE ACTIVO", 
+        descripcion as "DESCRIPCION", 
+        pedido_trabajo as "PEDIDO DE TRABAJO", 
+        fecha_inicial_programada as "FECHA INICIAL PROGRAMADA"
+      FROM PF_EAM_PEDIDOS
+      WHERE EXTRACT(YEAR FROM fecha_inicial_programada) = :anio 
+        AND EXTRACT(MONTH FROM fecha_inicial_programada) = :mes
+    `;
+    const res = await query(sql, { anio, mes });
+    return res?.rows || [];
+  },
+
+  getHistoricoCompliance: async (mes: number, anio: number) => {
+    const sql = `
+      SELECT nro_ot as "NRO_OT", empleado as "EMPLEADO" 
+      FROM PF_EAM_CUMPLIMIENTO
+      WHERE nro_ot IN (
+        SELECT pedido_trabajo FROM PF_EAM_PEDIDOS 
+        WHERE EXTRACT(YEAR FROM fecha_inicial_programada) = :anio 
+          AND EXTRACT(MONTH FROM fecha_inicial_programada) = :mes
+      )
+    `;
+    const res = await query(sql, { anio, mes });
+    return res?.rows || [];
+  },
+
   getPlanificacion: async (mes: number, anio: number, planta?: string) => {
     // Reutilizamos la misma lógica centralizada (ahora basada en Mes/Anio)
     const data = await PlanificacionRepository.getDataParaPlanificar(mes, anio, planta);
@@ -175,11 +203,11 @@ export const PlanificacionRepository = {
 
   getHorarios: async (mes: number, anio: number, planta: string | null) => {
     const sql = `
-      SELECT h.empleado_nombre, e.rol, e.planta, h.turnos
-      FROM PF_IM_HORARIOS h
-      LEFT JOIN PF_IM_TECNICOS e ON TRIM(UPPER(h.empleado_nombre)) = TRIM(UPPER(e.nombre))
-      WHERE h.anio = :anio AND h.mes = :mes
-      AND (
+      SELECT e.nombre as empleado_nombre, e.rol, e.planta, h.turnos
+      FROM PF_IM_TECNICOS e
+      LEFT JOIN PF_IM_HORARIOS h ON TRIM(UPPER(h.empleado_nombre)) = TRIM(UPPER(e.nombre))
+        AND h.anio = :anio AND h.mes = :mes
+      WHERE (
           :plantaFiltro IS NULL 
           OR e.planta LIKE :plantaLike 
           OR (:plantaFiltro IN ('PF3', 'PF4', 'PF5', 'PF6', 'CDT') AND e.planta = 'CI')
@@ -194,7 +222,9 @@ export const PlanificacionRepository = {
       nombre: r.EMPLEADO_NOMBRE,
       rol: r.ROL || 'M',
       planta: r.PLANTA || planta || 'VARIOS',
-      turnos: typeof r.TURNOS === 'string' ? JSON.parse(r.TURNOS) : r.TURNOS
+      turnos: r.TURNOS
+        ? (typeof r.TURNOS === 'string' ? JSON.parse(r.TURNOS) : r.TURNOS)
+        : Array(31).fill('L')
     }));
   },
 

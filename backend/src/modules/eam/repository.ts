@@ -5,9 +5,10 @@ export const EamRepository = {
 
   truncateTables: async () => {
     // Orden importante por FKs si las hubiera, aunque aquí no definimos FK hard.
-    await query("TRUNCATE TABLE PF_EAM_CUMPLIMIENTO");
-    await query("TRUNCATE TABLE PF_EAM_MASIVO");
-    await query("TRUNCATE TABLE PF_EAM_PEDIDOS");
+    console.log("Truncando tablas de EAM...");
+    try { await query("TRUNCATE TABLE PF_EAM_CUMPLIMIENTO"); } catch (e) { console.warn("Tabla cumplimiento no existe o error truncate", e); }
+    try { await query("TRUNCATE TABLE PF_EAM_MASIVO"); } catch (e) { console.warn("Tabla masivo no existe o error truncate", e); }
+    try { await query("TRUNCATE TABLE PF_EAM_PEDIDOS"); } catch (e) { console.warn("Tabla pedidos no existe o error truncate", e); }
     try { await query("TRUNCATE TABLE PF_EAM_ACTIVOS"); } catch (e) { console.warn("Tabla activos no existe o error truncate", e); }
   },
 

@@ -10,8 +10,8 @@ export const HorariosView = () => {
   const { planning: manager } = useData();
   const {
     horariosResult,
-    plantaHorarios,
-    setPlantaHorarios,
+    plantaPlan,
+    setPlantaPlan,
     cargandoPlan,
     handleCambioTurno,
     periodoSeleccionado,
@@ -43,7 +43,7 @@ export const HorariosView = () => {
     }
   };
 
-  const plantas = ["PF3", "PF4", "PF5", "PF6", "CDT", "CI", "OTROS"];
+  const plantas = ["PF1", "PF2", "PF3", "PF4", "PF5", "PF6", "CDT", "CI", "OTROS"];
   const mesOpts = getMonthOptions().options;
 
   const totalMecanicos = horariosResult.filter(h =>
@@ -100,8 +100,8 @@ export const HorariosView = () => {
           <div className="flex flex-col w-full sm:w-48">
             <label className="text-[10px] font-black text-slate-400 uppercase mb-1 px-1">Planta</label>
             <select
-              value={plantaHorarios}
-              onChange={(e) => setPlantaHorarios(e.target.value)}
+              value={plantaPlan}
+              onChange={(e) => setPlantaPlan(e.target.value)}
               className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-pf-red/20 transition-all"
             >
               {plantas.map((p) => <option key={p} value={p}>{p}</option>)}

@@ -40,13 +40,10 @@ const AppContent = () => {
             <DashboardView
               planResult={planning.planResult}
               seguimientoResult={seguimiento.dataActual}
-              seguimientoPrevio={seguimiento.dataAnterior}
               fallasResult={fallas.data}
-              onEjecutarPlan={planning.ejecutarPlanificacion}
               setActiveTab={(path) => navigate(path === 'dash' ? '/' : `/${path}`)}
               archivoCargado={planning.planResult.length > 0}
               reporteActual={seguimiento.reporteActual || config.semanaActual}
-              semanaComparar={seguimiento.semanaComparar}
             />
           } />
 
@@ -55,7 +52,7 @@ const AppContent = () => {
           <Route path="/seguimiento-tecnicos" element={
             <SeguimientoTecnicosView
               planResult={planning.planResult}
-              plantas={["PF3", "PF4", "PF5", "PF6", "CDT", "CI", "OTROS"]}
+              plantas={["PF1", "PF2", "PF3", "PF4", "PF5", "PF6", "CDT", "CI", "OTROS"]}
               onNavegar={handleNavegarPlanificacion}
               mes={planning.mes}
             />

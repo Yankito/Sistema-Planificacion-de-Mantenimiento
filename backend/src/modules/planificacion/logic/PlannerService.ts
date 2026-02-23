@@ -3,6 +3,7 @@ import { excelDateToJS, formatearFecha, evitarDomingo, getWeekId } from "../util
 import { limpiarKey, buscarNombreEnFila, mapDepartamentoAPlanta } from "../utils/excelHelpers.js";
 import { buscarNocheComun } from "./turnosLogic.js";
 import { distribuirCargaEquilibrada } from "./peakShavingLogic.js";
+import { necesitaValidacionTurno } from "../utils/planificacionUtils.js";
 
 export class PlannerService {
 
@@ -87,22 +88,30 @@ export class PlannerService {
           planta: plantaActual
         };
 
-        // 4. Validar Turnos (Logica importada)
-        const turnosValidos = tecnicosData.map(t => t.turnos).filter(t => t !== null) as string[][];
+        // 4. Validar Turnos
+        // Filtramos para usar solo los turnos de quienes SI validan turno (Mecánicos, Eléctricos, etc.)
+        const tecnicosQueValidan = tecnicosData.filter(t => necesitaValidacionTurno(t.rol));
+        const turnosParaValidar = tecnicosQueValidan.map(t => t.turnos).filter(t => t !== null) as string[][];
 
-        if (turnosValidos.length > 0) {
-          let fechaSugerida = new Date(fechaAntJS);
-          fechaSugerida.setMonth(fechaSugerida.getMonth() + 1);
-          let fechaFinal = buscarNocheComun(fechaSugerida, turnosValidos);
+        let fechaSugerida = new Date(fechaAntJS);
+        fechaSugerida.setMonth(fechaSugerida.getMonth() + 1);
 
+        if (tecnicosQueValidan.length === 0) {
+          // Si NADIE valida turno (ej: solo Supervisores), se asigna la fecha proyectada directa
+          const fechaFinal = evitarDomingo(fechaSugerida);
+          resultados.push({ ...objetoOT, fechaSugerida: formatearFecha(fechaFinal) });
+        } else if (turnosParaValidar.length > 0) {
+          // Si hay gente que valida y tiene turnos, buscar la noche común
+          let fechaFinal = buscarNocheComun(fechaSugerida, turnosParaValidar);
           if (fechaFinal) {
             fechaFinal = evitarDomingo(fechaFinal);
             resultados.push({ ...objetoOT, fechaSugerida: formatearFecha(fechaFinal) });
           } else {
-            sinAsignar.push({ ...objetoOT, error: "SIN HORARIO COMPATIBLE" });
+            sinAsignar.push({ ...objetoOT, error: "SIN NOCHE COMUN DISPONIBLE" });
           }
         } else {
-          sinAsignar.push({ ...objetoOT, error: "SIN TURNOS CARGADOS" });
+          // Si hay gente que valida pero no tiene turnos cargados
+          sinAsignar.push({ ...objetoOT, error: "SIN TURNOS CARGADOS (REQUERIDOS)" });
         }
       } else {
         sinAsignar.push({

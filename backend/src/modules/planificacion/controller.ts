@@ -6,42 +6,58 @@ import { query } from "../../db/config.js";
 
 export const PlanificacionController = {
 
-  // NUEVO: Ejecuta el algoritmo usando datos ya existentes en Oracle
   ejecutarPlanificacion: async (req: any, res: any) => {
     try {
-      const { mes, anio, modo, planta } = req.body; // 'periodo' en formato YYYY-MM
+      const { mes, anio, modo, planta } = req.body;
       if (!mes || !anio) return res.status(400).json({ error: "Periodo (Mes y Año) no especificado" });
 
-      // 1. Obtener datos crudos de las tablas (filtrando por planta si se especifica)
-      const { ots, empleados } = await PlanificacionRepository.getDataParaPlanificar(mes, anio, planta);
-
-      if (ots.length === 0) {
-        return res.status(404).json({ error: `No hay OTs cargadas para esta semana en Seguimiento${planta ? ' para la planta ' + planta : ''}.` });
+      // 0. Calcular periodo anterior para historial
+      let prevMes = Number(mes) - 1;
+      let prevAnio = Number(anio);
+      if (prevMes === 0) {
+        prevMes = 12;
+        prevAnio -= 1;
       }
 
-      // 2. Adaptar datos al formato que espera tu PlannerService (Normalización)
-      // Aquí mapeas los campos de Oracle (MAYÚSCULAS) a lo que tu lógica espera
+      // 1. Obtener datos crudos de las tablas
+      // Actual (OTs a planificar)
+      const { ots, empleados } = await PlanificacionRepository.getDataParaPlanificar(Number(mes), Number(anio), planta);
+      // Historico (Para continuidad)
+      const dfAnt = await PlanificacionRepository.getHistoricoPedidos(prevMes, prevAnio);
+      const dfCumplimiento = await PlanificacionRepository.getHistoricoCompliance(prevMes, prevAnio);
+      // Horarios (Para validar disponibilidad)
+      const horarios = await PlanificacionRepository.getHorarios(Number(mes), Number(anio), planta);
+
+      if (ots.length === 0) {
+        return res.status(404).json({ error: `No hay OTs cargadas para este mes en Seguimiento${planta ? ' para la planta ' + planta : ''}.` });
+      }
+
+      // 2. Adaptar datos al formato que espera PlannerService
       const datosNormalizados = ots.map(ot => ({
-        OT: ot.OT,
-        PLANTA: ot.PLANTA,
-        DESCRIPCION: ot.DESCRIPCION,
-        CLASIFICACION: ot.CLASIFICACION,
-        ES_OB: ot.ES_OB === 1
+        "NUMERO DE ACTIVO": ot.NRO_ACTIVO,
+        "DESCRIPCION": ot.DESCRIPCION,
+        "PEDIDO DE TRABAJO": ot.OT,
+        "PLANTA": ot.PLANTA,
+        "DEPARTAMENTO": ot.PLANTA // Fallback para mapDepartamentoAPlanta
       }));
 
       const tecnicosMap = new Map();
       empleados.forEach(emp => {
-        // Si hay filtro de planta, opcionalmente podríamos filtrar técnicos aquí también
-        // Pero PlannerService suele manejarlo con esPlantaCompatible
-        tecnicosMap.set(emp.NOMBRE, { planta: emp.PLANTA, rol: emp.ROL });
+        tecnicosMap.set(emp.NOMBRE.toUpperCase(), { planta: emp.PLANTA, rol: emp.ROL });
+      });
+
+      const mapaHorarios = new Map();
+      horarios.forEach(h => {
+        mapaHorarios.set(h.nombre.toUpperCase(), h.turnos);
       });
 
       // 3. Ejecutar algoritmo
       let resultado;
       if (modo === 'BALANCED') {
-        resultado = PlannerService.generarPlanificacionEquilibrada(datosNormalizados, [], [], tecnicosMap);
+        resultado = PlannerService.generarPlanificacionEquilibrada(datosNormalizados, dfAnt, dfCumplimiento, tecnicosMap);
       } else {
-        resultado = PlannerService.generarPlanificacion(datosNormalizados, [], [], tecnicosMap, new Map());
+        // En modo STRICT (Continuidad), pasamos mapaHorarios para validar la noche
+        resultado = PlannerService.generarPlanificacion(datosNormalizados, dfAnt, dfCumplimiento, tecnicosMap, mapaHorarios);
       }
 
       res.json(resultado);

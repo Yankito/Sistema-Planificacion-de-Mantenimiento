@@ -24,15 +24,18 @@ describe('PlanificacionController', () => {
             await PlanificacionController.ejecutarPlanificacion(req, res);
 
             expect(res.status).toHaveBeenCalledWith(400);
-            expect(res.json).toHaveBeenCalledWith({ error: "Periodo (Mes) no especificado" });
+            expect(res.json).toHaveBeenCalledWith({ error: "Periodo (Mes y Año) no especificado" });
         });
 
         it('debe retornar 404 si no hay OTs', async () => {
-            const req = { body: { periodo: '2025-10' } };
+            const req = { body: { mes: 10, anio: 2025 } };
             const res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
 
             vi.spyOn(PlanificacionRepository, 'getDataParaPlanificar')
                 .mockResolvedValue({ ots: [], empleados: [] } as any);
+            vi.spyOn(PlanificacionRepository, 'getHistoricoPedidos').mockResolvedValue([]);
+            vi.spyOn(PlanificacionRepository, 'getHistoricoCompliance').mockResolvedValue([]);
+            vi.spyOn(PlanificacionRepository, 'getHorarios').mockResolvedValue([]);
 
             await PlanificacionController.ejecutarPlanificacion(req, res);
 
@@ -40,14 +43,18 @@ describe('PlanificacionController', () => {
         });
 
         it('debe ejecutar planificacion estricta correctamente', async () => {
-            const req = { body: { periodo: '2025-10', modo: 'STRICT' } };
+            const req = { body: { mes: 10, anio: 2025, modo: 'STRICT', planta: 'PF1' } };
             const res = { json: vi.fn() };
 
             vi.spyOn(PlanificacionRepository, 'getDataParaPlanificar')
                 .mockResolvedValue({
-                    ots: [{ OT: '100', PLANTA: 'PF1' }],
-                    empleados: [{ NOMBRE: 'JUAN', PLANTA: 'PF1' }]
+                    ots: [{ OT: '100', PLANTA: 'PF1', NRO_ACTIVO: 'A1', DESCRIPCION: 'D1' }],
+                    empleados: [{ NOMBRE: 'JUAN', PLANTA: 'PF1', ROL: 'M' }]
                 } as any);
+
+            vi.spyOn(PlanificacionRepository, 'getHistoricoPedidos').mockResolvedValue([]);
+            vi.spyOn(PlanificacionRepository, 'getHistoricoCompliance').mockResolvedValue([]);
+            vi.spyOn(PlanificacionRepository, 'getHorarios').mockResolvedValue([]);
 
             vi.spyOn(PlannerService, 'generarPlanificacion').mockReturnValue({ result: 'ok' } as any);
 
@@ -92,7 +99,7 @@ describe('PlanificacionController', () => {
         });
 
         it('debe mapear correctamente los campos de base de datos', async () => {
-            const req = { query: { periodo: '2026-10' } };
+            const req = { query: { mes: 2, anio: 2026 } };
             const res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
 
             vi.spyOn(PlanificacionRepository, 'getPlanificacion').mockResolvedValue([
