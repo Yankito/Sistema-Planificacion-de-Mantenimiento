@@ -51,7 +51,6 @@ const AppContent = () => {
       <Sidebar
         activeTab={location.pathname}
         setActiveTab={(path) => navigate(path)}
-        onLimpiar={() => window.location.reload()}
         userRoles={roles}
       />
       <main className="flex-1 overflow-y-auto p-10 space-y-12 shadow-inner">
@@ -77,7 +76,7 @@ const AppContent = () => {
             puedeVerPlanificacion
               ? <SeguimientoTecnicosView
                 planResult={planning.planResult}
-                plantas={user?.plantas || ["PF1", "PF2", "PF3", "PF4", "PF5", "PF6", "CDT", "CI", "OTROS"]}
+                plantas={user?.plantas || []}
                 onNavegar={handleNavegarPlanificacion}
                 mes={planning.mes}
               />

@@ -18,6 +18,7 @@ import { LoadingOverlay } from "../../../shared/components/ui/LoadingOverlay";
 import * as SeguimientoService from "../services/SeguimientoService";
 
 import { useData } from "../../../context/PlanificacionContext";
+import { usePlantasAcceso } from "../../../shared/hooks/usePlantasAcceso";
 
 export const SeguimientoOTsView = () => {
   const { seguimiento: seguimientoData } = useData();
@@ -31,10 +32,11 @@ export const SeguimientoOTsView = () => {
     isLoading
   } = seguimientoData;
 
-  // CONSTANTES
-  const PLANTAS_COMPLEJO = useMemo(() => ["PF3", "PF4", "PF5", "PF6", "CDT", "OTROS", "DC", "VENTAS"], []);
-  const PLANTAS_PF_ALIMENTOS = useMemo(() => ["PF1", "PF2", ...PLANTAS_COMPLEJO], [PLANTAS_COMPLEJO]);
-  const LISTA_PLANTAS_INDIVIDUALES = useMemo(() => ["PF1", "PF2", "PF3", "PF4", "PF5", "PF6", "CDT", "OTROS", "MPS", "DC", "VENTAS"], []);
+  // Plantas filtradas según acceso del usuario
+  const { plantasIndividuales, plantasComplejo, plantasPFAlimentos } = usePlantasAcceso();
+  const PLANTAS_COMPLEJO = useMemo(() => plantasComplejo, [plantasComplejo]);
+  const PLANTAS_PF_ALIMENTOS = useMemo(() => plantasPFAlimentos, [plantasPFAlimentos]);
+  const LISTA_PLANTAS_INDIVIDUALES = useMemo(() => plantasIndividuales, [plantasIndividuales]);
   const LISTA_CUMPLIMIENTO = useMemo(() => LISTA_PLANTAS_INDIVIDUALES, [LISTA_PLANTAS_INDIVIDUALES]);
 
   const [modoVista, setModoVista] = useState<"ATRASOS" | "CUMPLIDAS">("ATRASOS");
@@ -324,13 +326,15 @@ export const SeguimientoOTsView = () => {
                     esOB={tipo.es} modoVista={modoVista} isGlobal showComparison={!!semanaComparar}
                     onDetail={(cat, periodo) => setViewDetail({ id: "PF ALIMENTOS", esOB: tipo.es, cat, periodo, isGlobal: true })}
                   />
-                  <ResumenTable
-                    titulo="COMPLEJO"
-                    dataset={dataFiltrada.filter(d => (!!d.esOB === tipo.es) && PLANTAS_COMPLEJO.includes(d.planta))}
-                    datasetAnt={dataAnteriorFiltrada.filter(d => (!!d.esOB === tipo.es) && PLANTAS_COMPLEJO.includes(d.planta))}
-                    esOB={tipo.es} modoVista={modoVista} isGlobal showComparison={!!semanaComparar}
-                    onDetail={(cat, periodo) => setViewDetail({ id: "COMPLEJO", esOB: tipo.es, cat, periodo, isGlobal: true })}
-                  />
+                  {plantasComplejo.length > 0 && (
+                    <ResumenTable
+                      titulo="COMPLEJO"
+                      dataset={dataFiltrada.filter(d => (!!d.esOB === tipo.es) && PLANTAS_COMPLEJO.includes(d.planta))}
+                      datasetAnt={dataAnteriorFiltrada.filter(d => (!!d.esOB === tipo.es) && PLANTAS_COMPLEJO.includes(d.planta))}
+                      esOB={tipo.es} modoVista={modoVista} isGlobal showComparison={!!semanaComparar}
+                      onDetail={(cat, periodo) => setViewDetail({ id: "COMPLEJO", esOB: tipo.es, cat, periodo, isGlobal: true })}
+                    />
+                  )}
                 </div>
               ))}
             </div>

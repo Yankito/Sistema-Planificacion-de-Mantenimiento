@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { initDB } from './db/init.js';
-import { authMiddleware } from './middleware/auth.js';
+import { authMiddleware, plantaMiddleware } from './middleware/auth.js';
 
 // Importación de Rutas
 import seguimientoRoutes from './routes/seguimiento.routes.js';
@@ -39,10 +39,10 @@ app.get('/health', (req, res) => {
 // --- RUTAS PROTEGIDAS (requieren token JWT válido) ---
 // Todas las rutas de la API requieren autenticación
 app.use('/api/seguimiento', authMiddleware, seguimientoRoutes);
-app.use('/api/planificacion', authMiddleware, planificacionRoutes);
+app.use('/api/planificacion', authMiddleware, plantaMiddleware, planificacionRoutes);
 app.use('/api/fallas', authMiddleware, fallasRoutes);
 app.use('/api/masivo', authMiddleware, masivoRoutes);
-app.use('/api/control-gastos', authMiddleware, controlGastosRoutes);
+app.use('/api/control-gastos', authMiddleware, plantaMiddleware, controlGastosRoutes);
 
 
 // --- INICIO DEL SERVIDOR ---

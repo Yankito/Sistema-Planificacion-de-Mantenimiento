@@ -31,7 +31,7 @@ export const DashboardView = ({ setActiveTab }: DashboardViewProps) => {
   const [indicadores, setIndicadores] = useState<DashboardIndicadores | null>(null);
   const [loading, setLoading] = useState(true);
   const [targetUploadWeek, setTargetUploadWeek] = useState(getWeekOptions().default);
-  const [highlightedModule, setHighlightedModule] = useState<FileType | null>(null);
+  const [highlightedModule] = useState<FileType | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
   // Cargar indicadores ligeros al montar

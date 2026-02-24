@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Filter, LayoutDashboard, Table as TableIcon, PieChart, XCircle, ArrowRight } from "lucide-react";
 import { getRangoSemana } from "../../../shared/utils/dateUtils";
 import { SelectPill } from "../components/ui/SelectPill";
@@ -9,6 +9,7 @@ import { TablaTab } from "../components/TablaTab";
 import { ExportButton } from "../../../shared/components/ExportButton";
 import { useFallasData } from "../hooks/useFallasData";
 import { useFallasManager } from "../hooks/useFallasManager";
+import { usePlantasAcceso } from "../../../shared/hooks/usePlantasAcceso";
 
 
 
@@ -28,6 +29,10 @@ export const FallasView = () => {
     // 2. ESTADOS VISUALES (Solo UI)
     const [activeTab, setActiveTab] = useState<'DASH' | 'CAUSAS' | 'TABLA'>('DASH');
     const [activoSeleccionado, setActivoSeleccionado] = useState<string | null>(null);
+
+    // Filtrar plantas del selector por las que el usuario tiene acceso
+    const { filtrarPlantas } = usePlantasAcceso();
+    const plantasAccesibles = useMemo(() => filtrarPlantas(config.plantas), [config.plantas, filtrarPlantas]);
 
     // Helper visual
     const rangoTextoHeader = semanaFiltro !== "TODAS"
@@ -99,7 +104,7 @@ export const FallasView = () => {
                     </div>
                     <div className="flex gap-2">
                         <SelectPill value={semanaFiltro} onChange={setSemanaFiltro} options={config.semanas} label="Semana" allLabel="Todas" />
-                        <SelectPill value={plantaFiltro} onChange={setPlantaFiltro} options={config.plantas} label="Planta" allLabel="Todas" />
+                        <SelectPill value={plantaFiltro} onChange={setPlantaFiltro} options={plantasAccesibles} label="Planta" allLabel="Todas" />
                         <SelectPill value={anioFiltro} onChange={(val: string | number) => setAnioFiltro(Number(val))} options={config.anios} label="Año" />
                     </div>
                 </div>

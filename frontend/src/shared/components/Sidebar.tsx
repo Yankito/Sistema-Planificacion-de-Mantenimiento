@@ -11,7 +11,6 @@ import { useAuth } from "../../context/AuthContext";
 interface SidebarProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
-  onLimpiar: () => void;
   userRoles?: string[];
 }
 

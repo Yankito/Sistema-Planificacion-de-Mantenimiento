@@ -82,3 +82,47 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction):
 export const generateToken = (payload: Omit<TokenPayload, 'iat' | 'exp'>): string => {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRATION });
 };
+
+/**
+ * Middleware que valida que el usuario tiene acceso a la planta solicitada.
+ * Busca el parámetro 'planta' en query string, params o body.
+ * Si no se envía planta, el request continúa (vista consolidada).
+ * Si se envía una planta no autorizada, retorna 403.
+ */
+export const plantaMiddleware = (req: Request, res: Response, next: NextFunction): void => {
+  const planta = (req.query.planta as string) || req.params.planta || req.body?.planta;
+
+  // Si no se especificó planta, no bloqueamos (puede ser consulta consolidada)
+  if (!planta) {
+    next();
+    return;
+  }
+
+  // Valores especiales que no necesitan validación
+  if (['TODAS', 'CONSOLIDADO', 'CI'].includes(planta.toUpperCase())) {
+    next();
+    return;
+  }
+
+  const plantasUsuario = req.authUser?.plantas || [];
+
+  if (!plantasUsuario.includes(planta.toUpperCase())) {
+    res.status(403).json({
+      error: `No tiene acceso a la planta ${planta}`,
+      code: 'PLANTA_NO_AUTORIZADA'
+    });
+    return;
+  }
+
+  next();
+};
+
+/**
+ * Helper: verifica si un usuario tiene acceso a una planta dada.
+ * Útil para controllers que necesitan validar acceso programáticamente.
+ */
+export const verificarAccesoPlanta = (req: Request, planta: string): boolean => {
+  if (!planta || ['TODAS', 'CONSOLIDADO', 'CI'].includes(planta.toUpperCase())) return true;
+  const plantasUsuario = req.authUser?.plantas || [];
+  return plantasUsuario.includes(planta.toUpperCase());
+};

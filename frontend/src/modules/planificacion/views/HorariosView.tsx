@@ -4,6 +4,7 @@ import { HorarioView } from "../components/HorarioView";
 import { Wrench, Zap, Users, Info, Loader2, CalendarDays, FileSpreadsheet, Download } from "lucide-react";
 import { useData } from "../../../context/PlanificacionContext";
 import { getMonthOptions } from "../../../shared/utils/dateUtils";
+import { usePlantasAcceso } from "../../../shared/hooks/usePlantasAcceso";
 
 export const HorariosView = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -43,7 +44,7 @@ export const HorariosView = () => {
     }
   };
 
-  const plantas = ["PF1", "PF2", "PF3", "PF4", "PF5", "PF6", "CDT", "CI", "OTROS"];
+  const { plantasPlanificacion: plantas } = usePlantasAcceso();
   const mesOpts = getMonthOptions().options;
 
   const totalMecanicos = horariosResult.filter(h =>

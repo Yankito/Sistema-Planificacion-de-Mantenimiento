@@ -4,14 +4,14 @@ import { BudgetConfig } from '../components/BudgetConfig';
 import { ExecutionMonitor } from '../components/ExecutionMonitor';
 import { ExpenseBreakdown } from '../components/ExpenseBreakdown';
 import { Settings, Activity, PieChart } from 'lucide-react';
+import { usePlantasAcceso } from '../../../shared/hooks/usePlantasAcceso';
 
 export const ControlGastosView = () => {
     const [activeTab, setActiveTab] = useState<'monitor' | 'config' | 'breakdown'>('monitor');
     const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
-    const [selectedPlanta, setSelectedPlanta] = useState<string>('PF1');
+    const { plantasIndividuales: plantas, plantaDefault } = usePlantasAcceso();
+    const [selectedPlanta, setSelectedPlanta] = useState<string>(plantaDefault);
     const [selectedMonth, setSelectedMonth] = useState<number | undefined>(new Date().getMonth() + 1);
-
-    const plantas = ["PF1", "PF2", "PF3", "PF4", "PF5", "PF6", "MPS", "CDT", "DC", "VENTAS", "OTROS"];
     const years = useMemo<number[]>(() => getYearOptions(2, 2), []);
     const months = [
         { val: undefined, label: 'Todo el año' },
