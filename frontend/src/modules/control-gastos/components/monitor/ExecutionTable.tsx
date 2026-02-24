@@ -207,9 +207,28 @@ export const ExecutionTable: React.FC<ExecutionTableProps> = ({
                                                                 <td className="px-6 py-3 pl-14 text-slate-800 font-medium">
                                                                     <div className="flex flex-wrap items-center gap-2">
                                                                         <span className="text-xs font-bold text-slate-700">{asset.activo}</span>
+                                                                        <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold border uppercase
+                                                                            ${asset.category === 'Maquinaria' ? 'bg-blue-50 text-blue-600 border-blue-100' :
+                                                                                asset.category === 'Redes' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                                                                                    asset.category === 'Infra' ? 'bg-indigo-50 text-indigo-600 border-indigo-100' :
+                                                                                        'bg-slate-50 text-slate-500 border-slate-100'}
+                                                                        `}>
+                                                                            {asset.category}
+                                                                        </span>
                                                                         {asset.planta && (
-                                                                            <span className="px-1.5 py-0.5 rounded text-[8px] font-bold bg-blue-50 text-blue-600 border border-blue-100 uppercase">
+                                                                            <span title="Planta" className="px-1.5 py-0.5 rounded text-[8px] font-bold bg-slate-50 text-slate-600 border border-slate-200 uppercase">
                                                                                 {asset.planta}
+                                                                            </span>
+                                                                        )}
+                                                                        {asset.claseContable && (
+                                                                            <span title="Clase Contable" className="px-1.5 py-0.5 rounded text-[8px] font-bold bg-amber-50 text-amber-700 border border-amber-100 uppercase">
+                                                                                {asset.claseContable}
+                                                                            </span>
+                                                                        )}
+                                                                        {asset.mantenible && (
+                                                                            <span title="Mantenible" className={`px-1.5 py-0.5 rounded text-[8px] font-bold border uppercase ${asset.mantenible === 'S' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'
+                                                                                }`}>
+                                                                                MANT: {asset.mantenible}
                                                                             </span>
                                                                         )}
                                                                     </div>

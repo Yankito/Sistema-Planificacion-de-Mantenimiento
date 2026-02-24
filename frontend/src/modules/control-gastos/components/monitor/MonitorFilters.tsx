@@ -20,6 +20,8 @@ interface MonitorFiltersProps {
     onSearchChange: (search: string) => void;
     isUploading: boolean;
     onFileUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    selectedCategory: string;
+    onCategoryChange: (category: string) => void;
 }
 
 export const MonitorFilters: React.FC<MonitorFiltersProps> = ({
@@ -39,7 +41,9 @@ export const MonitorFilters: React.FC<MonitorFiltersProps> = ({
     searchTerm,
     onSearchChange,
     isUploading,
-    onFileUpload
+    onFileUpload,
+    selectedCategory,
+    onCategoryChange
 }) => {
     return (
         <div className="space-y-4">
@@ -54,6 +58,18 @@ export const MonitorFilters: React.FC<MonitorFiltersProps> = ({
                         {months.map(m => (
                             <option key={m.id} value={m.id}>{m.name}</option>
                         ))}
+                    </select>
+
+                    <select
+                        value={selectedCategory}
+                        onChange={(e) => onCategoryChange(e.target.value)}
+                        className="px-4 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm min-w-[140px]"
+                    >
+                        <option value="Todos">Todas las Categorías</option>
+                        <option value="Maquinaria">Maquinaria</option>
+                        <option value="Redes">Redes</option>
+                        <option value="Infra">Infraestructura</option>
+                        <option value="Otros">Otros</option>
                     </select>
 
                     <div className="h-6 w-px bg-slate-200 mx-1 hidden md:block"></div>

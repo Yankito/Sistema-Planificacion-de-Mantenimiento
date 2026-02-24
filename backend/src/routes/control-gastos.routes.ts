@@ -11,5 +11,8 @@ router.post('/upload-presupuesto', upload.single('file'), (req, res) => controll
 router.post('/upload-gastos', upload.single('file'), (req, res) => controller.uploadGastosConsolidados(req, res));
 router.get('/presupuesto', (req, res) => controller.getPresupuesto(req, res));
 router.get('/gastos-consolidados', (req, res) => controller.getGastosConsolidados(req, res));
+router.get('/search-assets-cc', (req, res) => controller.searchAssetsByCentroCosto(req, res));
+router.post('/update-asset-name', (req, res) => controller.updateAssetPresupuesto(req, res));
+router.post('/auto-fix-assets', (req, res) => controller.autoFixAssets(req, res));
 
 export default router;

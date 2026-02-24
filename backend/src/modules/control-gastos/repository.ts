@@ -10,6 +10,9 @@ export interface PresupuestoRow {
     montoServExt?: number;
     montoCorrectivo?: number;
     centroCosto?: string; // Calculado al recuperar
+    claseContable?: string;
+    mantenible?: string;
+    frecuencia?: string;
 }
 
 export interface GastoConsolidadoRow {
@@ -32,7 +35,7 @@ export interface GastoConsolidadoRow {
     esHito?: boolean;
     planta?: string;
     claseContable?: string;
-
+    mantenible?: string;
 }
 
 export const ControlGastosRepository = {
@@ -137,6 +140,7 @@ export const ControlGastosRepository = {
                         EXTRACT(YEAR FROM p.FECHA_INICIAL_PROGRAMADA) as ANIO_CALC,
                         EXTRACT(MONTH FROM p.FECHA_INICIAL_PROGRAMADA) as MES_CALC,
                         a.clase_contable as CLASE_CONTABLE_ACTIVO,
+                        a.mantenible as MANTENIBLE_ACTIVO,
                         COALESCE(
                             CASE 
                                 WHEN a.organizacion = 'MP1' THEN 'PF1'
@@ -258,7 +262,8 @@ export const ControlGastosRepository = {
                     alertaFecha,
                     descripcionOt: descPedido,
                     estadoTrabajo: estadoPedido,
-                    esHito: esHitoValue
+                    esHito: esHitoValue,
+                    mantenible: row.MANTENIBLE_ACTIVO
                 });
             }
             return results;
@@ -287,6 +292,18 @@ export const ControlGastosRepository = {
                         MONTO_BODEGA as "montoBodega", 
                         MONTO_SERV_EXT as "montoServExt", 
                         MONTO_CORRECTIVO as "montoCorrectivo",
+                        (
+                            SELECT a.clase_contable 
+                            FROM PF_EAM_ACTIVOS a 
+                            WHERE TRIM(UPPER(a.nro_de_activo)) = TRIM(UPPER(ACTIVO_COD))
+                            AND ROWNUM = 1
+                        ) as "claseContable",
+                        (
+                            SELECT a.mantenible 
+                            FROM PF_EAM_ACTIVOS a 
+                            WHERE TRIM(UPPER(a.nro_de_activo)) = TRIM(UPPER(ACTIVO_COD))
+                            AND ROWNUM = 1
+                        ) as "mantenible",
                         COALESCE(
                             (
                                 SELECT CASE 
@@ -352,7 +369,8 @@ export const ControlGastosRepository = {
                                 WHEN ACTIVO_COD LIKE '%(6%' THEN 'PF6'
                                 ELSE 'OTROS'
                             END
-                        ) as PLANTA_CALC
+                        ) as PLANTA_CALC,
+                        FRECUENCIA
                     FROM PF_GASTOS_PRESUPUESTO 
                     WHERE ANIO = :anio
                 )
@@ -367,18 +385,96 @@ export const ControlGastosRepository = {
                 const activo = row.activo || row.ACTIVO;
                 // Usamos los últimos 6 caracteres para el centro de costo
                 const centroCosto = activo ? String(activo).slice(-6) : '';
-
                 return {
                     activo,
                     centroCosto,
-                    tipoFila: row.tipoFila || row.TIPOFILA,
-                    mes: row.mes || row.MES,
-                    anio: row.anio || row.ANIO,
-                    montoBodega: row.montoBodega || row.MONTOBODEGA,
-                    montoServExt: row.montoServExt || row.MONTOSERVEXT,
-                    montoCorrectivo: row.montoCorrectivo || row.MONTOCORRECTIVO
+                    tipoFila: row.tipoFila,
+                    mes: row.mes,
+                    anio: row.anio,
+                    montoBodega: row.montoBodega,
+                    montoServExt: row.montoServExt,
+                    montoCorrectivo: row.montoCorrectivo,
+                    claseContable: row.claseContable,
+                    mantenible: row.mantenible,
+                    frecuencia: row.frecuencia || row.FRECUENCIA
                 };
             }) as PresupuestoRow[];
+        });
+    },
+
+    searchAssetsByCentroCosto: async (centroCosto: string): Promise<any[]> => {
+        return await withConnection(async (connection) => {
+            const sql = `SELECT nro_de_activo, clase_contable, organizacion 
+                         FROM PF_EAM_ACTIVOS 
+                         WHERE nro_de_activo LIKE :ccPattern and mantenible = 'Si'
+                         ORDER BY nro_de_activo`;
+
+            // Buscamos específicamente el código con paréntesis para mayor precisión
+            const result = await connection.execute(sql, { ccPattern: `%(${centroCosto})%` });
+
+            return (result.rows || []).map((r: any) => ({
+                activo: r.NRO_DE_ACTIVO || r[0],
+                claseContable: r.CLASE_CONTABLE || r[1],
+                organizacion: r.ORGANIZACION || r[2]
+            }));
+        });
+    },
+
+    updatePresupuestoAssetName: async (oldName: string, newName: string, anio: number): Promise<void> => {
+        await withConnection(async (connection) => {
+            const sql = `UPDATE PF_GASTOS_PRESUPUESTO 
+                         SET ACTIVO_COD = :newName 
+                         WHERE ACTIVO_COD = :oldName AND ANIO = :anio`;
+            await connection.execute(sql, { oldName, newName, anio }, { autoCommit: true });
+        });
+    },
+
+    autoFixPresupuestoAssets: async (anio: number): Promise<{ fixed: number, total: number }> => {
+        return await withConnection(async (connection) => {
+            // 1. Obtener activos del presupuesto que no tienen coincidencia exacta
+            const sqlMissing = `
+                SELECT DISTINCT ACTIVO_COD 
+                FROM PF_GASTOS_PRESUPUESTO 
+                WHERE ANIO = :anio 
+                AND NOT EXISTS (
+                    SELECT 1 FROM PF_EAM_ACTIVOS 
+                    WHERE TRIM(UPPER(nro_de_activo)) = TRIM(UPPER(ACTIVO_COD))
+                )
+            `;
+            const resultMissing = await connection.execute(sqlMissing, { anio });
+            const missingAssets = (resultMissing.rows || []).map((r: any) => r.ACTIVO_COD || r[0]);
+
+            let fixedCount = 0;
+
+            for (const oldName of missingAssets) {
+                const match = String(oldName).match(/\((\d+)\)/);
+                if (!match) continue;
+
+                const cc = match[1];
+
+                // 2. Buscar si tiene exactamente una coincidencia mantenible
+                const sqlSearch = `
+                    SELECT nro_de_activo 
+                    FROM PF_EAM_ACTIVOS 
+                    WHERE nro_de_activo LIKE :ccPattern AND mantenible = 'Si'
+                `;
+                const resultSearch = await connection.execute(sqlSearch, { ccPattern: `%(${cc})%` });
+
+                if (resultSearch.rows && resultSearch.rows.length === 1) {
+                    const newName = resultSearch.rows[0].NRO_DE_ACTIVO || resultSearch.rows[0][0];
+
+                    // 3. Actualizar
+                    const sqlUpdate = `
+                        UPDATE PF_GASTOS_PRESUPUESTO 
+                        SET ACTIVO_COD = :newName 
+                        WHERE ACTIVO_COD = :oldName AND ANIO = :anio
+                    `;
+                    await connection.execute(sqlUpdate, { newName, oldName, anio }, { autoCommit: true });
+                    fixedCount++;
+                }
+            }
+
+            return { fixed: fixedCount, total: missingAssets.length };
         });
     }
 }

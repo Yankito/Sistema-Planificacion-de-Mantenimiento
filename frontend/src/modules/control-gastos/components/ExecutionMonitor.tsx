@@ -3,11 +3,12 @@ import { ControlGastosService } from '../services/ControlGastosService';
 import { Loader2 } from 'lucide-react';
 import { useControlGastos } from '../hooks/useControlGastos';
 import { type GastoConsolidadoRow } from '../types';
-import type { AssetExecutionDetail, CostCenterGroup, SortField, SortOrder } from './monitor/types';
+import type { AssetExecutionDetail, CostCenterGroup, SortField, SortOrder, AssetCategory, CategorySummary } from './monitor/types';
 import { KPICards } from './monitor/KPICards';
 import { MonitorFilters } from './monitor/MonitorFilters';
 import { ExecutionTable } from './monitor/ExecutionTable';
 import { TransactionSidePanel } from './monitor/TransactionSidePanel';
+import { categorizeAsset } from '../utils/categorization';
 
 interface ExecutionMonitorProps {
     selectedYear: number;
@@ -16,7 +17,9 @@ interface ExecutionMonitorProps {
 
 export const ExecutionMonitor = ({ selectedYear, selectedPlanta }: ExecutionMonitorProps) => {
     const [groupedData, setGroupedData] = useState<CostCenterGroup[]>([]);
+    const [categorySummaries, setCategorySummaries] = useState<CategorySummary[]>([]);
     const [currentMonth, setCurrentMonth] = useState<number>(new Date().getMonth() + 1);
+    const [selectedCategory, setSelectedCategory] = useState<string>('Todos');
     const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
     const [searchTerm, setSearchTerm] = useState('');
     const [isUploading, setIsUploading] = useState(false);
@@ -108,6 +111,12 @@ export const ExecutionMonitor = ({ selectedYear, selectedPlanta }: ExecutionMoni
                 const rowReal = realBodega + realServExt + realCorrectivo;
 
                 const firstReal = assetReal[0];
+                //mostrar activo : PF Conj Basculas P1 (0228)
+                if (row.activo.startsWith('PF Conj Basculas P1 (0228)')) {
+                    console.log(row);
+                    console.log(firstReal);
+                }
+                const claseContableAsset = row.claseContable || firstReal?.claseContable;
 
                 groups[cc].assets.push({
                     activo: row.activo,
@@ -117,9 +126,11 @@ export const ExecutionMonitor = ({ selectedYear, selectedPlanta }: ExecutionMoni
                     details: assetDetails,
                     hasDateAlert,
                     planta: firstReal?.planta,
-                    claseContable: firstReal?.claseContable,
+                    claseContable: claseContableAsset,
+                    category: categorizeAsset(claseContableAsset),
                     deviation: calculateDeviation(rowReal, rowBudget),
-                    hasActiveOT
+                    hasActiveOT,
+                    mantenible: row.mantenible || firstReal?.mantenible
                 });
 
                 groups[cc].totalBudget += rowBudget;
@@ -147,8 +158,10 @@ export const ExecutionMonitor = ({ selectedYear, selectedPlanta }: ExecutionMoni
                         hasDateAlert: false,
                         planta: g.planta,
                         claseContable: g.claseContable,
+                        category: categorizeAsset(g.claseContable),
                         deviation: 100,
-                        hasActiveOT: false
+                        hasActiveOT: false,
+                        mantenible: g.mantenible
                     };
                     groups[cc].assets.push(assetRow);
                 }
@@ -178,6 +191,28 @@ export const ExecutionMonitor = ({ selectedYear, selectedPlanta }: ExecutionMoni
             });
 
             setGroupedData(Object.values(groups));
+
+            // Calcular resúmenes por categoría
+            const catMap: Record<AssetCategory, CategorySummary> = {
+                'Maquinaria': { category: 'Maquinaria', totalBudget: 0, totalReal: 0, deviation: 0, itemCount: 0 },
+                'Redes': { category: 'Redes', totalBudget: 0, totalReal: 0, deviation: 0, itemCount: 0 },
+                'Infra': { category: 'Infra', totalBudget: 0, totalReal: 0, deviation: 0, itemCount: 0 },
+                'Otros': { category: 'Otros', totalBudget: 0, totalReal: 0, deviation: 0, itemCount: 0 },
+            };
+
+            Object.values(groups).forEach(g => {
+                g.assets.forEach(a => {
+                    catMap[a.category].totalBudget += a.totalBudget;
+                    catMap[a.category].totalReal += a.totalReal;
+                    catMap[a.category].itemCount++;
+                });
+            });
+
+            Object.values(catMap).forEach(c => {
+                c.deviation = calculateDeviation(c.totalReal, c.totalBudget);
+            });
+
+            setCategorySummaries(Object.values(catMap).filter(c => c.itemCount > 0));
             setExpandedGroups({});
 
         } catch (e) {
@@ -269,13 +304,30 @@ export const ExecutionMonitor = ({ selectedYear, selectedPlanta }: ExecutionMoni
             );
             const hasDateAlert = group.assets.some(a => a.hasDateAlert);
             const hasCritical = group.assets.some(a => a.totalReal > a.totalBudget && a.hasActiveOT);
+            const matchesCategory = selectedCategory === 'Todos' || group.assets.some(a => a.category === selectedCategory);
 
             const matchesExceeded = !filterExceededOnly || isExceeded;
             const matchesInternal = !filterInternalDeviation || hasInternalDeviation;
             const matchesDate = !filterDateAlert || hasDateAlert;
             const matchesCritical = !filterCriticalOnly || hasCritical;
 
-            return matchesSearch && matchesExceeded && matchesInternal && matchesDate && matchesCritical;
+            return matchesSearch && matchesExceeded && matchesInternal && matchesDate && matchesCritical && matchesCategory;
+        })
+        .map(group => {
+            if (selectedCategory === 'Todos') return group;
+
+            const filteredAssets = group.assets.filter(a => a.category === selectedCategory);
+            return {
+                ...group,
+                assets: filteredAssets,
+                // Opcional: Recalcular totales para que reflejen solo la categoría seleccionada
+                totalBudget: filteredAssets.reduce((sum, a) => sum + a.totalBudget, 0),
+                totalReal: filteredAssets.reduce((sum, a) => sum + a.totalReal, 0),
+                deviation: calculateDeviation(
+                    filteredAssets.reduce((sum, a) => sum + a.totalReal, 0),
+                    filteredAssets.reduce((sum, a) => sum + a.totalBudget, 0)
+                )
+            };
         })
         .sort((a, b) => {
             const factor = sortOrder === 'asc' ? 1 : -1;
@@ -359,6 +411,8 @@ export const ExecutionMonitor = ({ selectedYear, selectedPlanta }: ExecutionMoni
                 onItemsPerPageChange={setItemsPerPage}
                 searchTerm={searchTerm}
                 onSearchChange={setSearchTerm}
+                selectedCategory={selectedCategory}
+                onCategoryChange={setSelectedCategory}
                 isUploading={isUploading}
                 onFileUpload={handleFileUpload}
             />
@@ -372,6 +426,7 @@ export const ExecutionMonitor = ({ selectedYear, selectedPlanta }: ExecutionMoni
                 totalCorrectivoBudget={totalCorrectivoBudget}
                 totalCorrectivoReal={totalCorrectivoReal}
                 groupedData={groupedData}
+                categorySummaries={categorySummaries}
                 monthName={months.find(m => m.id === currentMonth)?.name || ''}
                 formatCurrency={formatCurrency}
                 onToggleFilter={handleToggleFilter}

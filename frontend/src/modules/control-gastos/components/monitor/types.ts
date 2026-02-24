@@ -1,4 +1,7 @@
 
+
+export type AssetCategory = 'Maquinaria' | 'Redes' | 'Infra' | 'Otros';
+
 export interface AssetExecutionDetail {
     tipo: string;
     budget: number;
@@ -14,8 +17,10 @@ export interface AssetExecutionGroup {
     hasDateAlert?: boolean;
     planta?: string;
     claseContable?: string;
+    category: AssetCategory;
     deviation: number;
     hasActiveOT?: boolean;
+    mantenible?: string;
 }
 
 export interface CostCenterGroup {
@@ -24,6 +29,14 @@ export interface CostCenterGroup {
     totalBudget: number;
     totalReal: number;
     deviation: number;
+}
+
+export interface CategorySummary {
+    category: AssetCategory;
+    totalBudget: number;
+    totalReal: number;
+    deviation: number;
+    itemCount: number;
 }
 
 export type SortField = 'centroCosto' | 'totalBudget' | 'totalReal' | 'deviation';

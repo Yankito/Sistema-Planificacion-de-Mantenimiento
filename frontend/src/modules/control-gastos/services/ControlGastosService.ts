@@ -63,4 +63,38 @@ export class ControlGastosService {
         }
         return await response.json();
     }
+
+    static async searchAssetsByCentroCosto(cc: string): Promise<any[]> {
+        const url = new URL(`${API_BASE}/search-assets-cc`);
+        url.searchParams.append('cc', cc);
+        const response = await fetch(url.toString());
+        if (!response.ok) throw new Error('Error searching assets');
+        return await response.json();
+    }
+
+    static async updateAssetName(oldName: string, newName: string, anio: number): Promise<void> {
+        const response = await fetch(`${API_BASE}/update-asset-name`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ oldName, newName, anio })
+        });
+        if (!response.ok) {
+            const data = await response.json();
+            throw new Error(data.error || 'Error updating asset name');
+        }
+    }
+
+    static async autoFixAssets(anio: number): Promise<{ fixed: number, total: number }> {
+        const response = await fetch(`${API_BASE}/auto-fix-assets`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ anio })
+        });
+        if (!response.ok) {
+            const data = await response.json();
+            throw new Error(data.error || 'Error auto-fixing assets');
+        }
+        return await response.json();
+    }
+
 }

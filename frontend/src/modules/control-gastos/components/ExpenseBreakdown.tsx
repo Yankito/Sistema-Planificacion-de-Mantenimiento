@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import type { DetalleGastoItem } from '../types';
-import { Search, Filter, Loader2 } from 'lucide-react';
+import { Search, Filter, Loader2, Box, Share2, Layers } from 'lucide-react';
 import { useControlGastos } from '../hooks/useControlGastos';
+import { categorizeAsset } from '../utils/categorization';
 
 interface ExpenseBreakdownProps {
     selectedYear: number;
@@ -47,7 +48,8 @@ export const ExpenseBreakdown = ({ selectedYear, selectedPlanta }: ExpenseBreakd
                     monto: g.costoTrx,
                     categoria,
                     fecha: typeof g.fechaTrx === 'string' ? g.fechaTrx : (g.fechaTrx as Date).toISOString().split('T')[0],
-                    otId: g.numeroOt
+                    otId: g.numeroOt,
+                    assetCategory: categorizeAsset(g.claseContable)
                 });
             });
 
@@ -59,10 +61,15 @@ export const ExpenseBreakdown = ({ selectedYear, selectedPlanta }: ExpenseBreakd
 
     // Filter Logic
     const filteredDetails = details.filter(item => {
-        if (selectedAsset !== 'Todos') {
-            return item.concepto.includes(selectedAsset);
+        if (selectedAsset === 'Todos') return true;
+
+        if (['Maquinaria', 'Redes', 'Infra'].includes(selectedAsset)) {
+            return item.assetCategory === selectedAsset;
         }
-        return true;
+
+        const matchesSearch = item.concepto.toLowerCase().includes(selectedAsset.toLowerCase()) ||
+            item.otId.toLowerCase().includes(selectedAsset.toLowerCase());
+        return matchesSearch;
     });
 
     // Group by category for Chart
@@ -124,6 +131,9 @@ export const ExpenseBreakdown = ({ selectedYear, selectedPlanta }: ExpenseBreakd
                         onChange={(e) => setSelectedAsset(e.target.value)}
                     >
                         <option value="Todos">Todos los Activos</option>
+                        <option value="Maquinaria">Maquinaria</option>
+                        <option value="Redes">Redes</option>
+                        <option value="Infra">Infraestructura</option>
                     </select>
                 </div>
             </div>
@@ -164,8 +174,8 @@ export const ExpenseBreakdown = ({ selectedYear, selectedPlanta }: ExpenseBreakd
                         <table className="w-full text-sm text-left">
                             <thead className="bg-slate-50 text-slate-500 font-medium sticky top-0">
                                 <tr>
-                                    <th className="px-6 py-3">Concepto</th>
-                                    <th className="px-6 py-3">Categoría</th>
+                                    <th className="px-6 py-3">Concepto / Clasificación</th>
+                                    <th className="px-6 py-3">Tipo Gasto</th>
                                     <th className="px-6 py-3 text-right">Monto</th>
                                     <th className="px-6 py-3 text-right">Fecha Ref.</th>
                                 </tr>
@@ -182,7 +192,22 @@ export const ExpenseBreakdown = ({ selectedYear, selectedPlanta }: ExpenseBreakd
                                     <tr key={item.id} className="hover:bg-slate-50 transition-colors">
                                         <td className="px-6 py-3">
                                             <div className="font-medium text-slate-800">{item.concepto}</div>
-                                            <div className="text-xs text-slate-400 font-mono">{item.otId}</div>
+                                            <div className="flex items-center gap-2 mt-1">
+                                                <span className="text-[10px] text-slate-400 font-mono">{item.otId}</span>
+                                                {item.assetCategory && (
+                                                    <span className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold border uppercase
+                                                        ${item.assetCategory === 'Maquinaria' ? 'bg-blue-50 text-blue-600 border-blue-100' :
+                                                            item.assetCategory === 'Redes' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                                                                item.assetCategory === 'Infra' ? 'bg-indigo-50 text-indigo-600 border-indigo-100' :
+                                                                    'bg-slate-50 text-slate-500 border-slate-100'}
+                                                    `}>
+                                                        {item.assetCategory === 'Maquinaria' && <Box size={10} />}
+                                                        {item.assetCategory === 'Redes' && <Share2 size={10} />}
+                                                        {item.assetCategory === 'Infra' && <Layers size={10} />}
+                                                        {item.assetCategory}
+                                                    </span>
+                                                )}
+                                            </div>
                                         </td>
                                         <td className="px-6 py-3">
                                             <span className={`inline-flex px-2 py-1 rounded text-xs font-bold

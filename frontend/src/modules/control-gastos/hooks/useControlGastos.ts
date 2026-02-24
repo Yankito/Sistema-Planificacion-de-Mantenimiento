@@ -47,10 +47,42 @@ export const useControlGastos = () => {
         }
     };
 
+    const searchAssetsByCentroCosto = async (cc: string) => {
+        setLoadingCount(prev => prev + 1);
+        try {
+            return await ControlGastosService.searchAssetsByCentroCosto(cc);
+        } finally {
+            setLoadingCount(prev => Math.max(0, prev - 1));
+        }
+    };
+
+    const updateAssetName = async (oldName: string, newName: string, anio: number) => {
+        setLoadingCount(prev => prev + 1);
+        try {
+            return await ControlGastosService.updateAssetName(oldName, newName, anio);
+        } finally {
+            setLoadingCount(prev => Math.max(0, prev - 1));
+        }
+    };
+
+    const autoFixAssets = async (anio: number) => {
+        setLoadingCount(prev => prev + 1);
+        try {
+            return await ControlGastosService.autoFixAssets(anio);
+        } finally {
+            setLoadingCount(prev => Math.max(0, prev - 1));
+        }
+    };
+
+
+
     return {
         uploadPresupuesto,
         getPresupuesto,
         getGastosConsolidados,
+        searchAssetsByCentroCosto,
+        updateAssetName,
+        autoFixAssets,
         loading,
         error
     };

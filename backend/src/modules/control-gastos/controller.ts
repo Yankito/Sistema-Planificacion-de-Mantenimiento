@@ -317,4 +317,38 @@ export class ControlGastosController {
             res.status(500).json({ error: e.message });
         }
     }
+
+    async searchAssetsByCentroCosto(req: Request, res: Response) {
+        try {
+            const cc = req.query.cc as string;
+            if (!cc) return res.status(400).json({ error: 'Centro de costo es requerido' });
+            const data = await ControlGastosRepository.searchAssetsByCentroCosto(cc);
+            res.json(data);
+        } catch (e: any) {
+            res.status(500).json({ error: e.message });
+        }
+    }
+
+    async updateAssetPresupuesto(req: Request, res: Response) {
+        try {
+            const { oldName, newName, anio } = req.body;
+            if (!oldName || !newName || !anio) return res.status(400).json({ error: 'Faltan parámetros' });
+            await ControlGastosRepository.updatePresupuestoAssetName(oldName, newName, anio);
+            res.json({ success: true });
+        } catch (e: any) {
+            res.status(500).json({ error: e.message });
+        }
+    }
+
+    async autoFixAssets(req: Request, res: Response) {
+        try {
+            const anio = Number(req.body.anio);
+            if (!anio) return res.status(400).json({ error: 'Año es requerido' });
+            const result = await ControlGastosRepository.autoFixPresupuestoAssets(anio);
+            res.json(result);
+        } catch (e: any) {
+            res.status(500).json({ error: e.message });
+        }
+    }
+
 }

@@ -25,6 +25,7 @@ export interface DetalleGastoItem {
     categoria: 'Bodega' | 'Servicios Externos' | 'Gasto Correctivo' | 'Hito';
     fecha: string;
     otId: string;
+    assetCategory?: 'Maquinaria' | 'Redes' | 'Infra' | 'Otros';
 }
 
 export interface PresupuestoRow {
@@ -36,6 +37,8 @@ export interface PresupuestoRow {
     montoBodega: number;
     montoServExt: number;
     montoCorrectivo: number;
+    claseContable?: string;
+    mantenible?: string;
 }
 
 export interface GastoConsolidadoRow {
@@ -57,4 +60,5 @@ export interface GastoConsolidadoRow {
     descripcionOt?: string;
     estadoTrabajo?: string;
     esHito?: boolean;
+    mantenible?: string;
 }
