@@ -20,11 +20,11 @@ export const useControlGastos = () => {
     }
   }, []);
 
-  const getPresupuesto = useCallback(async (anio: number, planta?: string, silent: boolean = false) => {
+  const getPresupuesto = useCallback(async (anio: number, planta?: string, activo?: string, mes?: number, silent: boolean = false) => {
     if (!silent) setLoadingCount(prev => prev + 1);
     setError(null);
     try {
-      return await ControlGastosService.getPresupuesto(anio, planta);
+      return await ControlGastosService.getPresupuesto(anio, planta, activo, mes);
     } catch (err: any) {
       setError(err.message);
       throw err;
@@ -33,11 +33,11 @@ export const useControlGastos = () => {
     }
   }, []);
 
-  const getGastosConsolidados = useCallback(async (anio: number, planta?: string, silent: boolean = false) => {
+  const getGastosConsolidados = useCallback(async (anio: number, planta?: string, mes?: number, silent: boolean = false) => {
     if (!silent) setLoadingCount(prev => prev + 1);
     setError(null);
     try {
-      return await ControlGastosService.getGastosConsolidados(anio, planta);
+      return await ControlGastosService.getGastosConsolidados(anio, planta, mes);
     } catch (err: any) {
       setError(err.message);
       throw err;

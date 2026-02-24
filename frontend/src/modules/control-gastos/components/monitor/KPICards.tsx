@@ -43,7 +43,7 @@ export const KPICards: React.FC<KPICardsProps> = ({
     return (
         <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* CARD 1: PRESUPUESTO Y PLAN VS REAL */}
+                {/* TARJETA 1: PRESUPUESTO Y PLAN VS REAL */}
                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between relative overflow-hidden group">
                     <div className="absolute right-0 top-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
                         <TrendingUp size={80} className="text-blue-500" />
@@ -53,7 +53,7 @@ export const KPICards: React.FC<KPICardsProps> = ({
                         <h3 className="text-3xl font-extrabold text-slate-800 mt-1">{formatCurrency(totalPresupuesto)}</h3>
 
                         <div className="mt-4 space-y-3">
-                            {/* Plan Breakdown */}
+                            {/* Desglose de Plan */}
                             <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
                                 <div className="flex justify-between items-center mb-1">
                                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Plan (Bodega + Serv)</span>
@@ -73,7 +73,7 @@ export const KPICards: React.FC<KPICardsProps> = ({
                                 </div>
                             </div>
 
-                            {/* Correctivo Breakdown */}
+                            {/* Desglose de Correctivo */}
                             <div className="p-3 bg-amber-50/30 rounded-xl border border-amber-100/50">
                                 <div className="flex justify-between items-center mb-1">
                                     <span className="text-[10px] font-bold text-amber-600/70 uppercase tracking-wider">Manto. Correctivo</span>
@@ -96,7 +96,7 @@ export const KPICards: React.FC<KPICardsProps> = ({
                     </div>
                 </div>
 
-                {/* CARD 2: EJECUCIÓN REAL TOTAL */}
+                {/* TARJETA 2: EJECUCIÓN REAL TOTAL */}
                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between relative overflow-hidden group">
                     <div className="absolute right-0 top-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
                         <AlertCircle size={80} className={totalGasto > totalPresupuesto ? "text-red-500" : "text-emerald-500"} />
@@ -110,7 +110,7 @@ export const KPICards: React.FC<KPICardsProps> = ({
 
                     <div className="mt-6">
                         <div className="flex justify-between items-end mb-2">
-                            <span className="text-xs text-slate-400 font-bold uppercase tracking-tighter">Consumo de meta anual</span>
+                            <span className="text-xs text-slate-400 font-bold uppercase tracking-tighter">Consumo de meta mensual</span>
                             <span className={`text-lg font-black ${totalGasto > totalPresupuesto ? 'text-pf-red' : 'text-emerald-600'}`}>
                                 {totalAvance.toFixed(1)}%
                             </span>
@@ -136,7 +136,7 @@ export const KPICards: React.FC<KPICardsProps> = ({
                     </div>
                 </div>
 
-                {/* CARD 3: ALERTAS DE EJECUCIÓN */}
+                {/* TARJETA 3: ALERTAS DE EJECUCIÓN */}
                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between relative">
                     <div>
                         <p className="text-slate-500 text-sm font-medium">Alertas de Ejecución</p>
@@ -213,7 +213,7 @@ export const KPICards: React.FC<KPICardsProps> = ({
                 </div>
             </div>
 
-            {/* SECCIÓN NUEVA: RESUMEN POR CATEGORÍA (User Request) */}
+            {/* SECCIÓN NUEVA: RESUMEN POR CATEGORÍA */}
             <div className="bg-slate-100/50 p-6 rounded-3xl border border-slate-200/60 shadow-inner">
                 <div className="flex items-center gap-3 mb-6">
                     <div className="w-10 h-10 rounded-2xl bg-white flex items-center justify-center shadow-sm text-pf-red border border-slate-100">

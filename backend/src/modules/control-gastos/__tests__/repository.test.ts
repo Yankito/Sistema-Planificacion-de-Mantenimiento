@@ -2,6 +2,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ControlGastosRepository } from '../repository.js';
 import * as dbConfig from '../../../db/config.js';
+import type { PresupuestoRow } from '../repository.js';
 
 vi.mock('../../../db/config.js', () => ({
     withConnection: vi.fn(async (callback) => {
@@ -144,16 +145,15 @@ describe('ControlGastosRepository', () => {
 
     describe('getPresupuesto', () => {
         it('debe obtener presupuesto y calcular centro de costo correctamente', async () => {
-            const mockRows = [
+            const mockRows: PresupuestoRow[] = [
                 {
-                    ACTIVO: 'ACTIVO DE PRUEBA (20002)',
-                    FRECUENCIA: 'MENSUAL',
-                    MES: 1,
-                    ANIO: 2026,
-                    MONTOBODEGA: 100,
-                    MONTOSERVEXT: 200,
-                    MONTOCORRECTIVO: 300,
-                    PLANTA_CALC: 'PF1'
+                    activo: 'ACTIVO DE PRUEBA (2002)',
+                    frecuencia: 'MENSUAL',
+                    mes: 1,
+                    anio: 2026,
+                    montoBodega: 100,
+                    montoServExt: 200,
+                    montoCorrectivo: 300
                 }
             ];
 
@@ -166,7 +166,7 @@ describe('ControlGastosRepository', () => {
             const result = await repository.getPresupuesto(2026);
 
             expect(result.length).toBe(1);
-            expect(result[0].centroCosto).toBe('20002)');
+            expect(result[0].centroCosto).toBe('(2002)');
             expect(result[0].montoBodega).toBe(100);
         });
     });

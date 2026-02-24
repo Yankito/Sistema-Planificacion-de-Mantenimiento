@@ -106,7 +106,6 @@ export const BudgetMatrixTable: React.FC<BudgetMatrixTableProps> = React.memo(({
             disabled={loading}
             className="px-4 py-2 bg-slate-100 text-slate-600 rounded-lg text-sm font-medium hover:bg-slate-200 transition-colors flex items-center gap-2"
           >
-            {loading ? <span className="animate-spin">⌛</span> : <FileSpreadsheet size={18} />}
             Importar Excel (Prueba)
           </button>
         </div>

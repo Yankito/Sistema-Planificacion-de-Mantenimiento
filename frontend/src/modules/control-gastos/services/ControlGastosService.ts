@@ -4,10 +4,12 @@ import type { PresupuestoRow } from '../types';
 const API_BASE = API_ENDPOINTS.CONTROL_GASTOS;
 
 export class ControlGastosService {
-  static async getPresupuesto(anio: number, planta?: string): Promise<PresupuestoRow[]> {
+  static async getPresupuesto(anio: number, planta?: string, activo?: string, mes?: number): Promise<PresupuestoRow[]> {
     const url = new URL(`${API_BASE}/presupuesto`);
     url.searchParams.append('anio', String(anio));
     if (planta) url.searchParams.append('planta', planta);
+    if (activo) url.searchParams.append('activo', activo);
+    if (mes) url.searchParams.append('mes', String(mes));
 
     const response = await fetch(url.toString());
     if (!response.ok) {
@@ -51,10 +53,11 @@ export class ControlGastosService {
     return await response.json();
   }
 
-  static async getGastosConsolidados(anio: number, planta?: string): Promise<any[]> {
+  static async getGastosConsolidados(anio: number, planta?: string, mes?: number): Promise<any[]> {
     const url = new URL(`${API_BASE}/gastos-consolidados`);
     url.searchParams.append('anio', String(anio));
     if (planta) url.searchParams.append('planta', planta);
+    if (mes) url.searchParams.append('mes', String(mes));
 
     const response = await fetch(url.toString());
     if (!response.ok) {

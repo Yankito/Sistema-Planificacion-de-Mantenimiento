@@ -90,7 +90,7 @@ export const TransactionSidePanel: React.FC<TransactionSidePanelProps> = ({
                 {/* Panel Header */}
                 <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-white shadow-sm z-10">
                     <div>
-                        <h3 className="text-lg font-bold text-slate-800">{title}</h3>
+                        <h3 className="text-lg font-bold text-slate-800 select-text">{title}</h3>
                         <p className="text-xs text-slate-500">Haz clic en las tarjetas para sumar y comparar contra el presupuesto</p>
                     </div>
                     <div className="flex items-center gap-2">
@@ -157,14 +157,14 @@ export const TransactionSidePanel: React.FC<TransactionSidePanelProps> = ({
                                             <div className="grid grid-cols-2 gap-y-2 gap-x-4 mt-4 border-t border-slate-50 pt-3">
                                                 <div className="flex flex-col">
                                                     <span className="text-[9px] text-slate-400 uppercase font-bold">OT Relacionada</span>
-                                                    <div className="flex items-center gap-1 text-xs font-semibold text-slate-600">
+                                                    <div className="flex items-center gap-1 text-xs font-semibold text-slate-600 select-text">
                                                         {trx.numeroOt || 'N/A'}
                                                         {trx.numeroOt && <ExternalLink size={10} className="text-slate-400 opacity-0 group-hover/card:opacity-100 transition-opacity" />}
                                                     </div>
                                                 </div>
                                                 <div className="flex flex-col">
                                                     <span className="text-[9px] text-slate-400 uppercase font-bold">Tipo OT</span>
-                                                    <div className="flex items-center gap-1 text-xs font-semibold text-slate-600">
+                                                    <div className="flex items-center gap-1 text-xs font-semibold text-slate-600 select-text">
                                                         {trx.tipoOt || 'N/A'}
                                                     </div>
                                                 </div>
@@ -186,13 +186,13 @@ export const TransactionSidePanel: React.FC<TransactionSidePanelProps> = ({
                                                 </div>
                                                 <div className="flex flex-col">
                                                     <span className="text-[9px] text-slate-400 uppercase font-bold">Fecha Transacción</span>
-                                                    <span className="text-xs font-semibold text-slate-600">
+                                                    <span className="text-xs font-semibold text-slate-600 select-text">
                                                         {trx.fechaTrx ? new Date(trx.fechaTrx).toLocaleDateString('es-CL') : 'N/A'}
                                                     </span>
                                                 </div>
                                                 <div className="flex flex-col col-span-2 bg-slate-50/50 p-2 rounded-lg mt-1">
                                                     <span className="text-[9px] text-slate-400 uppercase font-bold mb-1">Descripción OT</span>
-                                                    <span className="text-xs text-slate-500 italic leading-snug">
+                                                    <span className="text-xs text-slate-500 italic leading-snug select-text">
                                                         {trx.descripcionOt || 'Sin descripción'}
                                                     </span>
                                                 </div>

@@ -13,18 +13,20 @@ import { categorizeAsset } from '../utils/categorization';
 interface ExecutionMonitorProps {
     selectedYear: number;
     selectedPlanta: string;
+    selectedMonth?: number;
 }
 
-export const ExecutionMonitor = ({ selectedYear, selectedPlanta }: ExecutionMonitorProps) => {
+export const ExecutionMonitor = ({ selectedYear, selectedPlanta, selectedMonth }: ExecutionMonitorProps) => {
     const [groupedData, setGroupedData] = useState<CostCenterGroup[]>([]);
     const [categorySummaries, setCategorySummaries] = useState<CategorySummary[]>([]);
-    const [currentMonth, setCurrentMonth] = useState<number>(new Date().getMonth() + 1);
+    // Si no se selecciona un mes globalmente, se toma el mes actual
+    const currentMonth = selectedMonth ?? (new Date().getMonth() + 1);
     const [selectedCategory, setSelectedCategory] = useState<string>('Todos');
     const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
     const [searchTerm, setSearchTerm] = useState('');
     const [isUploading, setIsUploading] = useState(false);
 
-    // Pagination & Sorting State
+    // Paginacion y ordenamiento
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
     const [sortField, setSortField] = useState<SortField>('centroCosto');
@@ -34,7 +36,7 @@ export const ExecutionMonitor = ({ selectedYear, selectedPlanta }: ExecutionMoni
     const [filterDateAlert, setFilterDateAlert] = useState(false);
     const [filterCriticalOnly, setFilterCriticalOnly] = useState(false);
 
-    // Detail Panel State
+    // Panel de detalles
     const [rawMonthlyReal, setRawMonthlyReal] = useState<GastoConsolidadoRow[]>([]);
     const [selectedDetailTransactions, setSelectedDetailTransactions] = useState<GastoConsolidadoRow[]>([]);
     const [isPanelOpen, setIsPanelOpen] = useState(false);
@@ -61,13 +63,14 @@ export const ExecutionMonitor = ({ selectedYear, selectedPlanta }: ExecutionMoni
 
     const loadData = async () => {
         try {
+            // Optimizamos: Pedimos solo los datos del mes seleccionado si aplica
             const [budgetData, realExpenses] = await Promise.all([
-                getPresupuesto(selectedYear, selectedPlanta),
-                getGastosConsolidados(selectedYear, selectedPlanta)
+                getPresupuesto(selectedYear, selectedPlanta, undefined, currentMonth),
+                getGastosConsolidados(selectedYear, selectedPlanta, currentMonth)
             ]);
 
-            const monthlyBudget = budgetData.filter(r => r.mes === currentMonth);
-            const monthlyReal = realExpenses.filter(r => r.mes === currentMonth);
+            const monthlyBudget = budgetData; // Ya viene filtrado por mes desde el backend
+            const monthlyReal = realExpenses; // Ya viene filtrado por mes desde el backend
             setRawMonthlyReal(monthlyReal);
 
             const groups: Record<string, CostCenterGroup> = {};
@@ -396,9 +399,6 @@ export const ExecutionMonitor = ({ selectedYear, selectedPlanta }: ExecutionMoni
             )}
 
             <MonitorFilters
-                currentMonth={currentMonth}
-                months={months}
-                onMonthChange={setCurrentMonth}
                 filterExceededOnly={filterExceededOnly}
                 onToggleExceededOnly={() => setFilterExceededOnly(!filterExceededOnly)}
                 filterInternalDeviation={filterInternalDeviation}

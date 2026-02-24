@@ -109,12 +109,12 @@ export const ExecutionTable: React.FC<ExecutionTableProps> = ({
                                             </td>
                                         </tr>
                                     )}
-                                    {/* Group Header */}
+                                    {/* Cabecera de Grupo */}
                                     <tr className={`hover:bg-slate-50 cursor-pointer transition-colors ${isExpanded ? 'bg-slate-50/50' : ''}`} onClick={() => onToggleGroup(group.centroCosto)}>
                                         <td className="px-6 py-4 font-bold text-slate-700">
                                             <div className="flex items-center gap-3">
                                                 {isExpanded ? <ChevronDown size={18} className="text-slate-400" /> : <ChevronRight size={18} className="text-slate-400" />}
-                                                <div className="flex flex-col">
+                                                <div className="flex flex-col select-text">
                                                     <span>{group.centroCosto}</span>
                                                     <span className="text-[10px] font-normal text-slate-400 uppercase tracking-tighter">Centro de Costo</span>
                                                 </div>
@@ -172,7 +172,7 @@ export const ExecutionTable: React.FC<ExecutionTableProps> = ({
                                         </td>
                                     </tr>
 
-                                    {/* Assets grouped by type (Mensual, Hito, etc.) */}
+                                    {/* Activos agrupados por tipo (Mensual, Hito, etc.) */}
                                     {isExpanded && (() => {
                                         const types = Array.from(new Set(group.assets.map(a => a.frecuencia))).sort((a, b) => {
                                             const aLower = a.toLowerCase();
@@ -186,7 +186,7 @@ export const ExecutionTable: React.FC<ExecutionTableProps> = ({
 
                                         return types.map(type => (
                                             <Fragment key={`${group.centroCosto}-${type}`}>
-                                                {/* Category Separator Row */}
+                                                {/* Fila Separadora de Categoría */}
                                                 <tr className="bg-slate-100/30 border-y border-slate-200/40">
                                                     <td colSpan={5} className="px-6 py-1.5 pl-10">
                                                         <div className="flex items-center gap-3">
@@ -203,7 +203,7 @@ export const ExecutionTable: React.FC<ExecutionTableProps> = ({
                                                     const isHito = asset.frecuencia.toLowerCase().includes('hito');
                                                     return (
                                                         <Fragment key={`${group.centroCosto}-${asset.activo}-${assetIdx}`}>
-                                                            <tr className="bg-white hover:bg-slate-50 transition-colors">
+                                                            <tr className="bg-white hover:bg-slate-50 transition-colors select-text">
                                                                 <td className="px-6 py-3 pl-14 text-slate-800 font-medium">
                                                                     <div className="flex flex-wrap items-center gap-2">
                                                                         <span className="text-xs font-bold text-slate-700">{asset.activo}</span>
@@ -276,7 +276,7 @@ export const ExecutionTable: React.FC<ExecutionTableProps> = ({
                                                                     </div>
                                                                 </td>
                                                             </tr>
-                                                            {/* Details Breakdown */}
+                                                            {/* Desglose de Detalles */}
                                                             {asset.details.map((detail, dIdx) => {
                                                                 const progress = Math.min((detail.real / (detail.budget || 1)) * 100, 100);
                                                                 const isOverDetail = detail.real > (detail.budget || 0) && detail.budget > 0;
@@ -328,7 +328,7 @@ export const ExecutionTable: React.FC<ExecutionTableProps> = ({
                 </table>
             </div>
 
-            {/* Pagination Controls */}
+            {/* Controles de Paginación */}
             {totalPages > 1 && (
                 <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
                     <div className="text-sm text-slate-500">

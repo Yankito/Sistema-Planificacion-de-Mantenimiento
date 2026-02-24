@@ -4,9 +4,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useControlGastos } from '../useControlGastos';
 import { ControlGastosService } from '../../services/ControlGastosService';
+import type { PresupuestoRow } from '../../types';
 
 // Mock del servicio
-vi.mock('../services/ControlGastosService', () => {
+vi.mock('../../services/ControlGastosService', () => {
     return {
         ControlGastosService: {
             uploadPresupuesto: vi.fn(),
@@ -71,7 +72,17 @@ describe('useControlGastos Hook', () => {
     });
 
     it('debe llamar a getGastosConsolidados con los parámetros correctos', async () => {
-        const mockData = [{ id: 1 }];
+        const mockData: PresupuestoRow[] = [
+            {
+                activo: 'ACTIVO DE PRUEBA (2002)',
+                frecuencia: 'MENSUAL',
+                mes: 1,
+                anio: 2026,
+                montoBodega: 100,
+                montoServExt: 200,
+                montoCorrectivo: 300
+            }
+        ];
         vi.mocked(ControlGastosService.getGastosConsolidados).mockResolvedValue(mockData);
 
         const { result } = renderHook(() => useControlGastos());
@@ -81,12 +92,20 @@ describe('useControlGastos Hook', () => {
             data = await result.current.getGastosConsolidados(2026, 'PF1');
         });
 
-        expect(ControlGastosService.getGastosConsolidados).toHaveBeenCalledWith(2026, 'PF1');
+        expect(ControlGastosService.getGastosConsolidados).toHaveBeenCalledWith(2026, 'PF1', undefined);
         expect(data).toEqual(mockData);
     });
 
     it('debe llamar a saveManualPresupuesto correctamente', async () => {
-        const mockRows = [{ asset: 'A1', budget: 100 }];
+        const mockRows: PresupuestoRow[] = [{
+            activo: 'ACTIVO DE PRUEBA (2002)',
+            frecuencia: 'MENSUAL',
+            mes: 1,
+            anio: 2026,
+            montoBodega: 100,
+            montoServExt: 200,
+            montoCorrectivo: 300
+        }];
         vi.mocked(ControlGastosService.saveManualPresupuesto).mockResolvedValue(undefined as any);
 
         const { result } = renderHook(() => useControlGastos());

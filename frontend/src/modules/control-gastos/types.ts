@@ -30,13 +30,13 @@ export interface DetalleGastoItem {
 
 export interface PresupuestoRow {
     activo: string;
-    centroCosto: string;
     frecuencia: string;
     mes: number;
     anio: number;
     montoBodega: number;
     montoServExt: number;
     montoCorrectivo: number;
+    centroCosto?: string;
     claseContable?: string;
     mantenible?: string;
 }

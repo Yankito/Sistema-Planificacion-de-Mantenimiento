@@ -3,9 +3,6 @@ import { AlertCircle, Search, Upload } from 'lucide-react';
 import { Tooltip } from './Tooltip';
 
 interface MonitorFiltersProps {
-    currentMonth: number;
-    months: { id: number; name: string }[];
-    onMonthChange: (month: number) => void;
     filterExceededOnly: boolean;
     onToggleExceededOnly: () => void;
     filterInternalDeviation: boolean;
@@ -25,9 +22,6 @@ interface MonitorFiltersProps {
 }
 
 export const MonitorFilters: React.FC<MonitorFiltersProps> = ({
-    currentMonth,
-    months,
-    onMonthChange,
     filterExceededOnly,
     onToggleExceededOnly,
     filterInternalDeviation,
@@ -50,15 +44,6 @@ export const MonitorFilters: React.FC<MonitorFiltersProps> = ({
             {/* Header & Controls */}
             <div className="flex flex-wrap justify-between items-center gap-4 mb-2">
                 <div className="flex flex-wrap items-center gap-3">
-                    <select
-                        value={currentMonth}
-                        onChange={(e) => onMonthChange(Number(e.target.value))}
-                        className="px-4 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm min-w-[140px]"
-                    >
-                        {months.map(m => (
-                            <option key={m.id} value={m.id}>{m.name}</option>
-                        ))}
-                    </select>
 
                     <select
                         value={selectedCategory}

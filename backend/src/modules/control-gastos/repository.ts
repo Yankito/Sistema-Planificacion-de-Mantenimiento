@@ -112,7 +112,7 @@ export const ControlGastosRepository = {
         await connection.executeMany(sql, batch, { autoCommit: true });
       }
 
-      console.log(`Inserted ${rows.length} rows into PF_EAM_GASTOS_CONSOLIDADOS`);
+      console.log(`Insertadas ${rows.length} filas en PF_EAM_GASTOS_CONSOLIDADOS`);
     });
   },
 
@@ -135,11 +135,11 @@ export const ControlGastosRepository = {
       }));
 
       await connection.executeMany(sql, binds, { autoCommit: true });
-      console.log(`Inserted ${rows.length} rows into PF_GASTOS_PRESUPUESTO`);
+      console.log(`Insertadas ${rows.length} filas en PF_GASTOS_PRESUPUESTO`);
     });
   },
 
-  getGastosConsolidados: async (anio: number, planta?: string): Promise<GastoConsolidadoRow[]> => {
+  getGastosConsolidados: async (anio: number, planta?: string, mes?: number): Promise<GastoConsolidadoRow[]> => {
     return await withConnection(async (connection) => {
       const sql = `
                 WITH DataCalculada AS (
@@ -212,15 +212,26 @@ export const ControlGastosRepository = {
                             'OTROS'
                         ) as PLANTA_CALC
                     FROM PF_EAM_GASTOS_CONSOLIDADOS g
-                    INNER JOIN PF_EAM_PEDIDOS p ON TRIM(g.NUMERO_OT) = TRIM(p.PEDIDO_TRABAJO)
-                    LEFT JOIN PF_EAM_ACTIVOS a ON TRIM(UPPER(g.NRO_ACTIVO)) = TRIM(UPPER(a.nro_de_activo))
-                    WHERE EXTRACT(YEAR FROM p.FECHA_INICIAL_PROGRAMADA) = :anio
+                    INNER JOIN PF_EAM_PEDIDOS p ON g.NUMERO_OT = p.PEDIDO_TRABAJO
+                    LEFT JOIN PF_EAM_ACTIVOS a ON UPPER(g.NRO_ACTIVO) = UPPER(a.nro_de_activo)
+                    WHERE p.FECHA_INICIAL_PROGRAMADA >= TO_DATE(:startDate, 'YYYY-MM-DD')
+                      AND p.FECHA_INICIAL_PROGRAMADA <= TO_DATE(:endDate, 'YYYY-MM-DD')
                 )
                 SELECT * FROM DataCalculada
                 WHERE (:plantaFiltro IS NULL OR PLANTA_CALC = :planta)
             `;
 
-      const result = await connection.execute(sql, { anio, plantaFiltro: planta || null, planta: planta || null }, { outFormat: 4002 });
+      // Optimización de fechas: Usamos BETWEEN en lugar de EXTRACT para aprovechar índices
+      const startDate = mes ? `${anio}-${String(mes).padStart(2, '0')}-01` : `${anio}-01-01`;
+      let endDate;
+      if (mes) {
+        const lastDay = new Date(anio, mes, 0).getDate();
+        endDate = `${anio}-${String(mes).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+      } else {
+        endDate = `${anio}-12-31`;
+      }
+
+      const result = await connection.execute(sql, { startDate, endDate, plantaFiltro: planta || null, planta: planta || null }, { outFormat: 4002 });
       const rows = result.rows || [];
 
       const results: GastoConsolidadoRow[] = [];
@@ -244,7 +255,7 @@ export const ControlGastosRepository = {
           tipoGasto = 'CORRECTIVO';
         }
 
-        // Si no coincide con ninguna categoria, lo salta
+        // Si no coincide con ninguna categoría, lo salta
         if (!tipoGasto) continue;
 
         // Priorizamos la fecha programada del Pedido (Base)
@@ -297,7 +308,7 @@ export const ControlGastosRepository = {
     });
   },
 
-  getPresupuesto: async (anio: number, planta?: string): Promise<PresupuestoRow[]> => {
+  getPresupuesto: async (anio: number, planta?: string, activo?: string, mes?: number): Promise<PresupuestoRow[]> => {
     return await withConnection(async (connection) => {
       const sql = `
                 WITH DataPresupuesto AS (
@@ -312,13 +323,13 @@ export const ControlGastosRepository = {
                         (
                             SELECT a.clase_contable 
                             FROM PF_EAM_ACTIVOS a 
-                            WHERE TRIM(UPPER(a.nro_de_activo)) = TRIM(UPPER(ACTIVO_COD))
+                            WHERE a.nro_de_activo = ACTIVO_COD
                             AND ROWNUM = 1
                         ) as "claseContable",
                         (
                             SELECT a.mantenible 
                             FROM PF_EAM_ACTIVOS a 
-                            WHERE TRIM(UPPER(a.nro_de_activo)) = TRIM(UPPER(ACTIVO_COD))
+                            WHERE a.nro_de_activo = ACTIVO_COD
                             AND ROWNUM = 1
                         ) as "mantenible",
                         COALESCE(
@@ -374,7 +385,7 @@ export const ControlGastosRepository = {
                                     END
                                 END
                                 FROM PF_EAM_ACTIVOS a 
-                                WHERE TRIM(UPPER(a.nro_de_activo)) = TRIM(UPPER(ACTIVO_COD))
+                                WHERE a.nro_de_activo = ACTIVO_COD
                                 AND ROWNUM = 1
                             ),
                             CASE 
@@ -390,13 +401,21 @@ export const ControlGastosRepository = {
                         FRECUENCIA
                     FROM PF_GASTOS_PRESUPUESTO 
                     WHERE ANIO = :anio
+                    AND (:activo IS NULL OR ACTIVO_COD = :activo)
+                    AND (:mes IS NULL OR MES = :mes)
                 )
                 SELECT * FROM DataPresupuesto
                 WHERE (:plantaFiltro IS NULL OR PLANTA_CALC = :planta)
                 ORDER BY "activo", "mes"
             `;
 
-      const result = await connection.execute(sql, { anio, plantaFiltro: planta || null, planta: planta || null }, { outFormat: 4002 });
+      const result = await connection.execute(sql, {
+        anio,
+        plantaFiltro: planta || null,
+        planta: planta || null,
+        activo: activo || null,
+        mes: mes || null
+      }, { outFormat: 4002 });
 
       return (result.rows || []).map((row: any) => {
         const activo = row.activo;

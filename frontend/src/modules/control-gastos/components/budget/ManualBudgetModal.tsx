@@ -9,7 +9,7 @@ interface ManualBudgetModalProps {
   setSelectedAsset: (asset: any) => void;
   onSaveSuccess: () => void;
   getMaintainableAssets: (search?: string, silent?: boolean) => Promise<any[]>;
-  getPresupuesto: (year: number, planta: string, silent?: boolean) => Promise<any[]>;
+  getPresupuesto: (year: number, planta: string, activo?: string, mes?: number, silent?: boolean) => Promise<any[]>;
   saveManualPresupuesto: (rows: any[]) => Promise<void>;
   selectedYear: number;
   months: string[];
@@ -37,7 +37,7 @@ export const ManualBudgetModal: React.FC<ManualBudgetModalProps> = React.memo(({
 
   const lastLoadedAssetRef = useRef<string | null>(null);
 
-  // Load existing budget only once per selected asset
+  // Cargar presupuesto existente solo una vez por activo seleccionado
   useEffect(() => {
     if (isOpen && selectedAsset?.activo) {
       if (lastLoadedAssetRef.current !== selectedAsset.activo) {
@@ -55,8 +55,8 @@ export const ManualBudgetModal: React.FC<ManualBudgetModalProps> = React.memo(({
     if (!selectedAsset?.activo) return;
     setDataLoading(true);
     try {
-      const rows = await getPresupuesto(selectedYear, '', true);
-      const assetRows = rows.filter(r => r.activo === selectedAsset.activo);
+      // Pedimos solo los datos de este activo
+      const assetRows = await getPresupuesto(selectedYear, '', selectedAsset.activo, undefined, true);
       const groupedByFrecuencia: Record<string, ManualEntryLine> = {};
 
       assetRows.forEach(r => {
@@ -234,7 +234,7 @@ export const ManualBudgetModal: React.FC<ManualBudgetModalProps> = React.memo(({
                   <button
                     key={asset.activo}
                     onClick={() => setSelectedAsset(asset)}
-                    className="flex flex-col p-3 border border-slate-100 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all text-left group"
+                    className="flex flex-col p-3 border border-slate-100 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all text-left group cursor-pointer"
                   >
                     <span className="font-bold text-slate-700 group-hover:text-blue-700">{asset.activo}</span>
                     <span className="text-[10px] text-slate-400">{asset.claseContable} • {asset.organizacion}</span>
@@ -258,11 +258,11 @@ export const ManualBudgetModal: React.FC<ManualBudgetModalProps> = React.memo(({
                 <div className="flex gap-2">
                   <button
                     onClick={() => setManualEntries([...manualEntries, createEmptyEntry(`Tarea ${manualEntries.length + 1}`)])}
-                    className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-bold flex items-center gap-1"
+                    className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer"
                   >
                     <Plus size={14} /> Agregar Fila
                   </button>
-                  <button onClick={() => setSelectedAsset(null)} className="text-xs text-blue-600 font-bold hover:underline">Cambiar Activo</button>
+                  <button onClick={() => setSelectedAsset(null)} className="text-xs text-blue-600 font-bold hover:underline cursor-pointer">Cambiar Activo</button>
                 </div>
               </div>
 
@@ -283,7 +283,7 @@ export const ManualBudgetModal: React.FC<ManualBudgetModalProps> = React.memo(({
                               copy[entryIdx].collapsed = !copy[entryIdx].collapsed;
                               setManualEntries(copy);
                             }}
-                            className="p-1 hover:bg-slate-50 rounded-lg text-slate-400 transition-colors"
+                            className="p-1 hover:bg-slate-50 rounded-lg text-slate-400 transition-colors cursor-pointer"
                           >
                             {entry.collapsed ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
                           </button>

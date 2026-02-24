@@ -9,11 +9,12 @@ import { BudgetMatrixTable } from './budget/BudgetMatrixTable';
 interface BudgetConfigProps {
     selectedYear: number;
     selectedPlanta: string;
+    selectedMonth?: number;
 }
 
-// Internal type for the matrix view
+// Tipo interno para la vista de matriz
 interface BudgetMatrixItem {
-    id: string; // Asset Name
+    id: string;
     nivel: string;
     activo: string;
     totalAnnual: number;
@@ -31,7 +32,7 @@ interface BudgetMatrixItem {
 
 const MONTHS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
-export const BudgetConfig = ({ selectedYear, selectedPlanta }: BudgetConfigProps) => {
+export const BudgetConfig = ({ selectedYear, selectedPlanta, selectedMonth }: BudgetConfigProps) => {
     const [matrixData, setMatrixData] = useState<BudgetMatrixItem[]>([]);
     const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
     const [showNotFoundOnly, setShowNotFoundOnly] = useState(false);
@@ -53,13 +54,9 @@ export const BudgetConfig = ({ selectedYear, selectedPlanta }: BudgetConfigProps
     } = useControlGastos();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    useEffect(() => {
-        loadData();
-    }, [selectedYear, selectedPlanta]);
-
     const loadData = useCallback(async () => {
         try {
-            const data = await getPresupuesto(selectedYear, selectedPlanta);
+            const data = await getPresupuesto(selectedYear, selectedPlanta, undefined, selectedMonth);
             const grouped: Record<string, BudgetMatrixItem> = {};
 
             data.forEach(row => {
@@ -97,7 +94,11 @@ export const BudgetConfig = ({ selectedYear, selectedPlanta }: BudgetConfigProps
         } catch (e) {
             console.error(e);
         }
-    }, [selectedYear, selectedPlanta, getPresupuesto]);
+    }, [selectedYear, selectedPlanta, selectedMonth, getPresupuesto]);
+
+    useEffect(() => {
+        loadData();
+    }, [loadData]);
 
     const handleRemapSearchByCC = useCallback(async (cc: string) => {
         if (cc) {

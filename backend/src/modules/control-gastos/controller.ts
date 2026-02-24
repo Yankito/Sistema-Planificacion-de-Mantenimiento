@@ -295,7 +295,9 @@ export class ControlGastosController {
     try {
       const anio = Number(req.query.anio);
       const planta = req.query.planta as string;
-      const data = await ControlGastosRepository.getPresupuesto(anio, planta);
+      const activo = req.query.activo as string;
+      const mes = req.query.mes ? Number(req.query.mes) : undefined;
+      const data = await ControlGastosRepository.getPresupuesto(anio, planta, activo, mes);
       res.json(data);
     } catch (e: any) {
       console.error(e);
@@ -310,7 +312,8 @@ export class ControlGastosController {
     try {
       const anio = Number(req.query.anio);
       const planta = req.query.planta as string;
-      const data = await ControlGastosRepository.getGastosConsolidados(anio, planta);
+      const mes = req.query.mes ? Number(req.query.mes) : undefined;
+      const data = await ControlGastosRepository.getGastosConsolidados(anio, planta, mes);
       res.json(data);
     } catch (e: any) {
       console.error(e);

@@ -9,9 +9,17 @@ export const ControlGastosView = () => {
     const [activeTab, setActiveTab] = useState<'monitor' | 'config' | 'breakdown'>('monitor');
     const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
     const [selectedPlanta, setSelectedPlanta] = useState<string>('PF1');
+    const [selectedMonth, setSelectedMonth] = useState<number | undefined>(new Date().getMonth() + 1);
 
     const plantas = ["PF1", "PF2", "PF3", "PF4", "PF5", "PF6", "MPS", "CDT", "DC", "VENTAS", "OTROS"];
     const years = useMemo<number[]>(() => getYearOptions(2, 2), []);
+    const months = [
+        { val: undefined, label: 'Todo el año' },
+        { val: 1, label: 'Enero' }, { val: 2, label: 'Febrero' }, { val: 3, label: 'Marzo' },
+        { val: 4, label: 'Abril' }, { val: 5, label: 'Mayo' }, { val: 6, label: 'Junio' },
+        { val: 7, label: 'Julio' }, { val: 8, label: 'Agosto' }, { val: 9, label: 'Septiembre' },
+        { val: 10, label: 'Octubre' }, { val: 11, label: 'Noviembre' }, { val: 12, label: 'Diciembre' }
+    ];
 
     return (
         <div className="space-y-6 animate-fade-in-up">
@@ -44,14 +52,32 @@ export const ControlGastosView = () => {
                             ))}
                         </select>
                     </div>
+
+                    <div className="flex flex-col">
+                        <label className="text-[10px] font-black text-slate-400 uppercase mb-1 px-1">Mes</label>
+                        <select
+                            value={activeTab === 'config' ? '' : (selectedMonth ?? '')}
+                            disabled={activeTab === 'config'}
+                            onChange={(e) => setSelectedMonth(e.target.value === '' ? undefined : Number(e.target.value))}
+                            className={`px-4 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm min-w-[140px] ${activeTab === 'config' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        >
+                            {activeTab !== 'monitor' && <option value="">Todo el año</option>}
+                            {months.filter(m => m.val !== undefined).map(m => (
+                                <option key={m.val} value={m.val}>{m.label}</option>
+                            ))}
+                        </select>
+                    </div>
                 </div>
             </div>
 
-            {/* Navigation Tabs */}
+            {/* Pestañas de navegacion */}
             <div className="border-b border-slate-200">
                 <nav className="-mb-px flex space-x-8" aria-label="Tabs">
                     <button
-                        onClick={() => setActiveTab('monitor')}
+                        onClick={() => {
+                            setActiveTab('monitor');
+                            if (selectedMonth === undefined) setSelectedMonth(new Date().getMonth() + 1);
+                        }}
                         className={`
                             whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 transition-colors
                             ${activeTab === 'monitor'
@@ -77,7 +103,11 @@ export const ControlGastosView = () => {
                     </button>
 
                     <button
-                        onClick={() => setActiveTab('config')}
+                        onClick={() => {
+                            setActiveTab('config');
+                            // Si veníamos de monitor y no teníamos mes seleccionado (aunque ahora siempre tiene),
+                            // nos aseguramos que para presupuesto sea anual
+                        }}
                         className={`
                             whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 transition-colors
                             ${activeTab === 'config'
@@ -93,9 +123,15 @@ export const ControlGastosView = () => {
 
             {/* Content Area */}
             <div className="min-h-[500px]">
-                {activeTab === 'monitor' && <ExecutionMonitor selectedYear={selectedYear} selectedPlanta={selectedPlanta} />}
-                {activeTab === 'config' && <BudgetConfig selectedYear={selectedYear} selectedPlanta={selectedPlanta} />}
-                {activeTab === 'breakdown' && <ExpenseBreakdown selectedYear={selectedYear} selectedPlanta={selectedPlanta} />}
+                {activeTab === 'monitor' && (
+                    <ExecutionMonitor
+                        selectedYear={selectedYear}
+                        selectedPlanta={selectedPlanta}
+                        selectedMonth={selectedMonth}
+                    />
+                )}
+                {activeTab === 'config' && <BudgetConfig selectedYear={selectedYear} selectedPlanta={selectedPlanta} selectedMonth={undefined} />}
+                {activeTab === 'breakdown' && <ExpenseBreakdown selectedYear={selectedYear} selectedPlanta={selectedPlanta} selectedMonth={selectedMonth} />}
             </div>
         </div>
     );

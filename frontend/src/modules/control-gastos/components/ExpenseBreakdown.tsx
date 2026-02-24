@@ -7,22 +7,24 @@ import { categorizeAsset } from '../utils/categorization';
 interface ExpenseBreakdownProps {
     selectedYear: number;
     selectedPlanta: string;
+    selectedMonth?: number;
 }
 
-export const ExpenseBreakdown = ({ selectedYear, selectedPlanta }: ExpenseBreakdownProps) => {
+export const ExpenseBreakdown = ({ selectedYear, selectedPlanta, selectedMonth }: ExpenseBreakdownProps) => {
     const [selectedAsset, setSelectedAsset] = useState('Todos');
     const [details, setDetails] = useState<DetalleGastoItem[]>([]);
     const { getPresupuesto, getGastosConsolidados, loading } = useControlGastos();
 
     useEffect(() => {
         loadData();
-    }, [selectedYear, selectedPlanta]);
+    }, [selectedYear, selectedPlanta, selectedMonth]);
 
     const loadData = async () => {
         try {
+            // Optimizamos: Pedimos solo los datos del mes seleccionado si aplica
             const [, realExpenses] = await Promise.all([
-                getPresupuesto(selectedYear, selectedPlanta),
-                getGastosConsolidados(selectedYear, selectedPlanta)
+                getPresupuesto(selectedYear, selectedPlanta, undefined, selectedMonth),
+                getGastosConsolidados(selectedYear, selectedPlanta, selectedMonth)
             ]);
 
             const items: DetalleGastoItem[] = [];
@@ -165,7 +167,7 @@ export const ExpenseBreakdown = ({ selectedYear, selectedPlanta }: ExpenseBreakd
                     </div>
                 </div>
 
-                {/* Detailed Table */}
+                {/* Tabla de detalles */}
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
                     <div className="p-6 border-b border-slate-100">
                         <h3 className="text-lg font-bold text-slate-800">Detalle de Asignaciones</h3>
