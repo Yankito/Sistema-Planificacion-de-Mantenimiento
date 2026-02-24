@@ -15,6 +15,11 @@ export interface PlanResult {
   error?: string;
 }
 
+export interface PlanningOT extends Omit<PlanResult, 'fechaSugerida'> {
+  fechaIdeal: Date;
+  semana: string;
+}
+
 export interface HorarioTecnico {
   nombre: string;
   rol: string;

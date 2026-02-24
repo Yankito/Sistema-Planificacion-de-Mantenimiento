@@ -4,11 +4,11 @@ import { PlannerService } from "./PlannerService.js";
 import { type HorarioTecnico } from "../types.js";
 import { query } from "../../../db/config.js";
 
-export const normalizarColumnas = (df: any[]) => {
+export const normalizarColumnas = (df: Record<string, unknown>[]) => {
   if (df.length === 0) return [];
   const keys = Object.keys(df[0]);
   return df.map(row => {
-    const newRow: any = {};
+    const newRow: Record<string, unknown> = {};
     keys.forEach(k => {
       newRow[String(k).trim().toUpperCase()] = row[k];
     });
@@ -31,8 +31,7 @@ export const obtenerMapaHorarios = (sheets: { [key: string]: XLSX.WorkSheet }): 
   }
   console.log("Procesando hoja HORARIOS para obtener mapa de horarios por técnico");
 
-  // Usamos header: 1 para obtener un array de arrays
-  const dfHorarios = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as any[][];
+  const dfHorarios = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as unknown[][];
   const mapa = new Map<string, string[]>();
 
   dfHorarios.slice(1).forEach(fila => {
@@ -59,7 +58,7 @@ export const processExcelData = (
       console.warn(`Hoja "${name}" no encontrada en el archivo Excel.`);
       return [];
     }
-    return XLSX.utils.sheet_to_json(sheet);
+    return XLSX.utils.sheet_to_json(sheet) as Record<string, unknown>[];
   };
 
   const dfAnt = normalizarColumnas(getSheetData("B.ANT"));
@@ -129,7 +128,7 @@ export const processExcelData = (
 const obtenerHorariosDesdeSheets = (sheets: { [key: string]: XLSX.WorkSheet }) => {
   const sheet = findSheet(sheets, "HORARIOS");
   if (!sheet) return [];
-  const dfHorarios = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as any[][];
+  const dfHorarios = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as unknown[][];
 
   return dfHorarios.slice(1)
     .filter(fila => fila.length > 0 && fila[0])
@@ -146,8 +145,8 @@ export const obtenerHorariosPorPlanta = (workbook: XLSX.WorkBook, plantaSel: str
   if (!sheet || !sheetEmp) return [];
 
   console.log(`Buscando horarios para planta: ${plantaSel}`);
-  const dfHorarios = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as any[][];
-  const dfTecnicos = normalizarColumnas(XLSX.utils.sheet_to_json(sheetEmp));
+  const dfHorarios = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as unknown[][];
+  const dfTecnicos = normalizarColumnas(XLSX.utils.sheet_to_json(sheetEmp) as Record<string, unknown>[]);
 
   console.log(`Total técnicos en EMPLEADOS: ${dfTecnicos.length}`);
 
@@ -185,27 +184,4 @@ export const obtenerHorariosPorPlanta = (workbook: XLSX.WorkBook, plantaSel: str
         turnos: fila.slice(1, 32).map(v => String(v || "L").trim().toUpperCase())
       };
     });
-};
-
-export const savePlanningToDB = async (snapshotId: number, processData: any) => {
-  const { tecnicosMap, horariosCompletos } = processData;
-
-  // 1. Actualizar Maestro de Empleados
-  for (const [nombre, info] of Object.entries(tecnicosMap)) {
-    const { planta, rol } = info as any;
-    await query(`
-      INSERT INTO empleados (nombre, planta, rol)
-      VALUES ($1, $2, $3)
-      ON CONFLICT (nombre) DO UPDATE SET planta = $2, rol = $3
-    `, [nombre, planta, rol]);
-  }
-
-  // 2. Guardar Matriz de Horarios para este Snapshot
-  for (const h of horariosCompletos) {
-    await query(`
-      INSERT INTO horarios (snapshot_id, empleado_nombre, turnos)
-      VALUES ($1, $2, $3)
-      ON CONFLICT (snapshot_id, empleado_nombre) DO UPDATE SET turnos = $3
-    `, [snapshotId, h.nombre, JSON.stringify(h.turnos)]);
-  }
 };

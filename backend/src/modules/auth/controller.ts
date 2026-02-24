@@ -62,9 +62,10 @@ export const AuthController = {
         plantas,
         tieneCI,
       });
-    } catch (error: any) {
-      console.error('Error en login:', error);
-      return res.status(500).json({ error: 'Error interno del servidor' });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Error interno del servidor";
+      console.error('Error en login:', message);
+      return res.status(500).json({ error: message });
     }
   },
 
@@ -77,9 +78,10 @@ export const AuthController = {
     try {
       const indicadores = await AuthRepository.getDashboardIndicadores();
       return res.json(indicadores);
-    } catch (error: any) {
-      console.error('Error obteniendo indicadores:', error);
-      return res.status(500).json({ error: 'Error obteniendo indicadores' });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Error obteniendo indicadores";
+      console.error('Error obteniendo indicadores:', message);
+      return res.status(500).json({ error: message });
     }
   },
 
@@ -103,7 +105,7 @@ export const AuthController = {
         plantas: authUser.plantas,
         nombreCompleto: authUser.nombreCompleto,
       });
-    } catch (error: any) {
+    } catch (error) {
       return res.status(500).json({ error: 'Error verificando sesión' });
     }
   },

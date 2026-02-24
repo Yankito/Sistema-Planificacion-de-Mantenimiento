@@ -104,15 +104,12 @@ export interface ReporteExcel {
   fileName: string;
 }
 
-// Interfaz para la respuesta del Upload (evitar el any)
 export interface UploadResponse {
   actual: AtrasoRow[];
   anterior: AtrasoRow[];
   activos: ActivoRow[];
   message?: string;
 }
-
-// src/types.ts
 
 export interface CeldaExcel {
   v: string | number | boolean | Date;
@@ -126,5 +123,4 @@ export interface CeldaExcel {
   f?: string; // Fórmulas
 }
 
-// Una fila puede ser un conjunto de objetos de celda o valores primitivos
 export type FilaExcel = (CeldaExcel | string | number | null | undefined)[];

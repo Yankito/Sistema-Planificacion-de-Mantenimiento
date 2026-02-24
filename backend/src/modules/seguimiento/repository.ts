@@ -1,5 +1,6 @@
 import { query, executeMany } from '../../db/config.js';
-import type { AtrasoRow, ActivoRow, TecnicoEstado } from './types.js';
+import type { OrdenTrabajo, TecnicoEstado } from '../../types.js';
+import type { ActivoRow } from './types.js';
 
 export const SeguimientoRepository = {
   // Ya no usamos historial de semanas
@@ -9,12 +10,12 @@ export const SeguimientoRepository = {
 
   // Obtiene los datos ACTUALES directos de la base
   // Ignora el parámetro 'semana' ya que siempre lee en tiempo real
-  getPedidos: async (fechaInicio: string, fechaFin: string): Promise<AtrasoRow[]> => {
+  getPedidos: async (fechaInicio: string, fechaFin: string): Promise<OrdenTrabajo[]> => {
     if (!fechaInicio || !fechaFin) {
       throw new Error("El rango de fechas (fechaInicio y fechaFin) es obligatorio.");
     }
 
-    const params: any = { fechaInicio, fechaFin };
+    const params: Record<string, string> = { fechaInicio, fechaFin };
     const whereClause = `
       WHERE (
           UPPER(p.estado) = 'LIBERADO'
@@ -158,9 +159,9 @@ export const SeguimientoRepository = {
 
     const res = await query(sql, params);
 
-    if (!res?.rows) return [];
+    const rows = (res.rows || []) as Record<string, any>[];
 
-    return res.rows.map((r: any) => {
+    return rows.map((r): OrdenTrabajo => {
       let detalles: TecnicoEstado[] = [];
       try {
         if (r.DETALLES_TECNICOS_RAW) {
@@ -169,13 +170,13 @@ export const SeguimientoRepository = {
             : r.DETALLES_TECNICOS_RAW;
 
           if (Array.isArray(raw)) {
-            detalles = raw.map((d: any) => ({
+            detalles = raw.map((d: Record<string, any>) => ({
               tecnico: {
                 nombre: d.nombre,
                 rol: d.rol,
                 planta: d.planta
               },
-              opFinalizada: d.opFinalizada === 'SI' || d.opFinalizada === 'Si'
+              opFinalizada: d.opFinalizada === 'SI' || d.opFinalizada === 'Si' || d.opFinalizada === 'S' || d.opFinalizada === 's'
             }));
           }
         }
@@ -186,7 +187,9 @@ export const SeguimientoRepository = {
         id: r.OT,
         planta: r.PLANTA || 'OTROS',
         ot: r.OT,
+        nroOrden: r.OT, // Added for consistency with OrdenTrabajo
         nroActivo: r.NRO_ACTIVO,
+        equipo: r.NRO_ACTIVO, // Added for consistency with OrdenTrabajo
         descripcion: r.DESCRIPCION,
         estado: r.ESTADO,
         clasificacion: r.CLASIFICACION,

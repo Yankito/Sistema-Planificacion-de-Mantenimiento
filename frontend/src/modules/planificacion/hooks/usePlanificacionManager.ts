@@ -1,11 +1,14 @@
-import { useState, useEffect, useCallback } from "react";
-import type { PlanResult, HorarioTecnico } from "../types";
+import { useState, useEffect, useCallback, useRef } from "react";
+import type { PlanResult, HorarioTecnico, ProcesoExcelResponse } from "../types";
 import type { Tecnico } from "../../../shared/types";
 import { mapDepartamentoAPlanta } from "../utils/excelUtils";
 import * as PlanificacionService from "../services/PlanificacionService";
 import { getMonthOptions } from "../../../shared/utils/dateUtils";
+import { usePlantasAcceso } from "../../../shared/hooks/usePlantasAcceso";
 
 export const usePlanificacionManager = () => {
+  const { plantaDefault } = usePlantasAcceso();
+
   // --- ESTADO DE DATOS ---
   const [planResult, setPlanResult] = useState<PlanResult[]>([]);
   const [planResultSinAsignar, setPlanResultSinAsignar] = useState<PlanResult[]>([]);
@@ -21,19 +24,26 @@ export const usePlanificacionManager = () => {
   const [loadingHorarios, setLoadingHorarios] = useState(false);
   const [loadingAction, setLoadingAction] = useState(false);
   const cargandoPlan = loadingPlan || loadingHorarios || loadingAction;
-  const [plantaPlan, setPlantaPlan] = useState("PF3");
+  const [plantaPlan, setPlantaPlan] = useState(plantaDefault);
   const [fechaFoco, setFechaFoco] = useState<string | null>(null);
+
+  // Evita llamadas duplicadas con mismos parametros
+  const lastPlanKeyRef = useRef<string | null>(null);
+  const lastHorariosKeyRef = useRef<string | null>(null);
+  const planInFlightRef = useRef<string | null>(null);
+  const horariosInFlightRef = useRef<string | null>(null);
 
   /**
    * Helper para actualizar todo el estado desde una respuesta del servidor
    */
-  const actualizarDesdeRespuesta = useCallback((data: any) => {
+  const actualizarDesdeRespuesta = useCallback((data: ProcesoExcelResponse) => {
     if (!data) return;
+    console.log("usePlanificacionManager: Actualizando desde respuesta:", data);
 
     // Helper para normalizar nombres
-    const normalizePlan = (plan: any[]) => plan.map(ot => ({
+    const normalizePlan = (plan: PlanResult[]) => plan.map(ot => ({
       ...ot,
-      tecnicos: ot.tecnicos.map((t: any) => ({ ...t, nombre: t.nombre.toUpperCase() }))
+      tecnicos: ot.tecnicos.map((t: Tecnico) => ({ ...t, nombre: t.nombre }))
     }));
 
     // 1. OTs
@@ -76,7 +86,23 @@ export const usePlanificacionManager = () => {
   })();
 
   // --- CARGA DESDE ORACLE ---
-  const cargarHorarios = useCallback(async (periodo: string, planta: string) => {
+  const cargarHorarios = useCallback(async (
+    periodo: string,
+    planta: string,
+    options?: { force?: boolean }
+  ) => {
+    if (!/^\d{4}-\d{2}$/.test(periodo)) {
+      console.warn("usePlanificacionManager: Periodo invalido para horarios:", periodo);
+      return;
+    }
+
+    const key = `${periodo}::${planta}`;
+    if (!options?.force) {
+      if (lastHorariosKeyRef.current === key) return;
+      if (horariosInFlightRef.current === key) return;
+    }
+
+    horariosInFlightRef.current = key;
     setLoadingHorarios(true);
     try {
       console.log("Cargando horarios para periodo:", periodo, "planta:", planta);
@@ -84,31 +110,56 @@ export const usePlanificacionManager = () => {
       const resp = await PlanificacionService.getHorarios(mes, anio, planta);
       if (resp && resp.data) {
         setHorariosResult(resp.data);
+        lastHorariosKeyRef.current = key;
       }
     } catch (error) {
       console.error("Error al cargar horarios desde base de datos:", error);
     } finally {
+      if (horariosInFlightRef.current === key) {
+        horariosInFlightRef.current = null;
+      }
       setLoadingHorarios(false);
     }
   }, []);
 
-  const cargarPlanificacion = useCallback(async (mes: number, anio: number, planta: string) => {
+  const cargarPlanificacion = useCallback(async (
+    mes: number,
+    anio: number,
+    planta: string,
+    options?: { force?: boolean }
+  ) => {
+    if (!Number.isFinite(mes) || !Number.isFinite(anio)) {
+      console.warn("usePlanificacionManager: Mes/anio invalidos:", { mes, anio });
+      return;
+    }
+
+    const key = `${anio}-${String(mes).padStart(2, '0')}::${planta}`;
+    if (!options?.force) {
+      if (lastPlanKeyRef.current === key) return;
+      if (planInFlightRef.current === key) return;
+    }
+
+    planInFlightRef.current = key;
     setLoadingPlan(true);
     try {
       const data = await PlanificacionService.getResultadosPlanificacion(mes, anio, planta);
       if (data && data.resultados) {
         // Helper inline o reusado (mejor inline aquí para no romper deps del useCallback)
-        const normalizePlan = (plan: any[]) => plan.map(ot => ({
+        const normalizePlan = (plan: PlanResult[]) => plan.map(ot => ({
           ...ot,
-          tecnicos: ot.tecnicos.map((t: any) => ({ ...t, nombre: t.nombre.toUpperCase() }))
+          tecnicos: ot.tecnicos.map((t: Tecnico) => ({ ...t, nombre: t.nombre.toUpperCase(), existe: true }))
         }));
 
         setPlanResult(normalizePlan(data.resultados));
         setPlanResultSinAsignar(normalizePlan(data.sinAsignar || []));
+        lastPlanKeyRef.current = key;
       }
     } catch (error) {
       console.error("Error al cargar planificación:", error);
     } finally {
+      if (planInFlightRef.current === key) {
+        planInFlightRef.current = null;
+      }
       setLoadingPlan(false);
     }
   }, []);
@@ -129,18 +180,6 @@ export const usePlanificacionManager = () => {
     }
   }, [horariosResult]);
 
-  // Efecto principal: Cargar horarios al cambiar filtros
-  // Cargamos horarios tanto si cambia la planta del Gantt como si cambia la de Planificación
-  useEffect(() => {
-    console.log("usePlanificacionManager: Cargando horarios para periodo", periodoSeleccionado, "y planta", { plantaPlan });
-    // Cargamos para plantaPlan (vista Gantt)
-    cargarHorarios(periodoSeleccionado, plantaPlan);
-
-    // Y si es distinta, también para plantaPlan (vista Planificación) para el Magic Wand
-    if (plantaPlan !== plantaPlan) {
-      cargarHorarios(periodoSeleccionado, plantaPlan);
-    }
-  }, [periodoSeleccionado, plantaPlan, cargarHorarios]);
 
   // --- ACCIONES PRINCIPALES ---
 
@@ -166,31 +205,6 @@ export const usePlanificacionManager = () => {
       setLoadingAction(false);
     }
   };
-
-  /**
-   * Procesa un archivo Excel localmente enviándolo al servidor.
-   * Útil para cargas manuales o iniciales sin Oracle.
-   */
-  const procesarArchivo = async (file: File, mes?: number, anio?: number): Promise<void> => {
-    console.log("usePlanificacionManager: Iniciando procesarArchivo...");
-    setLoadingAction(true);
-    try {
-      console.log("Llamando a PlanificacionService.procesarExcelEnServidor...", { mes, anio });
-      const data = await PlanificacionService.procesarExcelEnServidor(file, 'STRICT', mes, anio);
-      console.log("Respuesta de servidor recibida:", data ? "CON DATOS" : "NULL");
-      if (data) {
-        actualizarDesdeRespuesta(data);
-      }
-    } catch (error) {
-
-      console.error("Error procesando archivo:", error);
-      alert("Error al procesar archivo de planificación.");
-    } finally {
-      setLoadingAction(false);
-    }
-  };
-
-
 
   /**
    * Sincroniza un cambio de turno individual en la matriz de técnicos.
@@ -242,7 +256,7 @@ export const usePlanificacionManager = () => {
     const actualizar = (ot: PlanResult): PlanResult => {
       const nuevos = [...ot.tecnicos];
       if (accion === 'ADD' && rol) {
-        nuevos.push({ nombre: "VACANTE", rol, turnos: null, existe: true });
+        nuevos.push({ nombre: "VACANTE", rol, planta: ot.planta, turnos: null, existe: true });
       } else if (accion === 'REMOVE' && typeof indice === 'number') {
         nuevos.splice(indice, 1);
       }
@@ -298,7 +312,6 @@ export const usePlanificacionManager = () => {
     handleCambioTurno,
     handleAsignarTecnico,
     handleModificarCupos,
-    procesarArchivo,
     guardarPlanificacion: PlanificacionService.guardarPlanificacion,
 
     reset: () => {

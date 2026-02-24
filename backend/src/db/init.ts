@@ -277,7 +277,6 @@ export const initDB = async () => {
       try { await query(`CREATE INDEX ${nombre} ON ${tabla}(${col})`); } catch (e) { }
     };
 
-    // await crearIndice('idx_ped_snap_pf', 'pedidos_de_trabajo', 'snapshot_id'); // ELIMINADO
     await crearIndice('idx_plan_mes_pf', 'PF_IM_PLANIFICACION', 'mes');
     await crearIndice('idx_hor_mes_pf', 'PF_IM_HORARIOS', 'mes');
     await crearIndice('idx_tec_pla_pf', 'PF_IM_TECNICOS', 'planta');

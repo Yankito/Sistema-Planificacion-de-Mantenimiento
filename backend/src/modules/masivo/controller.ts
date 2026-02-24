@@ -1,3 +1,4 @@
+import type { Request, Response } from 'express';
 import XLSX from "xlsx-js-style";
 import { processExcelData } from '../planificacion/logic/excelProcessor.js';
 import { processSeguimientoOTs } from '../seguimiento/logic/seguimientoOTsProcessor.js';
@@ -19,7 +20,7 @@ import { generarBufferPlantilla } from '../seguimiento/logic/templateGenerator.j
 import { EamRepository } from '../eam/repository.js';
 
 // Helper para convertir fecha Excel o String DD/MM/YYYY a String ISO o compatible DB
-const parseFecha = (val: any): string | null => {
+const parseFecha = (val: unknown): string | null => {
     if (!val) return null;
     let strVal = '';
 
@@ -51,7 +52,7 @@ const parseFecha = (val: any): string | null => {
 };
 
 // Helper SOLO FECHA (DD/MM/YYYY) para Cumplimiento y Masivo
-const parseFechaDateOnly = (val: any): string | null => {
+const parseFechaDateOnly = (val: unknown): string | null => {
     if (!val) return null;
     let strVal = '';
 
@@ -84,7 +85,7 @@ const parseFechaDateOnly = (val: any): string | null => {
 };
 
 export const MassiveController = {
-    uploadMassive: async (req: any, res: any) => {
+    uploadMassive: async (req: Request, res: Response) => {
         try {
             if (!req.file) {
                 return res.status(400).json({ error: "Archivo requerido" });
@@ -114,8 +115,8 @@ export const MassiveController = {
                 let totalPedidos = 0;
                 for (const hojaNombre of hojasPedidosEncontradas) {
                     console.log(`[MASIVO] 📊 Procesando hoja ${hojaNombre} con pedidos...`);
-                    const pedidosRaw = XLSX.utils.sheet_to_json(workbook.Sheets[hojaNombre]);
-                    const pedidosMapped = pedidosRaw.map((r: any) => ({
+                    const pedidosRaw = XLSX.utils.sheet_to_json(workbook.Sheets[hojaNombre]) as Record<string, unknown>[];
+                    const pedidosMapped = pedidosRaw.map((r) => ({
                         pedido_trabajo: String(r['Pedido de Trabajo'] || r['PEDIDO_DE_TRABAJO'] || '').trim(),
                         numero_activo: String(r['Número de Activo'] || r['NUMERO_DE_ACTIVO'] || '').trim(),
                         grupo_activos: String(r['Grupo de Activos'] || r['GRUPO_DE_ACTIVOS'] || '').trim(),
@@ -136,8 +137,8 @@ export const MassiveController = {
 
                 // 1.5 Cargar ACTIVOS
                 if (hojaActivos) {
-                    const activosRaw = XLSX.utils.sheet_to_json(workbook.Sheets[hojaActivos]);
-                    const activosMapped = activosRaw.map((r: any) => ({
+                    const activosRaw = XLSX.utils.sheet_to_json(workbook.Sheets[hojaActivos]) as Record<string, unknown>[];
+                    const activosMapped = activosRaw.map((r) => ({
                         grupo_de_activo: String(r['GRUPO_DE_ACTIVO'] || '').trim(),
                         desc_grupo_de_activo: String(r['DESC_GRUPO_DE_ACTIVO'] || '').trim(),
                         nro_de_serie: String(r['NRO_DE_SERIE'] || '').trim(),
@@ -160,8 +161,8 @@ export const MassiveController = {
 
                 // 2. Cargar CUMPLIMIENTO
                 if (sheetNames.includes('CUMPLIMIENTO')) {
-                    const cumplimientoRaw = XLSX.utils.sheet_to_json(workbook.Sheets['CUMPLIMIENTO']);
-                    const cumplimientoMapped = cumplimientoRaw.map((r: any) => ({
+                    const cumplimientoRaw = XLSX.utils.sheet_to_json(workbook.Sheets['CUMPLIMIENTO']) as Record<string, unknown>[];
+                    const cumplimientoMapped = cumplimientoRaw.map((r) => ({
                         planta: String(r['PLANTA'] || '').trim(),
                         empleado: String(r['EMPLEADO'] || '').trim(),
                         nro_ot: String(r['NRO_OT'] || '').trim(),
@@ -179,8 +180,8 @@ export const MassiveController = {
 
                 // 3. Cargar MASIVO
                 if (sheetNames.includes('MASIVO')) {
-                    const masivoRaw = XLSX.utils.sheet_to_json(workbook.Sheets['MASIVO']);
-                    const masivoMapped = masivoRaw.map((r: any) => ({
+                    const masivoRaw = XLSX.utils.sheet_to_json(workbook.Sheets['MASIVO']) as Record<string, unknown>[];
+                    const masivoMapped = masivoRaw.map((r) => ({
                         numero: String(r['Número'] || r['NUMERO'] || '').trim(),
                         activo: String(r['Activo'] || r['ACTIVO'] || '').trim(),
                         descripcion: String(r['Descripción'] || r['DESCRIPCION'] || '').trim(),
@@ -213,7 +214,6 @@ export const MassiveController = {
                         })()
                     })).filter(m => m.numero);
 
-                    // Eliminar duplicados por 'numero' para evitar ORA-00001
                     const uniqueMasivo = Array.from(
                         new Map(masivoMapped.map(item => [item.numero, item])).values()
                     );
@@ -271,33 +271,35 @@ export const MassiveController = {
                 counts
             });
 
-        } catch (error: any) {
-            console.error("[MASIVO] ❌ Error en carga masiva:", error.message);
-            console.error("[MASIVO] Stack:", error.stack);
-            res.status(500).json({ error: error.message });
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "Error desconocido";
+            console.error("[MASIVO] ❌ Error en carga masiva:", message);
+            res.status(500).json({ error: message });
         }
     },
-    descargarPlantillaEAM: async (req: any, res: any) => {
+    descargarPlantillaEAM: async (req: Request, res: Response) => {
         try {
             const buffer = generarBufferPlantilla('MASIVO_EAM');
             res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
             res.setHeader('Content-Disposition', 'attachment; filename=plantilla_carga_masiva_eam.xlsx');
             res.send(buffer);
-        } catch (error: any) {
-            console.error("Error generando plantilla:", error);
-            res.status(500).json({ error: error.message });
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "Error desconocido";
+            console.error("Error generando plantilla:", message);
+            res.status(500).json({ error: message });
         }
     },
 
-    descargarPlantillaHorarios: async (req: any, res: any) => {
+    descargarPlantillaHorarios: async (req: Request, res: Response) => {
         try {
             const buffer = generarBufferPlantilla('HORARIOS_EAM');
             res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
             res.setHeader('Content-Disposition', 'attachment; filename=plantilla_horarios_eam.xlsx');
             res.send(buffer);
-        } catch (error: any) {
-            console.error("Error generando plantilla horarios:", error);
-            res.status(500).json({ error: error.message });
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "Error desconocido";
+            console.error("Error generando plantilla horarios:", message);
+            res.status(500).json({ error: message });
         }
     }
 };

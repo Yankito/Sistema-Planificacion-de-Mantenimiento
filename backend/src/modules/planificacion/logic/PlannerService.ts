@@ -1,4 +1,4 @@
-import { type PlanResult } from "../types.js";
+import { type PlanResult, type PlanningOT } from "../types.js";
 import { excelDateToJS, formatearFecha, evitarDomingo, getWeekId } from "../utils/dateHelpers.js";
 import { limpiarKey, buscarNombreEnFila, mapDepartamentoAPlanta } from "../utils/excelHelpers.js";
 import { buscarNocheComun } from "./turnosLogic.js";
@@ -9,14 +9,14 @@ export class PlannerService {
 
   // --- MÉTODO 1: PLANIFICACIÓN STRICT (ORIGINAL) ---
   static generarPlanificacion(
-    dfAct: any[],
-    dfAnt: any[],
-    dfCumplimiento: any[],
-    tecnicosMap: Map<string, any>,
+    dfAct: Record<string, unknown>[],
+    dfAnt: Record<string, unknown>[],
+    dfCumplimiento: Record<string, unknown>[],
+    tecnicosMap: Map<string, { planta: string, rol: string }>,
     mapaHorarios: Map<string, string[]>
-  ): { resultados: PlanResult[], sinAsignar: any[] } {
+  ): { resultados: PlanResult[], sinAsignar: Record<string, unknown>[] } {
     const resultados: PlanResult[] = [];
-    const sinAsignar: any[] = [];
+    const sinAsignar: Record<string, unknown>[] = [];
 
     dfAct.forEach(filaAct => {
       // 1. Extracción de Datos
@@ -128,14 +128,14 @@ export class PlannerService {
 
   // --- MÉTODO 2: PLANIFICACIÓN EQUILIBRADA ---
   static generarPlanificacionEquilibrada(
-    dfAct: any[],
-    dfAnt: any[],
-    dfCumplimiento: any[],
-    tecnicosMap: Map<string, any>
-  ): { resultados: PlanResult[], sinAsignar: any[] } {
+    dfAct: Record<string, unknown>[],
+    dfAnt: Record<string, unknown>[],
+    dfCumplimiento: Record<string, unknown>[],
+    tecnicosMap: Map<string, { planta: string, rol: string }>
+  ): { resultados: PlanResult[], sinAsignar: Record<string, unknown>[] } {
 
-    const sinAsignar: any[] = [];
-    const ordenesParaDistribuir: any[] = [];
+    const sinAsignar: Record<string, unknown>[] = [];
+    const ordenesParaDistribuir: PlanningOT[] = [];
 
     // 1. Preparación de Datos (Extraer fechas ideales y roles)
     dfAct.forEach(filaAct => {
@@ -159,7 +159,7 @@ export class PlannerService {
       });
 
       let fechaIdeal: Date;
-      let tecnicosSlots: any[] = [];
+      let tecnicosSlots: PlanningOT['tecnicos'] = [];
       let fechaAnteriorStr = "N/A";
 
       if (matchAnt) {

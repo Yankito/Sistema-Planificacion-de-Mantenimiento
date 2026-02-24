@@ -15,51 +15,60 @@ export const ExpenseBreakdown = ({ selectedYear, selectedPlanta, selectedMonth }
     const [details, setDetails] = useState<DetalleGastoItem[]>([]);
     const { getPresupuesto, getGastosConsolidados, loading } = useControlGastos();
 
+
     useEffect(() => {
-        loadData();
-    }, [selectedYear, selectedPlanta, selectedMonth]);
+        let isMounted = true;
 
-    const loadData = async () => {
-        try {
-            // Optimizamos: Pedimos solo los datos del mes seleccionado si aplica
-            const [, realExpenses] = await Promise.all([
-                getPresupuesto(selectedYear, selectedPlanta, undefined, selectedMonth),
-                getGastosConsolidados(selectedYear, selectedPlanta, selectedMonth)
-            ]);
+        const fetchData = async () => {
+            try {
+                // Optimizamos: Pedimos solo los datos del mes seleccionado si aplica
+                const [, realExpenses] = await Promise.all([
+                    getPresupuesto(selectedYear, selectedPlanta, undefined, selectedMonth),
+                    getGastosConsolidados(selectedYear, selectedPlanta, selectedMonth)
+                ]);
 
-            const items: DetalleGastoItem[] = [];
+                if (!isMounted) return;
 
-            // Agregamos gastos reales (foco principal de este desglose)
-            realExpenses.forEach((g, idx) => {
-                let categoria: any = 'Gasto Correctivo';
+                const items: DetalleGastoItem[] = [];
 
-                // Si está marcado como Hito, lo categorizamos como tal para el gráfico
-                if (g.esHito) {
-                    categoria = 'Hito';
-                } else if (g.tipoGasto === 'BODEGA') {
-                    categoria = 'Bodega';
-                } else if (g.tipoGasto === 'SERV_EXT') {
-                    categoria = 'Servicios Externos';
-                } else {
-                    categoria = 'Gasto Correctivo';
-                }
+                // Agregamos gastos reales (foco principal de este desglose)
+                realExpenses.forEach((g, idx) => {
+                    let categoria: 'Hito' | 'Bodega' | 'Servicios Externos' | 'Gasto Correctivo' = 'Gasto Correctivo';
 
-                items.push({
-                    id: `real-${idx}`,
-                    concepto: `${g.descripcionOt || 'Gasto'} - ${g.descripcionArticulo || ''}`,
-                    monto: g.costoTrx,
-                    categoria,
-                    fecha: typeof g.fechaTrx === 'string' ? g.fechaTrx : (g.fechaTrx as Date).toISOString().split('T')[0],
-                    otId: g.numeroOt,
-                    assetCategory: categorizeAsset(g.claseContable)
+                    // Si está marcado como Hito, lo categorizamos como tal para el gráfico
+                    if (g.esHito) {
+                        categoria = 'Hito';
+                    } else if (g.tipoGasto === 'BODEGA') {
+                        categoria = 'Bodega';
+                    } else if (g.tipoGasto === 'SERV_EXT') {
+                        categoria = 'Servicios Externos';
+                    } else {
+                        categoria = 'Gasto Correctivo';
+                    }
+
+                    items.push({
+                        id: `real-${idx}`,
+                        concepto: `${g.descripcionOt || 'Gasto'} - ${g.descripcionArticulo || ''}`,
+                        monto: g.costoTrx,
+                        categoria,
+                        fecha: typeof g.fechaTrx === 'string' ? g.fechaTrx : (g.fechaTrx as Date).toISOString().split('T')[0],
+                        otId: g.numeroOt,
+                        assetCategory: categorizeAsset(g.claseContable)
+                    });
                 });
-            });
 
-            setDetails(items);
-        } catch (e) {
-            console.error(e);
-        }
-    };
+                setDetails(items);
+            } catch (e) {
+                console.error(e);
+            }
+        };
+
+        fetchData();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [selectedYear, selectedPlanta, selectedMonth, getPresupuesto, getGastosConsolidados]);
 
     // Filter Logic
     const filteredDetails = details.filter(item => {

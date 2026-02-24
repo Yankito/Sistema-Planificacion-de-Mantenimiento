@@ -1,5 +1,5 @@
 // src/shared/services/PlanificacionService.ts
-import type { PlanResult, ProcesoExcelResponse, HorarioTecnico } from "../types";
+import type { PlanResult, HorarioTecnico, ProcesoExcelResponse } from "../types";
 import { API_ENDPOINTS } from "../../../shared/api/config";
 import { fetchAuth } from "../../../shared/api/fetchAuth";
 
@@ -132,6 +132,7 @@ export async function ejecutarPlanificacionRemota(
     planta?: string
 ): Promise<ProcesoExcelResponse | null> {
     try {
+        console.log("ejecutando planificacion remota...");
         const response = await fetchAuth(`${API_BASE}/ejecutar`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -150,7 +151,7 @@ export async function uploadHorarios(
     file: File,
     mes: number,
     anio: number
-): Promise<any> {
+): Promise<{ success: boolean; message: string }> {
     try {
         const formData = new FormData();
         formData.append('file', file);

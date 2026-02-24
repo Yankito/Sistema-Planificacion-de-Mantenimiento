@@ -1,14 +1,15 @@
-import { type PlanResult } from "../types.js";
+import { type PlanResult, type PlanningOT } from "../types.js";
 import { getMonday, formatearFecha } from "../utils/dateHelpers.js";
 
-const groupBy = (xs: any[], key: string) => {
+const groupBy = <T extends Record<string, any>>(xs: T[], key: keyof T): Record<string, T[]> => {
     return xs.reduce(function (rv, x) {
-        (rv[x[key]] = rv[x[key]] || []).push(x);
+        const val = String(x[key]);
+        (rv[val] = rv[val] || []).push(x);
         return rv;
-    }, {});
+    }, {} as Record<string, T[]>);
 };
 
-export const distribuirCargaEquilibrada = (ordenesParaDistribuir: any[]): PlanResult[] => {
+export const distribuirCargaEquilibrada = (ordenesParaDistribuir: PlanningOT[]): PlanResult[] => {
     const resultados: PlanResult[] = [];
 
     // 1. Agrupar por PLANTA
@@ -18,7 +19,7 @@ export const distribuirCargaEquilibrada = (ordenesParaDistribuir: any[]): PlanRe
         const ordenesDeLaPlanta = ordenesPorPlanta[plantaKey];
 
         // 2. Agrupar por SEMANA
-        const ordenesPorSemana = groupBy(ordenesDeLaPlanta, 'weekId');
+        const ordenesPorSemana = groupBy(ordenesDeLaPlanta, 'semana');
 
         Object.keys(ordenesPorSemana).forEach(weekKey => {
             const ordenesDeLaSemana = ordenesPorSemana[weekKey];
@@ -26,10 +27,10 @@ export const distribuirCargaEquilibrada = (ordenesParaDistribuir: any[]): PlanRe
             const lunesSemana = getMonday(fechaReferencia);
 
             // Buckets [Lun, Mar, Mie, Jue, Vie]
-            const buckets: any[][] = [[], [], [], [], []];
+            const buckets: PlanningOT[][] = [[], [], [], [], []];
 
             // A. Asignación Inicial
-            ordenesDeLaSemana.forEach((ot: any) => {
+            ordenesDeLaSemana.forEach((ot) => {
                 let diaIdx = ot.fechaIdeal.getDay() - 1;
                 if (diaIdx < 0) diaIdx = 0;
                 if (diaIdx > 4) diaIdx = 4;
@@ -72,7 +73,7 @@ export const distribuirCargaEquilibrada = (ordenesParaDistribuir: any[]): PlanRe
                 fechaDia.setDate(lunesSemana.getDate() + i);
                 const fechaStr = formatearFecha(fechaDia);
 
-                listaOts.forEach((ot: any) => {
+                listaOts.forEach((ot) => {
                     const { fechaIdeal, ...rest } = ot;
                     resultados.push({ ...rest, fechaSugerida: fechaStr });
                 });

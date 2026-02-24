@@ -12,7 +12,7 @@ export const EamRepository = {
     try { await query("TRUNCATE TABLE PF_EAM_ACTIVOS"); } catch (e) { console.warn("Tabla activos no existe o error truncate", e); }
   },
 
-  insertarActivos: async (items: any[]) => {
+  insertarActivos: async (items: Record<string, unknown>[]) => {
     if (items.length === 0) return;
     const sql = `
       INSERT INTO PF_EAM_ACTIVOS (
@@ -28,7 +28,7 @@ export const EamRepository = {
     return await executeMany(sql, items);
   },
 
-  insertarPedidos: async (pedidos: any[]) => {
+  insertarPedidos: async (pedidos: Record<string, unknown>[]) => {
     if (pedidos.length === 0) return;
     const sql = `
       INSERT INTO PF_EAM_PEDIDOS (
@@ -46,7 +46,7 @@ export const EamRepository = {
     return await executeMany(sql, pedidos);
   },
 
-  insertarCumplimiento: async (items: any[]) => {
+  insertarCumplimiento: async (items: Record<string, unknown>[]) => {
     if (items.length === 0) return;
     const sql = `
       INSERT INTO PF_EAM_CUMPLIMIENTO (
@@ -60,7 +60,7 @@ export const EamRepository = {
     return await executeMany(sql, items);
   },
 
-  insertarMasivo: async (items: any[]) => {
+  insertarMasivo: async (items: Record<string, unknown>[]) => {
     if (items.length === 0) return;
     const sql = `
       INSERT INTO PF_EAM_MASIVO (

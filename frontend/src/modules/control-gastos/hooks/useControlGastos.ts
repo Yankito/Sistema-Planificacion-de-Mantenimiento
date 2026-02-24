@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { ControlGastosService } from '../services/ControlGastosService';
+import type { PresupuestoRow } from '../../../shared/types';
 
 export const useControlGastos = () => {
   const [loadingCount, setLoadingCount] = useState(0);
@@ -12,9 +13,10 @@ export const useControlGastos = () => {
     setError(null);
     try {
       return await ControlGastosService.uploadPresupuesto(file);
-    } catch (err: any) {
-      setError(err.message);
-      throw err;
+    } catch (err) {
+      const error = err as Error;
+      setError(error.message);
+      throw error;
     } finally {
       setLoadingCount(prev => Math.max(0, prev - 1));
     }
@@ -25,9 +27,10 @@ export const useControlGastos = () => {
     setError(null);
     try {
       return await ControlGastosService.getPresupuesto(anio, planta, activo, mes);
-    } catch (err: any) {
-      setError(err.message);
-      throw err;
+    } catch (err) {
+      const error = err as Error;
+      setError(error.message);
+      throw error;
     } finally {
       if (!silent) setLoadingCount(prev => Math.max(0, prev - 1));
     }
@@ -38,8 +41,8 @@ export const useControlGastos = () => {
     setError(null);
     try {
       return await ControlGastosService.getGastosConsolidados(anio, planta, mes);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error desconocido');
       throw err;
     } finally {
       if (!silent) setLoadingCount(prev => Math.max(0, prev - 1));
@@ -82,7 +85,7 @@ export const useControlGastos = () => {
     }
   }, []);
 
-  const saveManualPresupuesto = useCallback(async (rows: any[]) => {
+  const saveManualPresupuesto = useCallback(async (rows: PresupuestoRow[]) => {
     setLoadingCount(prev => prev + 1);
     try {
       await ControlGastosService.saveManualPresupuesto(rows);

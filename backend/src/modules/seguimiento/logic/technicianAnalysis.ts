@@ -1,4 +1,4 @@
-import { type AtrasoRow } from "../types.js";
+import type { OrdenTrabajo } from "../../../types.js";
 
 export interface TechStats {
   nombre: string;
@@ -11,7 +11,7 @@ export interface TechStats {
 
 export const prepareTechProfile = (
   techName: string,
-  allOrders: AtrasoRow[],
+  allOrders: OrdenTrabajo[],
   plantasDisponibles: string[]
 ) => {
   const techOrders = allOrders.filter(d => {
@@ -46,8 +46,8 @@ export const prepareTechProfile = (
 };
 
 export const analyzeTechnicians = (
-  backlogData: AtrasoRow[],
-  cumplimientoData: AtrasoRow[]
+  backlogData: OrdenTrabajo[],
+  cumplimientoData: OrdenTrabajo[]
 ): TechStats[] => {
   const map = new Map<string, TechStats>();
 

@@ -1,6 +1,6 @@
 import { Moon, CheckCircle2, UserX, Users, Wand2, Loader2 } from "lucide-react";
 import { useCalendarioGrid } from "../hooks/useCalendarioGrid";
-import { type PlanResult } from "../types";
+import type { PlanResult, Tecnico } from "../types";
 
 interface CalendarioProps {
   planResult: PlanResult[];
@@ -10,7 +10,7 @@ interface CalendarioProps {
   handleDragEnter: (e: React.DragEvent, fecha: string) => void;
   handleDragOver: (e: React.DragEvent) => void;
   handleDrop: (e: React.DragEvent, fecha: string) => void;
-  isNocheValid: (tecnicos: any[], fecha: string, mapaHorarios: Map<string, string[]>) => boolean;
+  isNocheValid: (tecnicos: Tecnico[], fecha: string, mapaHorarios: Map<string, string[]>) => boolean;
   showSuccess: boolean;
   dragOverDate: string | null;
   ordenesPorDia: Record<string, PlanResult[]>; // Tipado para el objeto de agrupación

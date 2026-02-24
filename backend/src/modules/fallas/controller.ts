@@ -1,10 +1,11 @@
+import type { Request, Response } from 'express';
 import XLSX from "xlsx-js-style";
 import { processFallasData } from './logic/fallasProcessor.js';
 import { FallasRepository } from './repository.js';
 
 export const FallasController = {
 
-    uploadFallas: async (req: any, res: any) => {
+    uploadFallas: async (req: Request, res: Response) => {
         try {
             if (!req.file) return res.status(400).json({ error: "Archivo Excel requerido" });
 
@@ -43,13 +44,14 @@ export const FallasController = {
                 semana: semanaStr
             });
 
-        } catch (error: any) {
-            console.error("Error cargando fallas:", error);
-            res.status(500).json({ error: error.message });
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "Error desconocido";
+            console.error("Error cargando fallas:", message);
+            res.status(500).json({ error: message });
         }
     },
 
-    listarFallas: async (req: any, res: any) => {
+    listarFallas: async (req: Request, res: Response) => {
         try {
             const { semana } = req.query;
             let data;
@@ -59,8 +61,9 @@ export const FallasController = {
                 data = await FallasRepository.getFallas();
             }
             res.json(data);
-        } catch (error: any) {
-            res.status(500).json({ error: error.message });
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "Error desconocido";
+            res.status(500).json({ error: message });
         }
     }
 };

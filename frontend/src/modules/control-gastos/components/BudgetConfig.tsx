@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useControlGastos } from '../hooks/useControlGastos';
+import type { ActivoEAM } from '../../../shared/types';
 
 import { ManualBudgetModal } from './budget/ManualBudgetModal';
 import { RemapAssetModal } from './budget/RemapAssetModal';
@@ -20,6 +21,7 @@ interface BudgetMatrixItem {
     totalAnnual: number;
     found: boolean;
     claseContable?: string;
+    organizacion?: string;
     monthly: {
         [month: number]: {
             bodega: number;
@@ -37,10 +39,10 @@ export const BudgetConfig = ({ selectedYear, selectedPlanta, selectedMonth }: Bu
     const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
     const [showNotFoundOnly, setShowNotFoundOnly] = useState(false);
     const [mappingModal, setMappingModal] = useState<{ open: boolean, oldAsset: string | null, cc: string | null }>({ open: false, oldAsset: null, cc: null });
-    const [suggestedAssets, setSuggestedAssets] = useState<any[]>([]);
+    const [suggestedAssets, setSuggestedAssets] = useState<ActivoEAM[]>([]);
 
     const [manualModalOpen, setManualModalOpen] = useState(false);
-    const [selectedAssetForManual, setSelectedAssetForManual] = useState<any | null>(null);
+    const [selectedAssetForManual, setSelectedAssetForManual] = useState<ActivoEAM | null>(null);
 
     const {
         uploadPresupuesto,
@@ -68,6 +70,7 @@ export const BudgetConfig = ({ selectedYear, selectedPlanta, selectedMonth }: Bu
                         totalAnnual: 0,
                         found: !!(row.claseContable || row.mantenible),
                         claseContable: row.claseContable,
+                        organizacion: row.organizacion,
                         monthly: {}
                     };
                     for (let i = 1; i <= 12; i++) {
@@ -126,8 +129,9 @@ export const BudgetConfig = ({ selectedYear, selectedPlanta, selectedMonth }: Bu
             setSuggestedAssets([]);
             loadData();
             alert('Nombre actualizado correctamente');
-        } catch (err: any) {
-            alert('Error al actualizar: ' + err.message);
+        } catch (err) {
+            const error = err as Error;
+            alert('Error al actualizar: ' + error.message);
         }
     }, [mappingModal.oldAsset, updateAssetName, selectedYear, loadData]);
 
@@ -137,8 +141,9 @@ export const BudgetConfig = ({ selectedYear, selectedPlanta, selectedMonth }: Bu
             const result = await autoFixAssets(selectedYear);
             alert(`Se vincularon ${result.fixed} activos automáticamente de un total de ${result.total} activos no encontrados.`);
             loadData();
-        } catch (err: any) {
-            alert('Error al ejecutar auto-vinculación: ' + err.message);
+        } catch (err) {
+            const error = err as Error;
+            alert('Error al ejecutar auto-vinculación: ' + error.message);
         }
     }, [autoFixAssets, selectedYear, loadData]);
 
@@ -149,8 +154,9 @@ export const BudgetConfig = ({ selectedYear, selectedPlanta, selectedMonth }: Bu
                 await uploadPresupuesto(e.target.files[0]);
                 alert('Presupuesto cargado exitosamente');
                 loadData();
-            } catch (err: any) {
-                alert('Error al cargar: ' + err.message);
+            } catch (err) {
+                const error = err as Error;
+                alert('Error al cargar: ' + error.message);
             }
         }
     }, [uploadPresupuesto, loadData]);

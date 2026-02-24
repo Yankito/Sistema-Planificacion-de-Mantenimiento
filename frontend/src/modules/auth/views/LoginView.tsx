@@ -1,7 +1,7 @@
 // Página de Login - Autenticación con credenciales Oracle
 // Fondo claro con logo PF Alimentos
 import { useState } from 'react';
-import { useAuth } from '../../../context/AuthContext';
+import { useAuth } from '../../../context/useAuth';
 import { Lock, User, Eye, EyeOff, AlertCircle } from 'lucide-react';
 
 export const LoginView = () => {

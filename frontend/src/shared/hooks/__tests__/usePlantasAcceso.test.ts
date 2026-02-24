@@ -17,7 +17,7 @@ const mockUser = {
   tieneCI: false,
 };
 
-vi.mock('../../../context/AuthContext', () => ({
+vi.mock('../../../context/useAuth', () => ({
   useAuth: vi.fn(() => ({
     user: mockUser,
     token: 'fake-token',

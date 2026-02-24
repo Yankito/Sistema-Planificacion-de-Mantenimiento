@@ -1,11 +1,10 @@
 import { query } from '../../db/config.js';
-import { type FallaRow } from './types.js';
+import type { FallaRow } from '../../types.js';
 
 export const FallasRepository = {
 
     // Save Fallas Data
     guardarFallas: async (semana: string, data: FallaRow[]) => {
-        // Ya no usamos snapshots para fallas
 
         // 2. Insert new data (MERGE)
         const sql = `
@@ -37,7 +36,6 @@ export const FallasRepository = {
                      :perdidaKg, :descripcionOperador)
         `;
 
-        // Deduplicar datos de entrada (mismo OT y Fecha) para evitar ORA-00001 en el mismo lote
         const uniqueData = new Map<string, FallaRow>();
         data.forEach(row => {
             const key = `${row.ot}-${row.fecha}`;
@@ -82,9 +80,8 @@ export const FallasRepository = {
 
         if (!res?.rows) return [];
 
-        return res.rows.map((r: any) => ({
+        return res.rows.map((r: any): FallaRow => ({
             id: r.ID,
-            snapshotId: r.SNAPSHOT_ID,
             fecha: r.FECHA,
             semana: r.SEMANA,
             anio: r.ANIO,
@@ -114,9 +111,8 @@ export const FallasRepository = {
 
         if (!res?.rows) return [];
 
-        return res.rows.map((r: any) => ({
+        return res.rows.map((r: any): FallaRow => ({
             id: r.ID,
-            snapshotId: r.SNAPSHOT_ID,
             fecha: r.FECHA,
             semana: r.SEMANA,
             anio: r.ANIO,

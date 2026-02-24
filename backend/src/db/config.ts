@@ -12,7 +12,7 @@ oracledb.fetchAsString = [oracledb.CLOB];
 
 export const query = async (
   sql: string,
-  params: any = [],
+  params: oracledb.BindParameters = [],
   options: oracledb.ExecuteOptions = {}
 ) => {
   let connection;
@@ -29,11 +29,12 @@ export const query = async (
       ...options
     });
     return result;
-  } catch (err: any) {
+  } catch (err) {
+    const error = err as Error;
     console.error("DATABASE ERROR:");
     console.error("SQL:", sql);
     console.error("PARAMS:", JSON.stringify(params));
-    console.error("MSG:", err.message);
+    console.error("MSG:", error.message);
     return null;
   } finally {
     if (connection) {
@@ -44,7 +45,7 @@ export const query = async (
 
 export const executeMany = async (
   sql: string,
-  binds: any[],
+  binds: Record<string, unknown>[] | unknown[][],
   options: oracledb.ExecuteManyOptions = {}
 ) => {
   let connection;
@@ -60,10 +61,11 @@ export const executeMany = async (
       ...options
     });
     return result;
-  } catch (err: any) {
+  } catch (err) {
+    const error = err as Error;
     console.error("DATABASE BATCH ERROR:");
     console.error("SQL:", sql);
-    console.error("MSG:", err.message);
+    console.error("MSG:", error.message);
     return null;
   } finally {
     if (connection) {
@@ -72,7 +74,7 @@ export const executeMany = async (
   }
 };
 
-export const withConnection = async (callback: (conn: oracledb.Connection) => Promise<any>) => {
+export const withConnection = async <T>(callback: (conn: oracledb.Connection) => Promise<T>): Promise<T> => {
   let connection;
   try {
     connection = await oracledb.getConnection({
@@ -81,9 +83,10 @@ export const withConnection = async (callback: (conn: oracledb.Connection) => Pr
       connectString: `${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_SERVICE}`
     });
     return await callback(connection);
-  } catch (err: any) {
-    console.error("CONNECTION ERROR:", err.message);
-    throw err;
+  } catch (err) {
+    const error = err as Error;
+    console.error("CONNECTION ERROR:", error.message);
+    throw error;
   } finally {
     if (connection) {
       await connection.close();

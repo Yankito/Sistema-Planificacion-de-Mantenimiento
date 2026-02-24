@@ -60,8 +60,8 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction):
     const decoded = jwt.verify(token, JWT_SECRET) as TokenPayload;
     req.authUser = decoded;
     next();
-  } catch (err: any) {
-    if (err.name === 'TokenExpiredError') {
+  } catch (err) {
+    if (err && typeof err === 'object' && 'name' in err && err.name === 'TokenExpiredError') {
       res.status(401).json({
         error: 'La sesión ha expirado. Inicie sesión nuevamente.',
         code: 'TOKEN_EXPIRED'

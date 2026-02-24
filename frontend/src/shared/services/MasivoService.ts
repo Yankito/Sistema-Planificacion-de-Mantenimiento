@@ -23,8 +23,9 @@ export const MasivoService = {
             }
 
             return await res.json();
-        } catch (error: any) {
-            throw new Error(error.message || "No se pudo conectar con el servidor para carga masiva");
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "No se pudo conectar con el servidor para carga masiva";
+            throw new Error(message);
         }
     },
 

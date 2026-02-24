@@ -1,6 +1,6 @@
 import { API_ENDPOINTS } from '../../../shared/api/config';
 import { fetchAuth } from '../../../shared/api/fetchAuth';
-import type { PresupuestoRow } from '../types';
+import type { PresupuestoRow, GastoConsolidadoRow, ActivoEAM } from '../../../shared/types';
 
 const API_BASE = API_ENDPOINTS.CONTROL_GASTOS;
 
@@ -20,7 +20,7 @@ export class ControlGastosService {
     return await response.json() as PresupuestoRow[];
   }
 
-  static async uploadPresupuesto(file: File): Promise<any> {
+  static async uploadPresupuesto(file: File): Promise<{ success: boolean, count: number }> {
     const formData = new FormData();
     formData.append('file', file);
 
@@ -37,7 +37,7 @@ export class ControlGastosService {
     return await response.json();
   }
 
-  static async uploadGastosConsolidados(file: File): Promise<any> {
+  static async uploadGastosConsolidados(file: File): Promise<{ success: boolean, count: number }> {
     const formData = new FormData();
     formData.append('file', file);
 
@@ -54,7 +54,7 @@ export class ControlGastosService {
     return await response.json();
   }
 
-  static async getGastosConsolidados(anio: number, planta?: string, mes?: number): Promise<any[]> {
+  static async getGastosConsolidados(anio: number, planta?: string, mes?: number): Promise<GastoConsolidadoRow[]> {
     const url = new URL(`${API_BASE}/gastos-consolidados`);
     url.searchParams.append('anio', String(anio));
     if (planta) url.searchParams.append('planta', planta);
@@ -68,7 +68,7 @@ export class ControlGastosService {
     return await response.json();
   }
 
-  static async searchAssetsByCentroCosto(cc: string): Promise<any[]> {
+  static async searchAssetsByCentroCosto(cc: string): Promise<ActivoEAM[]> {
     const url = new URL(`${API_BASE}/search-assets-cc`);
     url.searchParams.append('cc', cc);
     const response = await fetchAuth(url.toString());
@@ -101,7 +101,7 @@ export class ControlGastosService {
     return await response.json();
   }
 
-  static async getMaintainableAssets(search?: string): Promise<any[]> {
+  static async getMaintainableAssets(search?: string): Promise<ActivoEAM[]> {
     const url = new URL(`${API_BASE}/maintainable-assets`);
     if (search) url.searchParams.append('search', search);
     const response = await fetchAuth(url.toString());
@@ -109,7 +109,7 @@ export class ControlGastosService {
     return await response.json();
   }
 
-  static async saveManualPresupuesto(rows: any[]): Promise<void> {
+  static async saveManualPresupuesto(rows: PresupuestoRow[]): Promise<void> {
     const response = await fetchAuth(`${API_BASE}/save-manual-presupuesto`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

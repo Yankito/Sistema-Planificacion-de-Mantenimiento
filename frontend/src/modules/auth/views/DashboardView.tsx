@@ -1,19 +1,21 @@
 // Dashboard Principal - Vista simplificada con indicadores generales
 // No carga datos de planificación ni seguimiento automáticamente
 import { useState, useEffect } from 'react';
-import { useAuth } from '../../../context/AuthContext';
+import { useAuth } from '../../../context/useAuth';
 import * as AuthService from '../../auth/services/AuthService';
 import type { DashboardIndicadores } from '../../auth/types';
 import {
   Factory, Users, AlertTriangle, Wrench, BarChart2,
-  ClipboardList, Clock, TrendingUp, ArrowRight, Building2, Lock
+  ClipboardList, Clock, TrendingUp, ArrowRight, Building2, Lock,
+  type LucideIcon
 } from 'lucide-react';
 import { FileUploader, type FileType, type UploadEvent } from '../../../shared/components/FileUploader';
-import { useData } from '../../../context/PlanificacionContext';
 import * as SeguimientoService from '../../seguimiento/services/SeguimientoService';
 import { getWeekOptions } from '../../../shared/utils/dateUtils';
+import { usePlanificacionManager } from '../../planificacion/hooks/usePlanificacionManager';
+import { useSeguimientoData } from '../../seguimiento/hooks/useSeguimientoData';
+import { useFallasManager } from '../../fallas/hooks/useFallasManager';
 
-// Permisos por rol
 const PERMISOS_MODULOS: Record<string, string[]> = {
   programador: ['planificacion', 'gastos', 'seguimiento-planta'],
   analista: ['seguimiento-global', 'fallas', 'gastos-consolidado'],
@@ -26,7 +28,9 @@ interface DashboardViewProps {
 
 export const DashboardView = ({ setActiveTab }: DashboardViewProps) => {
   const { user } = useAuth();
-  const { planning, seguimiento, fallas } = useData();
+  const planning = usePlanificacionManager();
+  const seguimiento = useSeguimientoData();
+  const fallas = useFallasManager();
 
   const [indicadores, setIndicadores] = useState<DashboardIndicadores | null>(null);
   const [loading, setLoading] = useState(true);
@@ -34,7 +38,6 @@ export const DashboardView = ({ setActiveTab }: DashboardViewProps) => {
   const [highlightedModule] = useState<FileType | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Cargar indicadores ligeros al montar
   useEffect(() => {
     const fetchIndicadores = async () => {
       try {
@@ -58,13 +61,11 @@ export const DashboardView = ({ setActiveTab }: DashboardViewProps) => {
   const tieneAcceso = (modulo: string) => modulosAccesibles.has(modulo);
 
   const handleFileProcess = async (e: UploadEvent, tipo: FileType, extraData?: { mes?: number, anio?: number }) => {
-    const file = (e as any).target?.files?.[0];
+    const file = (e as UploadEvent).target?.files?.[0];
     if (!file) return;
     setIsProcessing(true);
     try {
-      if (tipo === 'PLAN') {
-        await planning.procesarArchivo(file, extraData?.mes, extraData?.anio);
-      } else if (tipo === 'SEGUIMIENTO') {
+      if (tipo === 'SEGUIMIENTO') {
         await SeguimientoService.uploadExcel(file, targetUploadWeek);
         seguimiento.cargarReporte(targetUploadWeek);
       } else if (tipo === 'FALLAS') {
@@ -321,7 +322,7 @@ export const DashboardView = ({ setActiveTab }: DashboardViewProps) => {
 // ===== COMPONENTES AUXILIARES =====
 
 const IndicadorCard = ({ icon: Icon, label, value, color, bgColor }: {
-  icon: any; label: string; value: number; color: string; bgColor: string;
+  icon: LucideIcon; label: string; value: number; color: string; bgColor: string;
 }) => (
   <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 hover:shadow-md transition-all group">
     <div className="flex items-center gap-3 mb-3">
@@ -335,7 +336,7 @@ const IndicadorCard = ({ icon: Icon, label, value, color, bgColor }: {
 );
 
 const ModuloCard = ({ icon: Icon, title, desc, color, bgColor, onClick }: {
-  icon: any; title: string; desc: string; color: string; bgColor: string; onClick: () => void;
+  icon: LucideIcon; title: string; desc: string; color: string; bgColor: string; onClick: () => void;
 }) => (
   <button
     onClick={onClick}

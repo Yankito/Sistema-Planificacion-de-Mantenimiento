@@ -1,23 +1,11 @@
 // Contexto de Autenticación
 // Maneja el estado de sesión del usuario, token JWT y expiración automática
-import { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
 import type { UsuarioAuth, AuthSession } from '../modules/auth/types';
+import { AuthContext } from './AuthContext';
 import * as AuthService from '../modules/auth/services/AuthService';
 import { setSessionExpiredHandler } from '../shared/api/fetchAuth';
-
-interface AuthContextType {
-  user: UsuarioAuth | null;
-  token: string | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  error: string | null;
-  login: (usuario: string, contrasena: string) => Promise<void>;
-  logout: () => void;
-  sessionExpiresAt: number | null;
-}
-
-const AuthContext = createContext<AuthContextType | null>(null);
 
 const STORAGE_KEY = 'pf_auth_session';
 
@@ -166,12 +154,4 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       {children}
     </AuthContext.Provider>
   );
-};
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
 };

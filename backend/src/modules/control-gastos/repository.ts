@@ -1,41 +1,5 @@
-
 import { withConnection } from '../../db/config.js';
-
-export interface PresupuestoRow {
-  activo: string;
-  mes: number;
-  anio: number;
-  frecuencia: string;
-  montoBodega?: number;
-  montoServExt?: number;
-  montoCorrectivo?: number;
-  centroCosto?: string; // Calculado al recuperar
-  claseContable?: string;
-  mantenible?: string;
-}
-
-export interface GastoConsolidadoRow {
-  tipo: string;
-  numeroOt: string;
-  tipoOt: string;
-  nroActivo: string;
-  fechaTrx: Date | string;
-  descripcionArticulo: string;
-  costoTrx: number;
-  alertaFecha?: number;
-  // Campos calculados
-  centroCosto?: string;
-  anio?: number;
-  mes?: number;
-  tipoGasto?: string; // BODEGA, SERV_EXT, CORRECTIVO
-  fechaOtPro?: Date | string;
-  descripcionOt?: string;
-  estadoTrabajo?: string;
-  esHito?: boolean;
-  planta?: string;
-  claseContable?: string;
-  mantenible?: string;
-}
+import type { PresupuestoRow, GastoConsolidadoRow, ActivoEAM } from '../../types.js';
 
 const FRECUENCIAS_PREDEFINIDAS = [
   'semanal', 'quincenal', 'mensual', 'bimensual',
@@ -64,7 +28,7 @@ export const ControlGastosRepository = {
     await withConnection(async (connection) => {
       for (let i = 0; i < uniqueOts.length; i += 1000) {
         const chunk = uniqueOts.slice(i, i + 1000);
-        const binds: any = {};
+        const binds: Record<string, string> = {};
         chunk.forEach((ot, idx) => binds[`ot${idx}`] = ot);
         const keys = chunk.map((_, idx) => `:ot${idx}`).join(',');
 
@@ -73,10 +37,11 @@ export const ControlGastosRepository = {
         const result = await connection.execute(sql, binds);
 
         (result.rows || []).forEach((r: any) => {
-          const ot = r.PEDIDO_TRABAJO || r[0];
-          const desc = r.DESCRIPCION || r[1];
-          const fProg = r.FECHA_INICIAL_PROGRAMADA || r[2];
-          const estado = r.ESTADO || r[3];
+          const row = r as Record<string, any>;
+          const ot = row.PEDIDO_TRABAJO || row[0];
+          const desc = row.DESCRIPCION || row[1];
+          const fProg = row.FECHA_INICIAL_PROGRAMADA || row[2];
+          const estado = row.ESTADO || row[3];
           if (ot) map.set(String(ot).trim(), {
             descripcion: desc,
             fechaProg: fProg ? new Date(fProg) : undefined,
@@ -232,7 +197,7 @@ export const ControlGastosRepository = {
       }
 
       const result = await connection.execute(sql, { startDate, endDate, plantaFiltro: planta || null, planta: planta || null }, { outFormat: 4002 });
-      const rows = result.rows || [];
+      const rows = (result.rows || []) as Record<string, any>[];
 
       const results: GastoConsolidadoRow[] = [];
 
@@ -332,6 +297,12 @@ export const ControlGastosRepository = {
                             WHERE a.nro_de_activo = ACTIVO_COD
                             AND ROWNUM = 1
                         ) as "mantenible",
+                        (
+                            SELECT a.organizacion 
+                            FROM PF_EAM_ACTIVOS a 
+                            WHERE a.nro_de_activo = ACTIVO_COD
+                            AND ROWNUM = 1
+                        ) as "organizacion",
                         COALESCE(
                             (
                                 SELECT CASE 
@@ -417,7 +388,8 @@ export const ControlGastosRepository = {
         mes: mes || null
       }, { outFormat: 4002 });
 
-      return (result.rows || []).map((row: any) => {
+      const rows = (result.rows || []) as Record<string, any>[];
+      return rows.map((row) => {
         const activo = row.activo;
         const centroCosto = activo ? String(activo).slice(-6) : '';
         const frecuencia = row.frecuencia;
@@ -433,12 +405,13 @@ export const ControlGastosRepository = {
           montoCorrectivo: row.montoCorrectivo,
           claseContable: row.claseContable,
           mantenible: row.mantenible,
+          organizacion: row.organizacion,
         };
       }) as PresupuestoRow[];
     });
   },
 
-  searchAssetsByCentroCosto: async (centroCosto: string): Promise<any[]> => {
+  searchAssetsByCentroCosto: async (centroCosto: string): Promise<ActivoEAM[]> => {
     return await withConnection(async (connection) => {
       const sql = `SELECT nro_de_activo, clase_contable, organizacion 
                          FROM PF_EAM_ACTIVOS 
@@ -447,8 +420,9 @@ export const ControlGastosRepository = {
 
       // Buscamos específicamente el código con paréntesis para mayor precisión
       const result = await connection.execute(sql, { ccPattern: `%(${centroCosto})%` });
+      const rows = (result.rows || []) as Record<string, any>[];
 
-      return (result.rows || []).map((r: any) => ({
+      return rows.map((r) => ({
         activo: r.NRO_DE_ACTIVO || r[0],
         claseContable: r.CLASE_CONTABLE || r[1],
         organizacion: r.ORGANIZACION || r[2]
@@ -478,7 +452,8 @@ export const ControlGastosRepository = {
                 )
             `;
       const resultMissing = await connection.execute(sqlMissing, { anio });
-      const missingAssets = (resultMissing.rows || []).map((r: any) => r.ACTIVO_COD || r[0]);
+      const rows = (resultMissing.rows || []) as Record<string, any>[];
+      const missingAssets = rows.map((r) => r.ACTIVO_COD || r[0]);
 
       let fixedCount = 0;
 
@@ -495,9 +470,10 @@ export const ControlGastosRepository = {
                     WHERE nro_de_activo LIKE :ccPattern AND mantenible = 'Si'
                 `;
         const resultSearch = await connection.execute(sqlSearch, { ccPattern: `%(${cc})%` });
+        const searchRows = (resultSearch.rows || []) as Record<string, any>[];
 
-        if (resultSearch.rows && resultSearch.rows.length === 1) {
-          const newName = resultSearch.rows[0].NRO_DE_ACTIVO || resultSearch.rows[0][0];
+        if (searchRows && searchRows.length === 1) {
+          const newName = searchRows[0].NRO_DE_ACTIVO || searchRows[0][0];
 
           // 3. Actualizar
           const sqlUpdate = `
@@ -543,7 +519,7 @@ export const ControlGastosRepository = {
     });
   },
 
-  getMaintainableAssets: async (search?: string): Promise<any[]> => {
+  getMaintainableAssets: async (search?: string): Promise<ActivoEAM[]> => {
     return await withConnection(async (connection) => {
       let sql = `SELECT nro_de_activo, clase_contable, organizacion 
                        FROM PF_EAM_ACTIVOS 
@@ -555,7 +531,8 @@ export const ControlGastosRepository = {
       }
       sql += ` ORDER BY nro_de_activo FETCH FIRST 50 ROWS ONLY`;
       const result = await connection.execute(sql, binds);
-      return (result.rows || []).map((r: any) => ({
+      const rows = (result.rows || []) as Record<string, any>[];
+      return rows.map((r) => ({
         activo: r.NRO_DE_ACTIVO || r[0],
         claseContable: r.CLASE_CONTABLE || r[1],
         organizacion: r.ORGANIZACION || r[2]

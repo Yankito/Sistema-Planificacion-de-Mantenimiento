@@ -3,7 +3,7 @@ import XLSX from "xlsx-js-style";
 import { type FallaRow } from "../types.js";
 
 // Helper para limpiar dinero: "$510.164" -> 510164
-const parseDineroLocal = (valor: any): number => {
+const parseDineroLocal = (valor: unknown): number => {
   if (typeof valor === 'number') return valor;
   if (!valor) return 0;
 
@@ -19,7 +19,7 @@ const parseDineroLocal = (valor: any): number => {
 };
 
 // Helper para fecha corregido y robusto
-const parseFechaLocal = (valor: any): Date | null => {
+const parseFechaLocal = (valor: unknown): Date | null => {
   if (!valor) return null;
 
   let fecha: Date | null = null;
@@ -91,7 +91,7 @@ export const processFallasData = (sheets: XLSX.WorkBook['Sheets']): FallaRow[] =
     return [];
   }
 
-  const rawData: any[] = XLSX.utils.sheet_to_json(sheet);
+  const rawData = XLSX.utils.sheet_to_json(sheet) as Record<string, unknown>[];
   const rowsProcesadas: FallaRow[] = [];
 
   rawData.forEach((row) => {
@@ -120,9 +120,9 @@ export const processFallasData = (sheets: XLSX.WorkBook['Sheets']): FallaRow[] =
       linea: String(row["Nombre Línea Prod"] || "").trim().toUpperCase(),
       equipo: String(row["Equipo Nombre"] || "Equipo Desconocido").trim().toUpperCase(),
       causa: String(row["Descripcion Causa"] || "").trim().toUpperCase(),
-      estadoPedido: row["Estado Pedido"],
-      tipoPedido: row["Tipo Pedido Trabajo"],
-      tecnico: row["Técnico"],
+      estadoPedido: String(row["Estado Pedido"] || ""),
+      tipoPedido: String(row["Tipo Pedido Trabajo"] || ""),
+      tecnico: String(row["Técnico"] || ""),
       duracionMinutos: duracion,
       gasto: gasto,
       perdidaKg: perdida,

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import type { FallaRow } from '../types';
 import * as FallasService from '../services/FallasService';
 
@@ -44,10 +44,6 @@ export const useFallasManager = () => {
         }
     }, [loadData]);
 
-    // Cargar datos al montar
-    useEffect(() => {
-        loadData();
-    }, [loadData]);
 
     return {
         data,

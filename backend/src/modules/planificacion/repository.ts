@@ -1,5 +1,6 @@
 import { query, executeMany } from '../../db/config.js';
 import { getMonthFromWeekId } from './utils/dateHelpers.js';
+import type { OrdenTrabajo, Tecnico } from '../../types.js';
 
 export const PlanificacionRepository = {
 
@@ -142,13 +143,13 @@ export const PlanificacionRepository = {
     const resEmps = await query(sqlEmps);
 
     // Procesar resultados
-    const rows = (resOTs?.rows || []).map((r: any) => {
-      let tecnicos = [];
+    const rows: OrdenTrabajo[] = (resOTs?.rows || []).map((r: any): OrdenTrabajo => {
+      let tecnicos: Tecnico[] = [];
       try {
         if (r.DETALLES_TECNICOS_RAW) {
           tecnicos = typeof r.DETALLES_TECNICOS_RAW === 'string'
             ? JSON.parse(r.DETALLES_TECNICOS_RAW)
-            : r.DETALLES_TECNICOS_RAW;
+            : r.DETALLES_TECNICOS_RAW as Tecnico[];
         }
       } catch (e) { console.error("Error parseando tecnicos", e); }
 
@@ -218,17 +219,19 @@ export const PlanificacionRepository = {
 
     if (!res?.rows) return [];
 
-    return res.rows.map((r: any) => ({
+    const rows = res.rows as Record<string, any>[];
+
+    return rows.map((r) => ({
       nombre: r.EMPLEADO_NOMBRE,
       rol: r.ROL || 'M',
-      planta: r.PLANTA || planta || 'VARIOS',
+      planta: r.PLANTA || (planta as string) || 'VARIOS',
       turnos: r.TURNOS
         ? (typeof r.TURNOS === 'string' ? JSON.parse(r.TURNOS) : r.TURNOS)
         : Array(31).fill('L')
     }));
   },
 
-  guardarPlanificacion: async (asignaciones: { ot: string, tecnicos: any[], mes: number, anio: number }[]) => {
+  guardarPlanificacion: async (asignaciones: { ot: string, tecnicos: Tecnico[], mes: number, anio: number }[]) => {
     for (const asignacion of asignaciones) {
 
       // 1. Upsert Header (PF_IM_PLANIFICACION)
@@ -258,7 +261,7 @@ export const PlanificacionRepository = {
           VALUES (:ot, :anio, :mes, :nombre, :rol, :planta, 'PLANIFICACION')
         `;
 
-        const binds = asignacion.tecnicos.map((t: any) => ({
+        const binds = asignacion.tecnicos.map((t: Tecnico) => ({
           ot: asignacion.ot,
           anio: asignacion.anio,
           mes: asignacion.mes,
@@ -296,7 +299,8 @@ export const PlanificacionRepository = {
     const res = await query(sql);
     if (!res?.rows) return new Set<string>();
 
-    const nombres = res.rows.map((r: any) => String(r.NOMBRE || '').trim().toUpperCase());
+    const rows = (res.rows || []) as Record<string, any>[];
+    const nombres = rows.map((r) => String(r.NOMBRE || '').trim().toUpperCase());
     return new Set(nombres);
   },
 

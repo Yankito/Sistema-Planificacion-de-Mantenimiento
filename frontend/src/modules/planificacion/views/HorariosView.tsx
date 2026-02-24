@@ -1,14 +1,13 @@
-
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 import { HorarioView } from "../components/HorarioView";
 import { Wrench, Zap, Users, Info, Loader2, CalendarDays, FileSpreadsheet, Download } from "lucide-react";
-import { useData } from "../../../context/PlanificacionContext";
+import { usePlanificacionManager } from "../hooks/usePlanificacionManager";
 import { getMonthOptions } from "../../../shared/utils/dateUtils";
 import { usePlantasAcceso } from "../../../shared/hooks/usePlantasAcceso";
 
 export const HorariosView = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { planning: manager } = useData();
+  const manager = usePlanificacionManager();
   const {
     horariosResult,
     plantaPlan,
@@ -16,8 +15,14 @@ export const HorariosView = () => {
     cargandoPlan,
     handleCambioTurno,
     periodoSeleccionado,
-    setPeriodoSeleccionado
+    setPeriodoSeleccionado,
+    cargarHorarios
   } = manager;
+
+  // Carga de datos al montar o cambiar filtros
+  useEffect(() => {
+    cargarHorarios(periodoSeleccionado, plantaPlan);
+  }, [cargarHorarios, periodoSeleccionado, plantaPlan]);
 
   const handleUploadHorarios = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

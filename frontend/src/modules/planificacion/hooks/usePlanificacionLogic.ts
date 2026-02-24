@@ -160,7 +160,7 @@ export const usePlanificacionLogic = ({
         fechaSugerida: fechaDestino,
         tecnicos: draggingOT.tecnicos && draggingOT.tecnicos.length > 0
           ? draggingOT.tecnicos
-          : [{ nombre: 'VACANTE', rol: 'M' }]
+          : [{ nombre: 'VACANTE', rol: 'M', planta: draggingOT.planta }]
       };
 
       // La añadimos al plan activo

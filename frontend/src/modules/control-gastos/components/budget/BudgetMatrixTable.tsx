@@ -1,5 +1,6 @@
 import React, { Fragment } from 'react';
-import { ChevronDown, ChevronRight, Search, AlertCircle, Edit2, Plus, FileSpreadsheet } from 'lucide-react';
+import { ChevronDown, ChevronRight, Search, AlertCircle, Edit2, Plus } from 'lucide-react';
+import type { ActivoEAM } from '../../../../shared/types';
 
 
 interface BudgetMatrixItem {
@@ -9,6 +10,7 @@ interface BudgetMatrixItem {
   totalAnnual: number;
   found: boolean;
   claseContable?: string;
+  organizacion?: string;
   monthly: {
     [month: number]: {
       bodega: number;
@@ -29,7 +31,7 @@ interface BudgetMatrixTableProps {
   toggleExpand: (id: string) => void;
   handleAutoFix: () => void;
   setManualModalOpen: (val: boolean) => void;
-  setSelectedAssetForManual: (asset: any) => void;
+  setSelectedAssetForManual: (asset: ActivoEAM | null) => void;
   fileInputRef: React.RefObject<HTMLInputElement | null>;
   handleFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   openRemapModal: (assetName: string) => void;
@@ -158,7 +160,11 @@ export const BudgetMatrixTable: React.FC<BudgetMatrixTableProps> = React.memo(({
                               ) : (
                                 <button
                                   onClick={() => {
-                                    setSelectedAssetForManual({ activo: item.activo });
+                                    setSelectedAssetForManual({
+                                      activo: item.activo,
+                                      claseContable: item.claseContable || '',
+                                      organizacion: item.organizacion || ''
+                                    });
                                     setManualModalOpen(true);
                                   }}
                                   className="p-1 hover:bg-blue-50 text-blue-500 rounded transition-colors opacity-0 group-hover:opacity-100"

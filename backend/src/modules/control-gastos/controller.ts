@@ -1,7 +1,7 @@
-
 import type { Request, Response } from 'express';
 import XLSX from "xlsx-js-style";
-import { ControlGastosRepository, type PresupuestoRow, type GastoConsolidadoRow } from './repository.js';
+import { ControlGastosRepository } from './repository.js';
+import type { PresupuestoRow, GastoConsolidadoRow } from '../../types.js';
 
 /**
  * Controlador para la gestión de control de gastos.
@@ -23,7 +23,7 @@ export class ControlGastosController {
       const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
       // Se asume que la hoja de interés se llama "MAQUINARIA"
       const sheet = workbook.Sheets["MAQUINARIA"];
-      const data = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: null }) as any[][];
+      const data = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: null }) as unknown[][];
 
       // 1. Identificar la fila donde se encuentran los nombres de los meses
       let monthRowIndex = -1;
@@ -31,7 +31,7 @@ export class ControlGastosController {
 
       for (let i = 0; i < Math.min(20, data.length); i++) {
         const row = data[i];
-        if (row && row.some((cell: any) => typeof cell === 'string' && cell.toLowerCase().includes('enero'))) {
+        if (row && row.some((cell) => typeof cell === 'string' && cell.toLowerCase().includes('enero'))) {
           monthRowIndex = i;
           break;
         }
@@ -170,9 +170,9 @@ export class ControlGastosController {
 
       res.json({ success: true, count: rowsToInsert.length });
 
-    } catch (e: any) {
-      console.error(e);
-      res.status(500).json({ error: e.message });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'Error desconocido';
+      res.status(500).json({ error: message });
     }
   }
 
@@ -190,7 +190,7 @@ export class ControlGastosController {
       const sheetName = workbook.SheetNames[0];
       const sheet = workbook.Sheets[sheetName];
 
-      const rawData = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as any[][];
+      const rawData = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as unknown[][];
 
       if (!rawData || rawData.length === 0) {
         return res.status(400).json({ error: 'El archivo está vacío' });
@@ -200,7 +200,7 @@ export class ControlGastosController {
       let headerRowIndex = -1;
       for (let i = 0; i < Math.min(20, rawData.length); i++) {
         const row = rawData[i];
-        if (row && row.some((cell: any) => {
+        if (row && row.some((cell) => {
           const str = String(cell).toUpperCase().replace(/[\s_]/g, '');
           return str.includes('NUMEROOT') || str.includes('NROOT');
         })) {
@@ -214,12 +214,12 @@ export class ControlGastosController {
       // 2. Crear un mapa de columnas para acceso rápido por nombre
       const headerRow = rawData[headerRowIndex];
       const colMap: Record<string, number> = {};
-      headerRow.forEach((cell: any, idx: number) => {
+      headerRow.forEach((cell, idx: number) => {
         const key = String(cell).toUpperCase().trim();
         colMap[key] = idx;
       });
 
-      const getVal = (row: any[], keys: string[]) => {
+      const getVal = (row: unknown[], keys: string[]) => {
         for (const k of keys) {
           if (colMap[k] !== undefined) return row[colMap[k]];
         }
@@ -227,7 +227,7 @@ export class ControlGastosController {
       };
 
       // Utilidad para parsear fechas de diferentes formatos de Excel
-      const parseDate = (val: any): Date | null => {
+      const parseDate = (val: unknown): Date | null => {
         if (!val) return null;
         if (val instanceof Date) return val;
         if (typeof val === 'number') return new Date((val - (25567 + 1)) * 86400 * 1000);
@@ -273,7 +273,7 @@ export class ControlGastosController {
           nroActivo: nroActivo,
           fechaTrx: fechaTrx,
           descripcionArticulo: descArticulo,
-          costoTrx: costo || 0
+          costoTrx: (costo as number) || 0
         });
       }
 
@@ -282,9 +282,9 @@ export class ControlGastosController {
 
       res.json({ success: true, count: rowsToInsert.length });
 
-    } catch (e: any) {
-      console.error(e);
-      res.status(500).json({ error: e.message });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'Error desconocido';
+      res.status(500).json({ error: message });
     }
   }
 
@@ -299,9 +299,9 @@ export class ControlGastosController {
       const mes = req.query.mes ? Number(req.query.mes) : undefined;
       const data = await ControlGastosRepository.getPresupuesto(anio, planta, activo, mes);
       res.json(data);
-    } catch (e: any) {
-      console.error(e);
-      res.status(500).json({ error: e.message });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'Error desconocido';
+      res.status(500).json({ error: message });
     }
   }
 
@@ -315,9 +315,9 @@ export class ControlGastosController {
       const mes = req.query.mes ? Number(req.query.mes) : undefined;
       const data = await ControlGastosRepository.getGastosConsolidados(anio, planta, mes);
       res.json(data);
-    } catch (e: any) {
-      console.error(e);
-      res.status(500).json({ error: e.message });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'Error desconocido';
+      res.status(500).json({ error: message });
     }
   }
 
@@ -327,8 +327,9 @@ export class ControlGastosController {
       if (!cc) return res.status(400).json({ error: 'Centro de costo es requerido' });
       const data = await ControlGastosRepository.searchAssetsByCentroCosto(cc);
       res.json(data);
-    } catch (e: any) {
-      res.status(500).json({ error: e.message });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'Error desconocido';
+      res.status(500).json({ error: message });
     }
   }
 
@@ -338,8 +339,9 @@ export class ControlGastosController {
       if (!oldName || !newName || !anio) return res.status(400).json({ error: 'Faltan parámetros' });
       await ControlGastosRepository.updatePresupuestoAssetName(oldName, newName, anio);
       res.json({ success: true });
-    } catch (e: any) {
-      res.status(500).json({ error: e.message });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'Error desconocido';
+      res.status(500).json({ error: message });
     }
   }
 
@@ -349,8 +351,9 @@ export class ControlGastosController {
       if (!anio) return res.status(400).json({ error: 'Año es requerido' });
       const result = await ControlGastosRepository.autoFixPresupuestoAssets(anio);
       res.json(result);
-    } catch (e: any) {
-      res.status(500).json({ error: e.message });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'Error desconocido';
+      res.status(500).json({ error: message });
     }
   }
 
@@ -359,8 +362,9 @@ export class ControlGastosController {
       const search = req.query.search as string;
       const data = await ControlGastosRepository.getMaintainableAssets(search);
       res.json(data);
-    } catch (e: any) {
-      res.status(500).json({ error: e.message });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'Error desconocido';
+      res.status(500).json({ error: message });
     }
   }
 
@@ -372,8 +376,9 @@ export class ControlGastosController {
       }
       await ControlGastosRepository.saveManualPresupuesto(rows);
       res.json({ success: true });
-    } catch (e: any) {
-      res.status(500).json({ error: e.message });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'Error desconocido';
+      res.status(500).json({ error: message });
     }
   }
 

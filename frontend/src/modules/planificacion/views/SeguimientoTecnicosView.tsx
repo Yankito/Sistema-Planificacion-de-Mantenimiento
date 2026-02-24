@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { PlanResult } from "../types";
 import { User, AlertTriangle, CheckCircle2, Search, X, ArrowRightCircle, Wrench, Zap, Cog, Eye, Flame, Briefcase } from "lucide-react";
-import { useTecnicosCarga } from "../hooks/useTecnicosCarga"; // Importamos el Hook
+import { useTecnicosCarga } from "../hooks/useTecnicosCarga";
 import { CONFIG_ROLES } from "../utils/planificacionUtils";
+import { usePlanificacionManager } from "../hooks/usePlanificacionManager";
 
 const getIconForRole = (rol: string) => {
   switch (rol) {
@@ -18,14 +19,22 @@ const getIconForRole = (rol: string) => {
 
 
 interface Props {
-  planResult: PlanResult[];
   plantas: string[];
-  onNavegar: (planta: string, fecha: string) => void;
-  mes?: string;
+  onNavegar: (planta: string, fecha?: string) => void;
 }
 
-export const SeguimientoTecnicosView = ({ planResult, plantas, onNavegar, mes }: Props) => {
+export const SeguimientoTecnicosView = ({ plantas, onNavegar }: Props) => {
+  const planning = usePlanificacionManager();
+  const { planResult, mes, periodoSeleccionado, plantaPlan, cargarPlanificacion } = planning;
   const [plantaSel, setPlantaSel] = useState("TODAS");
+
+  // Carga inicial al entrar
+  useEffect(() => {
+    if (planResult.length === 0) {
+      const [anio, mesNum] = periodoSeleccionado.split('-').map(Number);
+      cargarPlanificacion(mesNum, anio, plantaPlan);
+    }
+  }, [cargarPlanificacion, planResult.length, periodoSeleccionado, plantaPlan]);
 
   const {
     tecnicosFiltrados, diasMes,

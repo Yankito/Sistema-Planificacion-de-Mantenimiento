@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Filter, LayoutDashboard, Table as TableIcon, PieChart, XCircle, ArrowRight } from "lucide-react";
 import { getRangoSemana } from "../../../shared/utils/dateUtils";
 import { SelectPill } from "../components/ui/SelectPill";
@@ -14,7 +14,15 @@ import { usePlantasAcceso } from "../../../shared/hooks/usePlantasAcceso";
 
 
 export const FallasView = () => {
-    const { data } = useFallasManager(); // Instanciamos el manager aquí
+    const manager = useFallasManager();
+    const { data, loadData } = manager;
+
+    // Carga inicial al entrar a la vista
+    useEffect(() => {
+        if (data.length === 0) {
+            loadData();
+        }
+    }, [loadData, data.length]);
 
     // 1. LÓGICA (Hook)
     const {

@@ -1,3 +1,4 @@
+import type { Request, Response } from 'express';
 import XLSX from "xlsx-js-style";
 import { SeguimientoRepository } from './repository.js';
 import { processSeguimientoOTs } from './logic/seguimientoOTsProcessor.js';
@@ -5,37 +6,41 @@ import { analyzeBacklogFlow } from './logic/backlogAnalysis.js';
 import { analyzeTechnicians } from './logic/technicianAnalysis.js';
 import { generarExcelReporte } from './utils/exportUtils.js';
 import * as TemplateGenerator from './logic/templateGenerator.js';
+import type { OrdenTrabajo } from '../../types.js';
 
 export const SeguimientoController = {
 
-  getSemanas: async (req: any, res: any) => {
+  getSemanas: async (req: Request, res: Response) => {
     try {
       const { tipo } = req.query;
       const semanas = await SeguimientoRepository.getSemanas(tipo as string);
       console.log(semanas);
       res.json(semanas);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Error desconocido';
+      res.status(500).json({ error: message });
     }
   },
 
-  getPedidos: async (req: any, res: any) => {
+  getPedidos: async (req: Request, res: Response) => {
     try {
       const { fechaInicio, fechaFin } = req.query;
 
       if (!fechaInicio || !fechaFin) {
         return res.status(400).json({ error: "Parámetros fechaInicio y fechaFin son obligatorios (formato YYYY-MM-DD)" });
       }
+      console.log(fechaInicio, fechaFin);
 
       const data = await SeguimientoRepository.getPedidos(fechaInicio as string, fechaFin as string);
       res.json(data);
-    } catch (error: any) {
-      console.error("Error en /pedidos:", error);
-      res.status(500).json({ error: error.message });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Error desconocido";
+      console.error("Error en /pedidos:", message);
+      res.status(500).json({ error: message });
     }
   },
 
-  getDashboardStats: async (req: any, res: any) => {
+  getDashboardStats: async (req: Request, res: Response) => {
     try {
       const { fechaInicio, fechaFin } = req.query;
       // Si no vienen en el dashboard, usamos un rango amplio por defecto para no romper el análisis
@@ -60,12 +65,13 @@ export const SeguimientoController = {
           totalAnterior: dataAnterior.length
         }
       });
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Error desconocido';
+      res.status(500).json({ error: message });
     }
   },
 
-  descargarReporte: async (req: any, res: any) => {
+  descargarReporte: async (req: Request, res: Response) => {
     try {
       const { semana, modo, semanaAnt, fechaInicio, fechaFin } = req.query;
 
@@ -76,7 +82,7 @@ export const SeguimientoController = {
       // 1. Obtener datos desde Postgres
       const dataActual = await SeguimientoRepository.getPedidos(start, end);
 
-      let dataAnterior: any[] = [];
+      let dataAnterior: OrdenTrabajo[] = [];
       if (semanaAnt) {
         dataAnterior = await SeguimientoRepository.getPedidos(start, end);
       }
@@ -94,23 +100,25 @@ export const SeguimientoController = {
       res.setHeader('Content-Disposition', `attachment; filename=${reporte.fileName}`);
       res.send(reporte.buffer);
 
-    } catch (error: any) {
-      console.error("Error descarga:", error);
-      res.status(500).json({ error: error.message });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Error desconocido";
+      console.error("Error descarga:", message);
+      res.status(500).json({ error: message });
     }
   },
 
-  descargarPlantilla: async (req: any, res: any) => {
+  descargarPlantilla: async (req: Request, res: Response) => {
     try {
       const { tipo } = req.params;
-      const excelData = TemplateGenerator.generarBufferPlantilla(tipo.toUpperCase());
+      const excelData = TemplateGenerator.generarBufferPlantilla((tipo as string).toUpperCase());
 
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       res.setHeader('Content-Disposition', `attachment; filename=Plantilla_${tipo}.xlsx`);
       res.send(excelData);
 
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Error desconocido';
+      res.status(500).json({ error: message });
     }
   }
 };

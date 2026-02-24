@@ -5,29 +5,32 @@ import { Calendario } from "../components/Calendario";
 import { PanelLateral } from "../components/PanelLateral";
 import { ModalAsignacionTecnico } from "../components/ModalAsignacionTecnico";
 import { Loader2, CalendarDays } from "lucide-react";
-import { useData } from "../../../context/PlanificacionContext";
+import { usePlanificacionManager } from "../hooks/usePlanificacionManager";
 import { usePlantasAcceso } from "../../../shared/hooks/usePlantasAcceso";
 import { getMonthOptions } from "../../../shared/utils/dateUtils";
+import type { Tecnico } from "../types";
 
 const BLOQUEOS_SABADO = ['L', 'V', 'LIC', 'LM', 'LP'];
 
 export const PlanificacionView = () => {
-  const { planning } = useData();
+  const planning = usePlanificacionManager();
   const {
     planResult, setPlanResult, plantaPlan, setPlantaPlan,
     cargandoPlan,
     tecnicosMap, mapaHorariosActual,
     periodoSeleccionado, setPeriodoSeleccionado,
     planFiltrado, sinAsignarFiltrado,
-    cargarPlanificacion
+    cargarPlanificacion, cargarHorarios
   } = planning;
   console.log("cargandoPlan", cargandoPlan);
 
   useEffect(() => {
     const mes = periodoSeleccionado.split('-')[1];
     const anio = periodoSeleccionado.split('-')[0];
+    // Cargamos tanto el plan como los horarios (para validación de turnos)
     cargarPlanificacion(Number(mes), Number(anio), plantaPlan);
-  }, [cargarPlanificacion, periodoSeleccionado, plantaPlan]);
+    cargarHorarios(periodoSeleccionado, plantaPlan);
+  }, [cargarPlanificacion, cargarHorarios, periodoSeleccionado, plantaPlan]);
 
   const [idOrdenEditando, setIdOrdenEditando] = useState<string | null>(null);
 
@@ -65,7 +68,7 @@ export const PlanificacionView = () => {
       if (ot.nroOrden !== ordenId) return ot;
       const nuevosTecnicos = [...ot.tecnicos];
       if (accion === 'ADD' && rol) {
-        nuevosTecnicos.push({ nombre: 'VACANTE', rol });
+        nuevosTecnicos.push({ nombre: 'VACANTE', rol, planta: plantaPlan });
       } else if (accion === 'REMOVE' && indice !== undefined) {
         nuevosTecnicos.splice(indice, 1);
       }
@@ -157,7 +160,7 @@ export const PlanificacionView = () => {
           <Calendario
             {...logic}
             planResult={planFiltrado}
-            isNocheValid={(tecData: any[], fechaStr: string) => {
+            isNocheValid={(tecData: Tecnico[], fechaStr: string) => {
               if (!tecData || tecData.length === 0) return true;
 
               const [d, m, y] = fechaStr.split('/').map(Number);

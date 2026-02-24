@@ -1,7 +1,7 @@
 import { type AtrasoRow } from "../types.js";
 
 // Helper para normalizar OTs (asegura comparaciones correctas entre strings)
-export const normalizeOT = (val: any) => String(val || "").trim().toUpperCase();
+export const normalizeOT = (val: unknown) => String(val || "").trim().toUpperCase();
 
 interface FilterOptions {
   viewDetail: {

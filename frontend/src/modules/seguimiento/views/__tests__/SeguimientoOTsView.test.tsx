@@ -72,13 +72,13 @@ const baseSeguimientoData = {
 };
 
 // --- MOCK DEL CONTEXTO UNIFICADO ---
-import { useData } from '../../../../context/PlanificacionContext';
-vi.mock('../../../../context/PlanificacionContext', () => ({
-  useData: vi.fn()
+import { useSeguimientoData } from '../../hooks/useSeguimientoData';
+vi.mock('../../hooks/useSeguimientoData', () => ({
+  useSeguimientoData: vi.fn()
 }));
 
 // --- MOCK DEL CONTEXTO AUTH (requerido por usePlantasAcceso) ---
-vi.mock('../../../../context/AuthContext', () => ({
+vi.mock('../../../../context/useAuth', () => ({
   useAuth: vi.fn(() => ({
     user: {
       usuario: 'testuser',
@@ -101,18 +101,13 @@ vi.mock('../../../../context/AuthContext', () => ({
 
 describe('SeguimientoOTsView Component', () => {
 
-  const mockedUseData = vi.mocked(useData);
+  const mockedUseSeguimiento = vi.mocked(useSeguimientoData);
 
   beforeEach(() => {
     vi.clearAllMocks();
     window.confirm = vi.fn();
     window.alert = vi.fn();
-    mockedUseData.mockReturnValue({
-      planning: {} as unknown as ReturnType<typeof useData>['planning'],
-      seguimiento: baseSeguimientoData as unknown as ReturnType<typeof useData>['seguimiento'],
-      fallas: {} as unknown as ReturnType<typeof useData>['fallas'],
-      config: { semanaActual: '2026-S05' }
-    });
+    mockedUseSeguimiento.mockReturnValue(baseSeguimientoData as any);
   });
 
   it('debería renderizar correctamente en modo ATRASOS por defecto', () => {
@@ -134,12 +129,7 @@ describe('SeguimientoOTsView Component', () => {
   });
 
   it('debería mostrar el Overlay de Carga si isLoading es true', () => {
-    mockedUseData.mockReturnValue({
-      planning: {} as unknown as ReturnType<typeof useData>['planning'],
-      seguimiento: { ...baseSeguimientoData, isLoading: true } as unknown as ReturnType<typeof useData>['seguimiento'],
-      fallas: {} as unknown as ReturnType<typeof useData>['fallas'],
-      config: { semanaActual: '2026-S05' }
-    });
+    mockedUseSeguimiento.mockReturnValue({ ...baseSeguimientoData, isLoading: true } as any);
 
     render(<SeguimientoOTsView />);
 
@@ -147,12 +137,7 @@ describe('SeguimientoOTsView Component', () => {
   });
 
   it('debería intentar cargar el reporte inicial si no hay reporte actual', () => {
-    mockedUseData.mockReturnValue({
-      planning: {} as unknown as ReturnType<typeof useData>['planning'],
-      seguimiento: { ...baseSeguimientoData, reporteActual: '' } as unknown as ReturnType<typeof useData>['seguimiento'],
-      fallas: {} as unknown as ReturnType<typeof useData>['fallas'],
-      config: { semanaActual: '2026-S05' }
-    });
+    mockedUseSeguimiento.mockReturnValue({ ...baseSeguimientoData, reporteActual: '' } as any);
 
     render(<SeguimientoOTsView />);
 

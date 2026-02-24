@@ -6,7 +6,7 @@ import {
   LogOut, User
 } from "lucide-react";
 import { SidebarItem } from "./SidebarItem";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../context/useAuth";
 
 interface SidebarProps {
   activeTab: string;

@@ -2,15 +2,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { PlanificacionView } from '../PlanificacionView';
-import { useData } from '../../../../context/PlanificacionContext';
+import { usePlanificacionManager } from '../../hooks/usePlanificacionManager';
 import { usePlanificacionLogic } from '../../hooks/usePlanificacionLogic';
 
 // Mocks de componentes pesados
 vi.mock('../../components/Calendario', () => ({ Calendario: () => <div data-testid="calendario" /> }));
 vi.mock('../../components/PanelLateral', () => ({ PanelLateral: () => <div data-testid="panel" /> }));
 
-vi.mock('../../../../context/PlanificacionContext', () => ({
-  useData: vi.fn()
+vi.mock('../../hooks/usePlanificacionManager', () => ({
+  usePlanificacionManager: vi.fn()
 }));
 
 vi.mock('../../hooks/usePlanificacionLogic', () => ({
@@ -18,7 +18,7 @@ vi.mock('../../hooks/usePlanificacionLogic', () => ({
 }));
 
 // Mock del contexto Auth (requerido por usePlantasAcceso)
-vi.mock('../../../../context/AuthContext', () => ({
+vi.mock('../../../../context/useAuth', () => ({
   useAuth: vi.fn(() => ({
     user: {
       usuario: 'testuser',
@@ -40,7 +40,7 @@ vi.mock('../../../../context/AuthContext', () => ({
 }));
 
 describe('PlanificacionView', () => {
-  const mockedUseData = vi.mocked(useData);
+  const mockedUseManager = vi.mocked(usePlanificacionManager);
   const mockedUseLogic = vi.mocked(usePlanificacionLogic);
 
   const mockManager = {
@@ -60,6 +60,7 @@ describe('PlanificacionView', () => {
     planFiltrado: [],
     sinAsignarFiltrado: [],
     cargarPlanificacion: vi.fn(),
+    cargarHorarios: vi.fn()
   };
 
   const mockLogic = {
@@ -85,22 +86,12 @@ describe('PlanificacionView', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockedUseData.mockReturnValue({
-      planning: mockManager as unknown as ReturnType<typeof useData>['planning'],
-      seguimiento: {} as unknown as ReturnType<typeof useData>['seguimiento'],
-      fallas: {} as unknown as ReturnType<typeof useData>['fallas'],
-      config: { semanaActual: '2024-s01' }
-    });
-    mockedUseLogic.mockReturnValue(mockLogic as unknown as ReturnType<typeof usePlanificacionLogic>);
+    mockedUseManager.mockReturnValue(mockManager as any);
+    mockedUseLogic.mockReturnValue(mockLogic as any);
   });
 
   it('debería mostrar el spinner de carga cuando sincroniza con Oracle', () => {
-    mockedUseData.mockReturnValue({
-      planning: { ...mockManager, cargandoPlan: true } as unknown as ReturnType<typeof useData>['planning'],
-      seguimiento: {} as unknown as ReturnType<typeof useData>['seguimiento'],
-      fallas: {} as unknown as ReturnType<typeof useData>['fallas'],
-      config: { semanaActual: '2024-s01' }
-    });
+    mockedUseManager.mockReturnValue({ ...mockManager, cargandoPlan: true } as any);
 
     render(<PlanificacionView />);
     expect(screen.getByText(/Sincronizando Oracle/i)).toBeInTheDocument();

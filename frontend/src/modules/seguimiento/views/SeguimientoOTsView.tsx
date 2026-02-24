@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import type { AtrasoRow, BacklogStats, TechStats } from "../types";
 import { BarChart3, PieChart, Factory, FileText, Search, Calendar as CalendarIcon, RotateCcw } from "lucide-react";
 import { ResumenTable } from "../components/ResumenTable";
@@ -15,13 +15,12 @@ import { SeguimientoModal } from "../components/SeguimientoModal";
 import { AnalysisDashboard } from "../components/AnalysisDashboard";
 import { EvolutionDashboard } from "../components/EvolutionDashboard";
 import { LoadingOverlay } from "../../../shared/components/ui/LoadingOverlay";
+import { useSeguimientoData } from "../hooks/useSeguimientoData";
+import { usePlantasAcceso } from "../../../shared/hooks/usePlantasAcceso";
 import * as SeguimientoService from "../services/SeguimientoService";
 
-import { useData } from "../../../context/PlanificacionContext";
-import { usePlantasAcceso } from "../../../shared/hooks/usePlantasAcceso";
-
 export const SeguimientoOTsView = () => {
-  const { seguimiento: seguimientoData } = useData();
+  const seguimientoData = useSeguimientoData();
 
   const {
     dataActual,
@@ -46,6 +45,13 @@ export const SeguimientoOTsView = () => {
 
   const [fechaInicio, setFechaInicio] = useState<string>(toISODate(getStartOfPreviousYear()));
   const [fechaFin, setFechaFin] = useState<string>(toISODate(getCurrentDate()));
+
+  // Carga inicial al entrar a la vista
+  useEffect(() => {
+    if (dataActual.length === 0) {
+      seguimientoData.cargarDatos(fechaInicio, fechaFin);
+    }
+  }, [seguimientoData, dataActual.length, fechaInicio, fechaFin]);
 
   // NORMALIZACIÓN DE PERIODOS: Comprime años anteriores en una sola columna
   const normalizeData = useCallback((data: AtrasoRow[]) => {

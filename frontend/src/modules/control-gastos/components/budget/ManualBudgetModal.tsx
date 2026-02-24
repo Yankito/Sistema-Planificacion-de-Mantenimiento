@@ -1,16 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Search, Plus, Save, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
-import { type ManualEntryLine, FRECUENCIAS_PREDEFINIDAS } from '../../types';
+import { type ManualEntryLine, FRECUENCIAS_PREDEFINIDAS, type PresupuestoRow } from '../../types';
+import type { ActivoEAM } from '../../../../shared/types';
 
 interface ManualBudgetModalProps {
   isOpen: boolean;
   onClose: () => void;
-  selectedAsset: any;
-  setSelectedAsset: (asset: any) => void;
+  selectedAsset: ActivoEAM | { activo: string, claseContable?: string, organizacion?: string } | null;
+  setSelectedAsset: (asset: ActivoEAM | null) => void;
   onSaveSuccess: () => void;
-  getMaintainableAssets: (search?: string, silent?: boolean) => Promise<any[]>;
-  getPresupuesto: (year: number, planta: string, activo?: string, mes?: number, silent?: boolean) => Promise<any[]>;
-  saveManualPresupuesto: (rows: any[]) => Promise<void>;
+  getMaintainableAssets: (search?: string, silent?: boolean) => Promise<ActivoEAM[]>;
+  getPresupuesto: (year: number, planta?: string, activo?: string, mes?: number, silent?: boolean) => Promise<PresupuestoRow[]>;
+  saveManualPresupuesto: (rows: PresupuestoRow[]) => Promise<void>;
   selectedYear: number;
   months: string[];
 }
@@ -28,7 +29,7 @@ export const ManualBudgetModal: React.FC<ManualBudgetModalProps> = React.memo(({
   months
 }) => {
   const [assetSearch, setAssetSearch] = useState('');
-  const [maintainableAssets, setMaintainableAssets] = useState<any[]>([]);
+  const [maintainableAssets, setMaintainableAssets] = useState<ActivoEAM[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [manualEntries, setManualEntries] = useState<ManualEntryLine[]>([]);
   const [saveLoading, setSaveLoading] = useState(false);
@@ -157,7 +158,7 @@ export const ManualBudgetModal: React.FC<ManualBudgetModalProps> = React.memo(({
     if (!selectedAsset) return;
     setSaveLoading(true);
     try {
-      const allRows: any[] = [];
+      const allRows: PresupuestoRow[] = [];
       manualEntries.forEach(entry => {
         for (let i = 1; i <= 12; i++) {
           const m = entry.monthlyData[i];

@@ -1,7 +1,7 @@
 // Hook para obtener las plantas accesibles al usuario autenticado
 // Filtra cualquier lista de plantas según los permisos del usuario
 import { useMemo } from 'react';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/useAuth';
 
 // Todas las plantas posibles del sistema
 const TODAS_LAS_PLANTAS_SISTEMA = ['PF1', 'PF2', 'PF3', 'PF4', 'PF5', 'PF6', 'CDT', 'MPS', 'OTROS', 'DC', 'VENTAS'];

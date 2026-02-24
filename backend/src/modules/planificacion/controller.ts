@@ -1,12 +1,14 @@
+import type { Request, Response } from 'express';
 import XLSX from "xlsx-js-style";
 import { processExcelData } from './logic/excelProcessor.js';
 import { PlanificacionRepository } from './repository.js';
 import { PlannerService } from './logic/PlannerService.js';
 import { query } from "../../db/config.js";
+import type { OrdenTrabajo, Tecnico } from '../../types.js';
 
 export const PlanificacionController = {
 
-  ejecutarPlanificacion: async (req: any, res: any) => {
+  ejecutarPlanificacion: async (req: Request, res: Response) => {
     try {
       const { mes, anio, modo, planta } = req.body;
       if (!mes || !anio) return res.status(400).json({ error: "Periodo (Mes y Año) no especificado" });
@@ -41,12 +43,12 @@ export const PlanificacionController = {
         "DEPARTAMENTO": ot.PLANTA // Fallback para mapDepartamentoAPlanta
       }));
 
-      const tecnicosMap = new Map();
+      const tecnicosMap = new Map<string, { planta: string, rol: string }>();
       empleados.forEach(emp => {
         tecnicosMap.set(emp.NOMBRE.toUpperCase(), { planta: emp.PLANTA, rol: emp.ROL });
       });
 
-      const mapaHorarios = new Map();
+      const mapaHorarios = new Map<string, string[]>();
       horarios.forEach(h => {
         mapaHorarios.set(h.nombre.toUpperCase(), h.turnos);
       });
@@ -61,13 +63,14 @@ export const PlanificacionController = {
       }
 
       res.json(resultado);
-    } catch (error: any) {
-      console.error("Error ejecucion remota:", error);
-      res.status(500).json({ error: error.message });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Error desconocido";
+      console.error("Error ejecucion remota:", message);
+      res.status(500).json({ error: message });
     }
   },
 
-  obtenerPlanificacion: async (req: any, res: any) => {
+  obtenerPlanificacion: async (req: Request, res: Response) => {
     try {
       const { mes, anio, planta } = req.query;
       console.log(`Petición obtenerPlanificacion para periodo: ${mes}-${anio}, planta: ${planta || 'TODAS'}`);
@@ -80,7 +83,7 @@ export const PlanificacionController = {
       console.log("data", data);
 
       // Adaptar campos de DB a formato frontend
-      const resultados = data.map((ot: any) => ({
+      const resultados: OrdenTrabajo[] = data.map((ot: Record<string, any>) => ({
         nroOrden: ot.OT,
         equipo: ot.NRO_ACTIVO,
         planta: ot.PLANTA,
@@ -97,25 +100,26 @@ export const PlanificacionController = {
       // Separar asignados de sin asignar para el frontend
       const asignados = resultados.filter(ot =>
         ot.tecnicos && ot.tecnicos.length > 0 &&
-        ot.tecnicos.some((t: any) => t.nombre && t.nombre !== "VACANTE")
+        ot.tecnicos.some((t: { nombre?: string }) => t.nombre && t.nombre !== "VACANTE")
       );
 
       const sinAsignar = resultados.filter(ot =>
         !ot.tecnicos || ot.tecnicos.length === 0 ||
-        ot.tecnicos.every((t: any) => !t.nombre || t.nombre === "VACANTE")
+        ot.tecnicos.every((t: { nombre?: string }) => !t.nombre || t.nombre === "VACANTE")
       );
 
       console.log(`obtenerPlanificacion: Éxito. Asignados: ${asignados.length}, Sin Asignar: ${sinAsignar.length}`);
       res.json({ resultados: asignados, sinAsignar });
-    } catch (error: any) {
-      console.error("FATAL ERROR in obtenerPlanificacion:", error);
-      res.status(500).json({ error: error.message });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Error desconocido";
+      console.error("FATAL ERROR in obtenerPlanificacion:", message);
+      res.status(500).json({ error: message });
     }
   },
 
 
   // Mantener para compatibilidad o cargas iniciales
-  procesarExcel: async (req: any, res: any) => {
+  procesarExcel: async (req: Request, res: Response) => {
     try {
       if (!req.file) return res.status(400).json({ error: "Archivo requerido" });
       const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
@@ -145,7 +149,7 @@ export const PlanificacionController = {
       const snapshotId = resSnap?.rows?.[0]?.ID || resSnap?.rows?.[0]?.[0];
 
       if (snapshotId) {
-        const emps = Object.entries(resultado.tecnicosMap).map(([nombre, info]: [string, any]) => ({
+        const emps = Object.entries(resultado.tecnicosMap).map(([nombre, info]: [string, { planta: string, rol: string }]) => ({
           nombre,
           planta: info.planta,
           rol: info.rol
@@ -183,20 +187,21 @@ export const PlanificacionController = {
         periodo
       });
 
-    } catch (error: any) {
-      console.error("Error procesando excel:", error);
-      res.status(500).json({ error: error.message });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Error desconocido";
+      console.error("Error procesando excel:", message);
+      res.status(500).json({ error: message });
     }
   },
 
-  guardarPlanificacion: async (req: any, res: any) => {
+  guardarPlanificacion: async (req: Request, res: Response) => {
     try {
       const { datos, semana } = req.body;
       if (!Array.isArray(datos) || datos.length === 0) {
         return res.status(400).json({ error: "Lista de datos requerida" });
       }
 
-      const asignaciones = datos.map((d: any) => ({
+      const asignaciones = datos.map((d: Record<string, any>) => ({
         ot: d.nroOrden || d.OT,
         tecnicos: d.tecnicos,
         mes: d.mes,
@@ -205,36 +210,39 @@ export const PlanificacionController = {
 
       await PlanificacionRepository.guardarPlanificacion(asignaciones);
       res.json({ success: true, count: asignaciones.length });
-    } catch (error: any) {
-      console.error("Error guardando planificacion:", error);
-      res.status(500).json({ error: error.message });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Error desconocido";
+      console.error("Error guardando planificacion:", message);
+      res.status(500).json({ error: message });
     }
   },
 
 
 
-  listarHorarios: async (req: any, res: any) => {
+  listarHorarios: async (req: Request, res: Response) => {
     try {
       const { mes, anio, planta } = req.query;
       console.log(`Petición listarHorarios para periodo: ${mes}-${anio}, planta: ${planta || 'TODAS'}`);
       const data = await PlanificacionRepository.getHorarios(Number(mes), Number(anio), planta ? String(planta) : null);
       res.json({ periodo: `${mes}-${anio}`, count: data.length, data });
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Error desconocido";
+      res.status(500).json({ error: message });
     }
   },
 
-  actualizarTurno: async (req: any, res: any) => {
+  actualizarTurno: async (req: Request, res: Response) => {
     try {
       const { nombre, turnos, mes, anio } = req.body;
       await PlanificacionRepository.upsertHorarioManual(mes, anio, nombre, turnos);
       res.json({ success: true });
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Error desconocido";
+      res.status(500).json({ error: message });
     }
   },
 
-  uploadHorarios: async (req: any, res: any) => {
+  uploadHorarios: async (req: Request, res: Response) => {
     try {
       if (!req.file) return res.status(400).json({ error: "Archivo requerido" });
 
@@ -264,7 +272,7 @@ export const PlanificacionController = {
       // 2. HORARIOS
       const hojaHorariosName = sheetNames.find(s => ['HORARIOS', 'TURNOS'].includes(s.trim().toUpperCase()));
       if (hojaHorariosName) {
-        const horariosRaw = XLSX.utils.sheet_to_json(workbook.Sheets[hojaHorariosName], { header: 1 }) as any[][];
+        const horariosRaw = XLSX.utils.sheet_to_json(workbook.Sheets[hojaHorariosName], { header: 1 }) as unknown[][];
 
         let anioHorario: number | undefined;
         let mesHorario: number | undefined;
@@ -281,7 +289,7 @@ export const PlanificacionController = {
           horariosRaw.slice(1).forEach(row => {
             let nombre = String(row[0] || '').trim().toUpperCase();
             if (tecnicosValidos.has(nombre)) {
-              const turnos = row.slice(1, 32).map((t: any) => String(t || 'L').trim());
+              const turnos = row.slice(1, 32).map((t) => String(t || 'L').trim());
               horariosParaGuardar.push({ nombre, turnos });
             }
           });
@@ -296,9 +304,10 @@ export const PlanificacionController = {
 
       res.json({ success: true, counts });
 
-    } catch (error: any) {
-      console.error("Error uploadHorarios:", error);
-      res.status(500).json({ error: error.message });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Error desconocido";
+      console.error("Error uploadHorarios:", message);
+      res.status(500).json({ error: message });
     }
   }
 };

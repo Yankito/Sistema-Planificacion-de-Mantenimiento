@@ -6,14 +6,7 @@ export interface PlanResult {
   equipo: string;
   descripcion: string;
   planta: string;
-  tecnicos: {
-    nombre: string;
-    rol: string;
-    turnos?: string[] | null;
-    existe?: boolean;
-    esSugerido?: boolean;
-    opFinalizada?: string;
-  }[];
+  tecnicos: Tecnico[];
 
   fechaSugerida: string;
   fechaAnterior: string;

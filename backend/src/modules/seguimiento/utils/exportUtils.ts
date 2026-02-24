@@ -1,5 +1,6 @@
 import XLSX from "xlsx-js-style";
-import { type AtrasoRow, type ReporteExcel } from "../types.js";
+import type { OrdenTrabajo } from "../../../types.js";
+import type { ReporteExcel } from "../types.js";
 
 // CONSTANTES
 const PLANTAS_INDIVIDUALES = ["PF1", "PF2", "PF3", "PF4", "PF5", "PF6", "CDT", "MPS", "DC", "VENTAS", "OTROS"];
@@ -23,7 +24,7 @@ const STYLE_HEADER_MAIN = {
 };
 
 // LÓGICA DE COLORES DEL SEMÁFORO
-const getTrafficLightStyle = (current: number, previous: number, isBold: boolean = false, extraBorder?: any) => {
+const getTrafficLightStyle = (current: number, previous: number, isBold: boolean = false, extraBorder?: unknown) => {
   let color = "FFFF99";
   if (current > previous) color = "FF8888";
   if (current < previous) color = "90EE90";
@@ -48,7 +49,7 @@ const getColLetter = (colIndex: number) => {
 };
 
 // Helpers de Conteo - ACTUALIZADO para filtrar por año en totales
-const count = (data: AtrasoRow[], planta: string | string[], esOB: boolean, periodo: string, cat?: string) => {
+const count = (data: OrdenTrabajo[], planta: string | string[], esOB: boolean, periodo: string, cat?: string) => {
   return data.filter(d => {
     const matchPlanta = Array.isArray(planta) ? planta.includes(d.planta) : d.planta === planta;
     const matchTipo = d.esOB === esOB;
@@ -101,7 +102,7 @@ const sortPeriods = (a: string, b: string) => {
 };
 
 // Helper para normalizar periodos (Comprimir años anteriores)
-const normalizeDatasetPeriods = (data: AtrasoRow[]): AtrasoRow[] => {
+const normalizeDatasetPeriods = (data: OrdenTrabajo[]): OrdenTrabajo[] => {
   const currentYear = new Date().getFullYear();
 
   return data.map(row => {
@@ -138,8 +139,8 @@ const normalizeDatasetPeriods = (data: AtrasoRow[]): AtrasoRow[] => {
 
 
 export const generarExcelReporte = async (
-  dataActual: AtrasoRow[],
-  dataAnterior: AtrasoRow[],
+  dataActual: OrdenTrabajo[],
+  dataAnterior: OrdenTrabajo[],
   modoVista: "ATRASOS" | "CUMPLIDAS",
   reporteActual: string
 ): Promise<ReporteExcel> => {
@@ -197,7 +198,7 @@ export const generarExcelReporte = async (
       return { v: label, t: 's', s: isFrontera ? { ...STYLE_HEADER_MAIN, border: BORDER_BOUNDARY_RIGHT } : STYLE_HEADER_MAIN };
     });
 
-    const matrix: any[][] = [];
+    const matrix: unknown[][] = [];
     const rowMap = new Map<string, number>();
     matrix.push(headerRow);
     let currentRowIndex = 2;
@@ -218,7 +219,7 @@ export const generarExcelReporte = async (
       const suffixDisplay = esOB ? "(OB)" : "(OM)";
 
       ordenGrupos.forEach(grupo => {
-        const rowCells: any[] = [];
+        const rowCells: unknown[] = [];
         // Variables de suma para la fila actual
         let valTotalActActual = 0;
         let valTotalAntActual = 0;
@@ -275,7 +276,7 @@ export const generarExcelReporte = async (
         currentRowIndex++;
 
         CATEGORIAS.forEach(cat => {
-          const filaCat: any[] = [{ v: `   ${cat}`, t: 's', s: { border: BORDER_ALL } }];
+          const filaCat: unknown[] = [{ v: `   ${cat}`, t: 's', s: { border: BORDER_ALL } }];
           const plantasTarget = grupo.isAgrupado ? DEFINICION_GRUPOS[grupo.id as keyof typeof DEFINICION_GRUPOS] : grupo.id;
 
           let catTotalAct = 0;
@@ -338,7 +339,7 @@ export const generarExcelReporte = async (
       Tipo: item.esOB ? "OB" : "OM",
       Periodo: item.periodo,
       Semana: item.semana,
-      Tecnicos: item.detallesTecnicos?.map((t: any) => t.tecnico).join(", ") || ""
+      Tecnicos: item.detallesTecnicos?.map((t) => t.tecnico.nombre).join(", ") || ""
     }));
     console.log(`Datos detallados a exportar: ${dataRaw.length} filas`);
     console.log("Ejemplo fila detallada:", dataRaw[0]);

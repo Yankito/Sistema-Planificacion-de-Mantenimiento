@@ -1,6 +1,7 @@
 import XLSX from "xlsx-js-style";
-import { normalizarColumnas } from "../../planificacion/logic/excelProcessor.js"; // Asegura que la ruta sea correcta
-import type { AtrasoRow, MasivoRow, CumplimientoRow, ActivoRow, TecnicoEstado } from "../types.js";
+import { normalizarColumnas } from "../../planificacion/logic/excelProcessor.js";
+import type { OrdenTrabajo, TecnicoEstado } from "../../../types.js";
+import type { MasivoRow, CumplimientoRow, ActivoRow } from "../types.js";
 
 const getWeekLabel = (d: Date): string => {
   const date = new Date(d.getTime());
@@ -24,7 +25,7 @@ const getPeriodoLabel = (d: Date): string => {
 export const processSeguimientoOTs = (sheets: { [key: string]: XLSX.WorkSheet }) => {
   console.log("Hojas detectadas en el archivo:", Object.keys(sheets).join(", "));
 
-  const resultados: AtrasoRow[] = [];
+  const resultados: OrdenTrabajo[] = [];
   const listaActivos: ActivoRow[] = [];
   const rawMasivoData: MasivoRow[] = [];
   const rawCumplimientoData: CumplimientoRow[] = [];
@@ -40,16 +41,16 @@ export const processSeguimientoOTs = (sheets: { [key: string]: XLSX.WorkSheet })
   console.log("Leyendo datos de CUMPLIMIENTO");
 
   // Leemos como matriz primero para depurar
-  const rows = XLSX.utils.sheet_to_json(sheets["CUMPLIMIENTO"], { header: 1 }) as any[][];
+  const rows = XLSX.utils.sheet_to_json(sheets["CUMPLIMIENTO"], { header: 1 }) as unknown[][];
   console.log("Primeras 2 filas de CUMPLIMIENTO:", rows.slice(0, 2));
 
   // Leemos normalizado
-  const rawCumplimiento = XLSX.utils.sheet_to_json(sheets["CUMPLIMIENTO"], { defval: "" });
+  const rawCumplimiento = XLSX.utils.sheet_to_json(sheets["CUMPLIMIENTO"], { defval: "" }) as Record<string, unknown>[];
   const dataCumplimientoNorm = normalizarColumnas(rawCumplimiento);
 
   const mapaCumplimiento = new Map<string, { total: boolean, tecnicos: TecnicoEstado[] }>();
 
-  dataCumplimientoNorm.forEach((r: any) => {
+  dataCumplimientoNorm.forEach((r: Record<string, unknown>) => {
     // Intenta buscar la OT con diferentes nombres posibles por si la normalización falla
     const ot = String(r["NRO_OT"] || r["OT"] || r["NUMERO_OT"] || "").trim();
     if (!ot) return;
@@ -80,10 +81,10 @@ export const processSeguimientoOTs = (sheets: { [key: string]: XLSX.WorkSheet })
 
   // PROCESAMIENTO DE MASIVO 
   // { defval: "" } obliga a leer TODAS las columnas del encabezado, 
-  const dataMasivo = normalizarColumnas(XLSX.utils.sheet_to_json(sheets["MASIVO"], { defval: "" }));
+  const dataMasivo = normalizarColumnas(XLSX.utils.sheet_to_json(sheets["MASIVO"], { defval: "" }) as Record<string, unknown>[]);
   const masivoLookup = new Map<string, { rmd: string, rse: string }>();
 
-  dataMasivo.forEach(r => {
+  dataMasivo.forEach((r: Record<string, unknown>) => {
     const ot = String(r["NÚMERO"] || r["NUMERO"] || r["NUMBER"] || "").trim();
     if (!ot) return;
 
@@ -107,7 +108,7 @@ export const processSeguimientoOTs = (sheets: { [key: string]: XLSX.WorkSheet })
   // ACTIVOS
   const dfActivos = sheets["ACTIVOS"] ? normalizarColumnas(XLSX.utils.sheet_to_json(sheets["ACTIVOS"], { defval: "" })) : [];
   if (dfActivos.length > 0) {
-    dfActivos.forEach(a => {
+    dfActivos.forEach((a: Record<string, unknown>) => {
       const cc = String(a["CC"] || "").replace(/[()]/g, "").trim();
       if (cc) {
         listaActivos.push({
@@ -131,7 +132,7 @@ export const processSeguimientoOTs = (sheets: { [key: string]: XLSX.WorkSheet })
     if (!sheets[nombreHoja]) return;
     const dfPlanta = normalizarColumnas(XLSX.utils.sheet_to_json(sheets[nombreHoja], { defval: "" }));
 
-    dfPlanta.forEach(fila => {
+    dfPlanta.forEach((fila: Record<string, unknown>) => {
       const nroOT = String(fila["PEDIDO DE TRABAJO"] || "").trim();
       if (!nroOT || otsProcesadasEnCiclo.has(nroOT)) return;
 
@@ -150,7 +151,7 @@ export const processSeguimientoOTs = (sheets: { [key: string]: XLSX.WorkSheet })
       const valRse = infoMasivo ? infoMasivo.rse : "N/A";
 
       // Lógica de clasificación
-      let clasificacion: AtrasoRow['clasificacion'];
+      let clasificacion: OrdenTrabajo['clasificacion'];
       if (estadosFinalizados.includes(estado)) {
         clasificacion = "CUMPLIDA";
       } else {
@@ -221,7 +222,9 @@ export const processSeguimientoOTs = (sheets: { [key: string]: XLSX.WorkSheet })
       resultados.push({
         planta: plantaReal,
         ot: nroOT,
+        nroOrden: nroOT,
         nroActivo: nroActivo,
+        equipo: nroActivo,
         descripcion,
         estado,
         clasificacion,

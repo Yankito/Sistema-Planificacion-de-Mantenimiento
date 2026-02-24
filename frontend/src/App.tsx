@@ -1,7 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
 import "./App.css";
-import { PlanificacionProvider } from "./context/PlanificacionProvider";
-import { AuthProvider, useAuth } from "./context/AuthContext";
+import { AuthProvider } from "./context/AuthContext.tsx";
+import { useAuth } from "./context/useAuth";
 
 // Auth
 import { LoginView } from "./modules/auth/views/LoginView";
@@ -16,20 +16,13 @@ import { SeguimientoTecnicosView } from "./modules/planificacion/views/Seguimien
 import { FallasView } from "./modules/fallas/views/FallasView";
 import { ControlGastosView } from "./modules/control-gastos/views/ControlGastosView";
 
-import { useData } from "./context/PlanificacionContext";
+
 
 // Contenido principal protegido
 const AppContent = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
-
-  const { planning } = useData();
-
-  const handleNavegarPlanificacion = (planta: string) => {
-    if (planta) planning.setPlantaPlan(planta);
-    navigate('/planificacion');
-  };
 
   // Permisos por rol
   const roles = user?.roles || [];
@@ -75,10 +68,8 @@ const AppContent = () => {
           <Route path="/seguimiento-tecnicos" element={
             puedeVerPlanificacion
               ? <SeguimientoTecnicosView
-                planResult={planning.planResult}
                 plantas={user?.plantas || []}
-                onNavegar={handleNavegarPlanificacion}
-                mes={planning.mes}
+                onNavegar={() => navigate('/planificacion')}
               />
               : <Navigate to="/" replace />
           } />
@@ -131,9 +122,7 @@ const AuthGate = () => {
   }
 
   return (
-    <PlanificacionProvider>
-      <AppContent />
-    </PlanificacionProvider>
+    <AppContent />
   );
 };
 

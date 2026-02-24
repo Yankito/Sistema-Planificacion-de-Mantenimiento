@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import * as SeguimientoService from "../services/SeguimientoService";
 import type { AtrasoRow, BacklogStats, TechStats } from "../types";
 import {
@@ -35,6 +35,7 @@ export const useSeguimientoData = () => {
         fechaFin: fechaFin !== undefined ? fechaFin : prev.fechaFin
       }));
     }
+    console.log(fechaInicio, fechaFin);
 
     try {
       const data = await SeguimientoService.getPedidos(fechaInicio, fechaFin);
@@ -55,10 +56,6 @@ export const useSeguimientoData = () => {
     }
   }, []);
 
-  // Efecto de carga inicial con el rango por defecto
-  useEffect(() => {
-    cargarDatos(filtros.fechaInicio, filtros.fechaFin);
-  }, [cargarDatos]); // Solo al montar
 
   return {
     dataActual,
