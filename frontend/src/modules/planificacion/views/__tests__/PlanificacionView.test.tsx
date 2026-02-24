@@ -17,6 +17,28 @@ vi.mock('../../hooks/usePlanificacionLogic', () => ({
   usePlanificacionLogic: vi.fn()
 }));
 
+// Mock del contexto Auth (requerido por usePlantasAcceso)
+vi.mock('../../../../context/AuthContext', () => ({
+  useAuth: vi.fn(() => ({
+    user: {
+      usuario: 'testuser',
+      roles: ['supervisor'],
+      plantas: ['PF1', 'PF2', 'PF3', 'PF4', 'PF5', 'PF6', 'CDT', 'OTROS'],
+      nombreCompleto: 'Test User',
+      primerNombre: 'Test',
+      primerApellido: 'User',
+      tieneCI: true,
+    },
+    token: 'fake-token',
+    isAuthenticated: true,
+    isLoading: false,
+    error: null,
+    login: vi.fn(),
+    logout: vi.fn(),
+    sessionExpiresAt: Date.now() + 8 * 60 * 60 * 1000,
+  })),
+}));
+
 describe('PlanificacionView', () => {
   const mockedUseData = vi.mocked(useData);
   const mockedUseLogic = vi.mocked(usePlanificacionLogic);
