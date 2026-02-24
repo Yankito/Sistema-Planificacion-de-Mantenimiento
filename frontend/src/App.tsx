@@ -1,10 +1,14 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
 import "./App.css";
 import { PlanificacionProvider } from "./context/PlanificacionProvider";
+import { AuthProvider, useAuth } from "./context/AuthContext";
+
+// Auth
+import { LoginView } from "./modules/auth/views/LoginView";
+import { DashboardView } from "./modules/auth/views/DashboardView";
 
 // Components
 import { Sidebar } from "./shared/components/Sidebar";
-import { DashboardView } from "./shared/views/DashboardView";
 import { HorariosView } from "./modules/planificacion/views/HorariosView";
 import { PlanificacionView } from "./modules/planificacion/views/PlanificacionView";
 import { SeguimientoOTsView } from "./modules/seguimiento/views/SeguimientoOTsView";
@@ -14,18 +18,33 @@ import { ControlGastosView } from "./modules/control-gastos/views/ControlGastosV
 
 import { useData } from "./context/PlanificacionContext";
 
-// App Content Component
+// Contenido principal protegido
 const AppContent = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuth();
 
-  const { planning, seguimiento, fallas, config } = useData();
+  const { planning } = useData();
 
   const handleNavegarPlanificacion = (planta: string) => {
     if (planta) planning.setPlantaPlan(planta);
-    // Podríamos setear la fecha si el context lo soportara, pero por ahora vamos a la vista
     navigate('/planificacion');
   };
+
+  // Permisos por rol
+  const roles = user?.roles || [];
+  const esProgramador = roles.includes('programador');
+  const esAnalista = roles.includes('analista');
+  const esSupervisor = roles.includes('supervisor');
+
+  // Funcionalidades:
+  // Programador: planificación, horarios, seguimiento-tecnicos, gastos, seguimiento (su planta)
+  // Analista: seguimiento global, fallas, gastos consolidado
+  // Supervisor: todo
+  const puedeVerPlanificacion = esProgramador || esSupervisor;
+  const puedeVerFallas = esAnalista || esSupervisor;
+  const puedeVerGastos = esProgramador || esAnalista || esSupervisor;
+  const puedeVerSeguimiento = esProgramador || esAnalista || esSupervisor;
 
   return (
     <div className="flex h-screen bg-pf-light overflow-hidden">
@@ -33,33 +52,59 @@ const AppContent = () => {
         activeTab={location.pathname}
         setActiveTab={(path) => navigate(path)}
         onLimpiar={() => window.location.reload()}
+        userRoles={roles}
       />
       <main className="flex-1 overflow-y-auto p-10 space-y-12 shadow-inner">
         <Routes>
           <Route path="/" element={
             <DashboardView
-              planResult={planning.planResult}
-              seguimientoResult={seguimiento.dataActual}
-              fallasResult={fallas.data}
               setActiveTab={(path) => navigate(path === 'dash' ? '/' : `/${path}`)}
-              archivoCargado={planning.planResult.length > 0}
-              reporteActual={seguimiento.reporteActual || config.semanaActual}
             />
           } />
 
-          <Route path="/planificacion" element={<PlanificacionView />} />
-          <Route path="/gantt" element={<HorariosView />} />
-          <Route path="/seguimiento-tecnicos" element={
-            <SeguimientoTecnicosView
-              planResult={planning.planResult}
-              plantas={["PF1", "PF2", "PF3", "PF4", "PF5", "PF6", "CDT", "CI", "OTROS"]}
-              onNavegar={handleNavegarPlanificacion}
-              mes={planning.mes}
-            />
+          {/* PLANIFICACIÓN - Solo programadores y supervisores */}
+          <Route path="/planificacion" element={
+            puedeVerPlanificacion
+              ? <PlanificacionView />
+              : <Navigate to="/" replace />
           } />
-          <Route path="/atrasos" element={<SeguimientoOTsView />} />
-          <Route path="/fallas" element={<FallasView />} />
-          <Route path="/gastos" element={<ControlGastosView />} />
+          <Route path="/gantt" element={
+            puedeVerPlanificacion
+              ? <HorariosView />
+              : <Navigate to="/" replace />
+          } />
+          <Route path="/seguimiento-tecnicos" element={
+            puedeVerPlanificacion
+              ? <SeguimientoTecnicosView
+                planResult={planning.planResult}
+                plantas={user?.plantas || ["PF1", "PF2", "PF3", "PF4", "PF5", "PF6", "CDT", "CI", "OTROS"]}
+                onNavegar={handleNavegarPlanificacion}
+                mes={planning.mes}
+              />
+              : <Navigate to="/" replace />
+          } />
+
+          {/* SEGUIMIENTO - Todos con acceso (filtrado por planta en el componente) */}
+          <Route path="/atrasos" element={
+            puedeVerSeguimiento
+              ? <SeguimientoOTsView />
+              : <Navigate to="/" replace />
+          } />
+
+          {/* FALLAS - Solo analistas y supervisores */}
+          <Route path="/fallas" element={
+            puedeVerFallas
+              ? <FallasView />
+              : <Navigate to="/" replace />
+          } />
+
+          {/* GASTOS - Todos con acceso */}
+          <Route path="/gastos" element={
+            puedeVerGastos
+              ? <ControlGastosView />
+              : <Navigate to="/" replace />
+          } />
+
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
@@ -67,13 +112,39 @@ const AppContent = () => {
   );
 };
 
+// Componente que decide si mostrar login o la app
+const AuthGate = () => {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-900">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-red-500/30 border-t-red-500 rounded-full animate-spin" />
+          <p className="text-slate-400 text-sm font-medium">Cargando sistema...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <LoginView />;
+  }
+
+  return (
+    <PlanificacionProvider>
+      <AppContent />
+    </PlanificacionProvider>
+  );
+};
+
 // Main App Component
 const App = () => {
   return (
     <Router>
-      <PlanificacionProvider>
-        <AppContent />
-      </PlanificacionProvider>
+      <AuthProvider>
+        <AuthGate />
+      </AuthProvider>
     </Router>
   );
 };

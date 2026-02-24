@@ -109,15 +109,47 @@ export const initDB = async () => {
       END;
     `);
 
-    // 8. PF_IM_USUARIOS (Nueva tabla solicitada)
+    // 8. PF_EAM_USUARIOS (Tabla de usuarios - simula credenciales Oracle)
     await query(`
       BEGIN
-        EXECUTE IMMEDIATE 'CREATE TABLE PF_IM_USUARIOS (
+        EXECUTE IMMEDIATE 'CREATE TABLE PF_EAM_USUARIOS (
           id NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-          username VARCHAR2(100) UNIQUE NOT NULL,
-          password_hash VARCHAR2(500) NOT NULL,
-          rol VARCHAR2(50) DEFAULT ''USER'',
-          planta VARCHAR2(50)
+          usuario VARCHAR2(100) UNIQUE NOT NULL,
+          contrasena VARCHAR2(500) NOT NULL,
+          primer_nombre VARCHAR2(100) NOT NULL,
+          segundo_nombre VARCHAR2(100),
+          primer_apellido VARCHAR2(100) NOT NULL,
+          segundo_apellido VARCHAR2(100),
+          activo NUMBER(1) DEFAULT 1,
+          fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )';
+      EXCEPTION WHEN OTHERS THEN IF SQLCODE != -955 THEN RAISE; END IF;
+      END;
+    `);
+
+    // 8.1 PF_EAM_ROLES (Enlace usuario-rol)
+    await query(`
+      BEGIN
+        EXECUTE IMMEDIATE 'CREATE TABLE PF_EAM_ROLES (
+          id NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+          usuario VARCHAR2(100) NOT NULL,
+          rol VARCHAR2(50) NOT NULL,
+          CONSTRAINT UNQ_USR_ROL UNIQUE(usuario, rol),
+          CONSTRAINT FK_ROL_USUARIO FOREIGN KEY (usuario) REFERENCES PF_EAM_USUARIOS(usuario)
+        )';
+      EXCEPTION WHEN OTHERS THEN IF SQLCODE != -955 THEN RAISE; END IF;
+      END;
+    `);
+
+    // 8.2 PF_EAM_ACCESO_PLANTAS (Acceso de usuario a plantas)
+    await query(`
+      BEGIN
+        EXECUTE IMMEDIATE 'CREATE TABLE PF_EAM_ACCESO_PLANTAS (
+          id NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+          usuario VARCHAR2(100) NOT NULL,
+          planta VARCHAR2(50) NOT NULL,
+          CONSTRAINT UNQ_USR_PLANTA UNIQUE(usuario, planta),
+          CONSTRAINT FK_PLANTA_USUARIO FOREIGN KEY (usuario) REFERENCES PF_EAM_USUARIOS(usuario)
         )';
       EXCEPTION WHEN OTHERS THEN IF SQLCODE != -955 THEN RAISE; END IF;
       END;
@@ -252,9 +284,100 @@ export const initDB = async () => {
 
     await crearIndice('idx_plan_tec_ot', 'PF_IM_PLANIFICACION_TECNICOS', 'ot');
     await crearIndice('idx_plan_tec_mes', 'PF_IM_PLANIFICACION_TECNICOS', 'mes');
+    await crearIndice('idx_roles_usr', 'PF_EAM_ROLES', 'usuario');
+    await crearIndice('idx_acceso_usr', 'PF_EAM_ACCESO_PLANTAS', 'usuario');
+
+    // ===== DATOS SEMILLA DE USUARIOS =====
+    await seedUsuarios();
 
     console.log("Base de datos Oracle (Refactorizada con Prefijos PF_IM) inicializada correctamente.");
   } catch (error) {
     console.error("Error inicializando DB Oracle:", error);
+  }
+};
+
+// ===== SEED: Insertar usuarios de ejemplo si no existen =====
+const seedUsuarios = async () => {
+  try {
+    // Verificar si ya hay usuarios
+    const existing = await query(`SELECT COUNT(*) AS cnt FROM PF_EAM_USUARIOS`);
+    const count = (existing?.rows as any)?.[0]?.CNT || 0;
+    if (count > 0) return; // Ya hay datos, no insertar
+
+    console.log('Insertando usuarios semilla...');
+
+    // Usuarios de ejemplo (contraseñas en texto plano para simulación)
+    const usuarios = [
+      { usuario: 'jperez', contrasena: 'jperez123', pn: 'Juan', sn: 'Carlos', pa: 'Pérez', sa: 'Gómez' },
+      { usuario: 'mrodriguez', contrasena: 'mrodriguez123', pn: 'María', sn: null, pa: 'Rodríguez', sa: 'Silva' },
+      { usuario: 'cfuentes', contrasena: 'cfuentes123', pn: 'Carlos', sn: 'Andrés', pa: 'Fuentes', sa: 'Muñoz' },
+      { usuario: 'lmorales', contrasena: 'lmorales123', pn: 'Luis', sn: null, pa: 'Morales', sa: 'Reyes' },
+      { usuario: 'aherrera', contrasena: 'aherrera123', pn: 'Ana', sn: 'Beatriz', pa: 'Herrera', sa: null },
+    ];
+
+    for (const u of usuarios) {
+      await query(
+        `INSERT INTO PF_EAM_USUARIOS (usuario, contrasena, primer_nombre, segundo_nombre, primer_apellido, segundo_apellido)
+         VALUES (:1, :2, :3, :4, :5, :6)`,
+        [u.usuario, u.contrasena, u.pn, u.sn, u.pa, u.sa]
+      );
+    }
+
+    // Roles: programador, analista, supervisor
+    const roles = [
+      { usuario: 'jperez', rol: 'programador' },
+      { usuario: 'mrodriguez', rol: 'analista' },
+      { usuario: 'cfuentes', rol: 'supervisor' },
+      { usuario: 'lmorales', rol: 'programador' },
+      { usuario: 'aherrera', rol: 'analista' },
+    ];
+
+    for (const r of roles) {
+      await query(
+        `INSERT INTO PF_EAM_ROLES (usuario, rol) VALUES (:1, :2)`,
+        [r.usuario, r.rol]
+      );
+    }
+
+    // Acceso a plantas
+    const accesos = [
+      // jperez: acceso a PF1, PF2
+      { usuario: 'jperez', planta: 'PF1' },
+      { usuario: 'jperez', planta: 'PF2' },
+      // mrodriguez: acceso a CI (PF3-PF6, CDT, OTROS)
+      { usuario: 'mrodriguez', planta: 'PF3' },
+      { usuario: 'mrodriguez', planta: 'PF4' },
+      { usuario: 'mrodriguez', planta: 'PF5' },
+      { usuario: 'mrodriguez', planta: 'PF6' },
+      { usuario: 'mrodriguez', planta: 'CDT' },
+      { usuario: 'mrodriguez', planta: 'OTROS' },
+      // cfuentes: supervisor con acceso total
+      { usuario: 'cfuentes', planta: 'PF1' },
+      { usuario: 'cfuentes', planta: 'PF2' },
+      { usuario: 'cfuentes', planta: 'PF3' },
+      { usuario: 'cfuentes', planta: 'PF4' },
+      { usuario: 'cfuentes', planta: 'PF5' },
+      { usuario: 'cfuentes', planta: 'PF6' },
+      { usuario: 'cfuentes', planta: 'CDT' },
+      { usuario: 'cfuentes', planta: 'OTROS' },
+      { usuario: 'cfuentes', planta: 'MPS' },
+      // lmorales: PF1 y MPS
+      { usuario: 'lmorales', planta: 'PF1' },
+      { usuario: 'lmorales', planta: 'MPS' },
+      // aherrera: PF5, PF6
+      { usuario: 'aherrera', planta: 'PF5' },
+      { usuario: 'aherrera', planta: 'PF6' },
+    ];
+
+    for (const a of accesos) {
+      await query(
+        `INSERT INTO PF_EAM_ACCESO_PLANTAS (usuario, planta) VALUES (:1, :2)`,
+        [a.usuario, a.planta]
+      );
+    }
+
+    console.log('✅ Usuarios semilla insertados correctamente.');
+  } catch (error) {
+    console.error('⚠️ Error insertando datos semilla de usuarios:', error);
   }
 };

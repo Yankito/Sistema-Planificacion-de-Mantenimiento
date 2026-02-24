@@ -1,53 +1,87 @@
 // components/Sidebar.tsx
 import { useState, useEffect, useMemo } from "react";
 import {
-  LayoutDashboard, Calendar, CalendarCheck, RotateCcw, Clock,
-  ClipboardList, BarChart2, ChevronLeft, ChevronRight, Briefcase, ChevronDown, CircleDollarSign
+  LayoutDashboard, Calendar, CalendarCheck, Clock,
+  ClipboardList, BarChart2, ChevronLeft, ChevronRight, Briefcase, ChevronDown, CircleDollarSign,
+  LogOut, User
 } from "lucide-react";
 import { SidebarItem } from "./SidebarItem";
+import { useAuth } from "../../context/AuthContext";
 
 interface SidebarProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
   onLimpiar: () => void;
+  userRoles?: string[];
 }
 
 export const Sidebar = ({
-  activeTab, setActiveTab, onLimpiar
+  activeTab, setActiveTab, userRoles = []
 }: SidebarProps) => {
 
+  const { user, logout } = useAuth();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [openGroups, setOpenGroups] = useState<string[]>([]);
 
-  // NOTE: hayDatos calculation needs to be updated if archivoCargado, tieneSeguimiento, tieneFallas are no longer passed as props.
-  // For now, it's commented out or needs to be derived from a different source.
-  // const hayDatos = archivoCargado || tieneSeguimiento || tieneFallas;
-  // Placeholder for demonstration, assuming these values might come from a context or global state later.
-  const hayDatos = false; // This will need to be properly implemented based on where the data state now resides.
+  // Determinar acceso por rol
+  const esProgramador = userRoles.includes('programador');
+  const esAnalista = userRoles.includes('analista');
+  const esSupervisor = userRoles.includes('supervisor');
 
-  const menuStructure = useMemo(() => [
-    { type: 'link', id: 'dash', label: 'Dashboard', icon: LayoutDashboard, path: '/', locked: false },
-    {
-      type: 'group',
-      id: 'group-plan',
-      label: 'Planificación',
-      icon: Briefcase,
-      locked: false,
-      children: [
-        { id: 'plan', label: 'Asignación Horaria', icon: CalendarCheck, path: '/planificacion' },
-        { id: 'gantt', label: 'Horarios', icon: Calendar, path: '/gantt' },
-        { id: 'carga', label: 'Seguimiento Técnicos', icon: ClipboardList, path: '/seguimiento-tecnicos' },
-      ]
-    },
-    { type: 'link', id: 'seguimiento', label: 'Atrasos / KPI', icon: Clock, path: '/atrasos', locked: false },
-    { type: 'link', id: 'fallas', label: 'Fallas Activos', icon: BarChart2, path: '/fallas', locked: false },
-    { type: 'link', id: 'gastos', label: 'Control Gastos', icon: CircleDollarSign, path: '/gastos', locked: false },
-  ], []);
+  const puedeVerPlanificacion = esProgramador || esSupervisor;
+  const puedeVerSeguimiento = esProgramador || esAnalista || esSupervisor;
+  const puedeVerFallas = esAnalista || esSupervisor;
+  const puedeVerGastos = esProgramador || esAnalista || esSupervisor;
+
+  const menuStructure = useMemo(() => {
+    const items: any[] = [
+      { type: 'link', id: 'dash', label: 'Dashboard', icon: LayoutDashboard, path: '/', locked: false },
+    ];
+
+    // Planificación - Solo programadores y supervisores
+    if (puedeVerPlanificacion) {
+      items.push({
+        type: 'group',
+        id: 'group-plan',
+        label: 'Planificación',
+        icon: Briefcase,
+        locked: false,
+        children: [
+          { id: 'plan', label: 'Asignación Horaria', icon: CalendarCheck, path: '/planificacion' },
+          { id: 'gantt', label: 'Horarios', icon: Calendar, path: '/gantt' },
+          { id: 'carga', label: 'Seguimiento Técnicos', icon: ClipboardList, path: '/seguimiento-tecnicos' },
+        ]
+      });
+    }
+
+    // Seguimiento KPI - Todos los roles autenticados
+    if (puedeVerSeguimiento) {
+      items.push({
+        type: 'link', id: 'seguimiento', label: 'Atrasos / KPI', icon: Clock, path: '/atrasos', locked: false
+      });
+    }
+
+    // Fallas - Solo analistas y supervisores
+    if (puedeVerFallas) {
+      items.push({
+        type: 'link', id: 'fallas', label: 'Fallas Activos', icon: BarChart2, path: '/fallas', locked: false
+      });
+    }
+
+    // Control Gastos - Todos los roles
+    if (puedeVerGastos) {
+      items.push({
+        type: 'link', id: 'gastos', label: 'Control Gastos', icon: CircleDollarSign, path: '/gastos', locked: false
+      });
+    }
+
+    return items;
+  }, [puedeVerPlanificacion, puedeVerSeguimiento, puedeVerFallas, puedeVerGastos]);
 
   // Efecto para auto-abrir grupos
   useEffect(() => {
     menuStructure.forEach((item) => {
-      if (item.type === 'group' && item.children?.some((c) => c.id === activeTab)) {
+      if (item.type === 'group' && item.children?.some((c: any) => c.id === activeTab)) {
         setOpenGroups(prev => prev.includes(item.id) ? prev : [...prev, item.id]);
       }
     });
@@ -89,7 +123,7 @@ export const Sidebar = ({
           // RENDER: GRUPO
           if (item.type === 'group') {
             const isOpen = openGroups.includes(item.id);
-            const hasActiveChild = item.children?.some((c) => c.id === activeTab);
+            const hasActiveChild = item.children?.some((c: any) => c.id === activeTab);
 
             return (
               <div key={item.id} className="mb-2">
@@ -118,15 +152,15 @@ export const Sidebar = ({
                 {/* Hijos del Grupo */}
                 <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isOpen && !isCollapsed ? 'max-h-96 opacity-100 mt-1' : 'max-h-0 opacity-0'}`}>
                   <div className="ml-4 pl-2 border-l-2 border-slate-100 space-y-1 mt-1">
-                    {item.children?.map((child) => (
+                    {item.children?.map((child: any) => (
                       <SidebarItem
                         key={child.id}
                         to={child.path}
                         label={child.label}
                         icon={child.icon}
-                        isCollapsed={false} // Siempre expandido en la sub-vista
+                        isCollapsed={false}
                         onClick={() => setActiveTab(child.id)}
-                        className="py-2 text-xs font-medium" // Estilo override para hijos
+                        className="py-2 text-xs font-medium"
                       />
                     ))}
                   </div>
@@ -149,30 +183,36 @@ export const Sidebar = ({
             />
           );
         })}
-
-        {/* BOTÓN REINICIAR */}
-        {hayDatos && (
-          <div className="pt-4 mt-4 border-t border-pf-border/50">
-            <SidebarItem
-              label="Reiniciar Sistema"
-              icon={RotateCcw}
-              isCollapsed={isCollapsed}
-              onClick={onLimpiar}
-              className="text-slate-400 hover:text-pf-red hover:bg-pf-red/5"
-            />
-          </div>
-        )}
       </nav>
 
-      {/* FOOTER STATUS */}
-      <div className={`border-t border-pf-border transition-all duration-300 ${isCollapsed ? 'p-3' : 'p-6'}`}>
-        <div className={`flex items-center bg-slate-50 rounded-xl border border-pf-border transition-all duration-300 ${isCollapsed ? 'justify-center p-2 aspect-square' : 'space-x-3 p-3'}`}>
-          <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${hayDatos ? 'bg-green-500 shadow-green-200 shadow-md' : 'bg-slate-300'}`}></div>
-          <div className={`flex flex-col overflow-hidden whitespace-nowrap transition-all duration-300 ${isCollapsed ? 'w-0 opacity-0 hidden' : 'w-auto opacity-100'}`}>
-            <span className="text-[10px] font-bold text-slate-600 uppercase">Complejo Ind.</span>
-            <span className="text-[9px] text-slate-400 font-medium">{hayDatos ? 'SISTEMA ONLINE' : 'ESPERANDO DATOS'}</span>
+      {/* FOOTER: USUARIO + LOGOUT */}
+      <div className={`border-t border-pf-border transition-all duration-300 ${isCollapsed ? 'p-3' : 'p-4'}`}>
+        {/* Info del usuario */}
+        <div className={`flex items-center bg-slate-50 rounded-xl border border-pf-border transition-all duration-300 ${isCollapsed ? 'justify-center p-2 aspect-square' : 'gap-3 p-3'}`}>
+          <div className="w-8 h-8 rounded-full bg-pf-red/10 flex items-center justify-center flex-shrink-0">
+            <User size={16} className="text-pf-red" />
+          </div>
+          <div className={`flex flex-col overflow-hidden whitespace-nowrap transition-all duration-300 ${isCollapsed ? 'w-0 opacity-0 hidden' : 'w-auto opacity-100 flex-1 min-w-0'}`}>
+            <span className="text-[11px] font-bold text-slate-700 truncate">
+              {user?.primerNombre} {user?.primerApellido}
+            </span>
+            <span className="text-[9px] text-slate-400 font-bold uppercase">
+              {user?.roles[0]}
+            </span>
           </div>
         </div>
+
+        {/* Botón Cerrar Sesión */}
+        <button
+          onClick={logout}
+          className={`w-full mt-2 flex items-center rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all duration-200
+            ${isCollapsed ? 'justify-center p-2' : 'gap-3 p-2.5 px-3'}`}
+        >
+          <LogOut size={16} />
+          <span className={`text-[11px] font-bold uppercase tracking-tight transition-all duration-300 ${isCollapsed ? 'w-0 opacity-0 hidden' : 'w-auto opacity-100'}`}>
+            Cerrar Sesión
+          </span>
+        </button>
       </div>
     </aside>
   );

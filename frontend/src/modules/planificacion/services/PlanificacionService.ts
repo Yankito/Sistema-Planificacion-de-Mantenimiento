@@ -1,6 +1,7 @@
 // src/shared/services/PlanificacionService.ts
 import type { PlanResult, ProcesoExcelResponse, HorarioTecnico } from "../types";
 import { API_ENDPOINTS } from "../../../shared/api/config";
+import { fetchAuth } from "../../../shared/api/fetchAuth";
 
 const API_BASE = API_ENDPOINTS.PLANIFICACION;
 
@@ -18,7 +19,7 @@ export async function procesarExcelEnServidor(
         formData.append('mes', String(mes));
         formData.append('anio', String(anio));
 
-        const response = await fetch(`${API_BASE}/procesar`, {
+        const response = await fetchAuth(`${API_BASE}/procesar`, {
             method: 'POST',
             body: formData,
         });
@@ -45,7 +46,7 @@ export async function getHorarios(mes: number, anio: number, planta?: string): P
         url.searchParams.append('anio', String(anio));
         if (planta) url.searchParams.append('planta', planta);
 
-        const response = await fetch(url.toString());
+        const response = await fetchAuth(url.toString());
 
         if (!response.ok) throw new Error("Error al obtener horarios de la DB");
 
@@ -66,7 +67,7 @@ export async function guardarPlanificacion(
     periodo: string
 ): Promise<boolean> {
     try {
-        const response = await fetch(`${API_BASE}/guardar`, {
+        const response = await fetchAuth(`${API_BASE}/guardar`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -92,7 +93,7 @@ export async function actualizarTurnoTecnico(
     periodo: string
 ): Promise<boolean> {
     try {
-        const response = await fetch(`${API_BASE}/horarios`, {
+        const response = await fetchAuth(`${API_BASE}/horarios`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ nombre, turnos, periodo }),
@@ -114,7 +115,7 @@ export async function getResultadosPlanificacion(mes: number, anio: number, plan
         url.searchParams.append('anio', String(anio));
         if (planta) url.searchParams.append('planta', planta);
 
-        const response = await fetch(url.toString());
+        const response = await fetchAuth(url.toString());
         if (!response.ok) throw new Error("Error al obtener resultados");
         return await response.json() as ProcesoExcelResponse;
     } catch (error) {
@@ -131,7 +132,7 @@ export async function ejecutarPlanificacionRemota(
     planta?: string
 ): Promise<ProcesoExcelResponse | null> {
     try {
-        const response = await fetch(`${API_BASE}/ejecutar`, {
+        const response = await fetchAuth(`${API_BASE}/ejecutar`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ modo, mes, anio, planta }),
@@ -156,7 +157,7 @@ export async function uploadHorarios(
         formData.append('mes', String(mes));
         formData.append('anio', String(anio));
 
-        const response = await fetch(`${API_BASE}/upload-horarios`, {
+        const response = await fetchAuth(`${API_BASE}/upload-horarios`, {
             method: 'POST',
             body: formData,
         });

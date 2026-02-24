@@ -5,12 +5,13 @@ import type {
   UploadResponse
 } from "../types";
 import { API_ENDPOINTS } from "../../../shared/api/config";
+import { fetchAuth } from "../../../shared/api/fetchAuth";
 
 const API_BASE = API_ENDPOINTS.SEGUIMIENTO;
 
 // Obtener lista de semanas (snapshots) disponibles
 export const getSemanas = async (tipo: string = 'SEGUIMIENTO'): Promise<string[]> => {
-  const res = await fetch(`${API_BASE}/semanas?tipo=${tipo}`);
+  const res = await fetchAuth(`${API_BASE}/semanas?tipo=${tipo}`);
   if (!res.ok) throw new Error("Error al obtener semanas");
   return res.json();
 };
@@ -26,7 +27,7 @@ export const getPedidos = async (fechaInicio?: string, fechaFin?: string): Promi
     url += `?${params.toString()}`;
   }
 
-  const res = await fetch(url);
+  const res = await fetchAuth(url);
   if (!res.ok) throw new Error("Error al cargar pedidos");
   return res.json();
 };
@@ -46,7 +47,7 @@ export const getAnalytics = async (actual: string, anterior: string, fechaInicio
     url += `?${params.toString()}`;
   }
 
-  const res = await fetch(url);
+  const res = await fetchAuth(url);
   if (!res.ok) {
     const err = await res.json();
     throw new Error(err.error || "Error al procesar analítica");
@@ -65,7 +66,7 @@ export const uploadExcel = async (file: File, targetWeek: string): Promise<Uploa
   console.log("Subiendo archivo para semana:", targetWeek);
 
   try {
-    const res = await fetch(`${API_BASE}/upload`, {
+    const res = await fetchAuth(`${API_BASE}/upload`, {
       method: 'POST',
       body: formData,
     });
@@ -91,7 +92,7 @@ export const uploadExcel = async (file: File, targetWeek: string): Promise<Uploa
 // Descargar Reporte Excel (Manejo de Blob compatible con Navegador)
 export const descargarExcel = async (semana: string, modo: string, semanaAnt: string): Promise<void> => {
   const url = `${API_BASE}/descargar-reporte?semana=${semana}&modo=${modo}&semanaAnt=${semanaAnt}`;
-  const res = await fetch(url);
+  const res = await fetchAuth(url);
   if (!res.ok) throw new Error("Error al generar Excel");
 
   const blob = await res.blob();
@@ -111,7 +112,7 @@ export const descargarExcel = async (semana: string, modo: string, semanaAnt: st
 
 
 export const descargarPlantilla = async (tipo: string): Promise<void> => {
-  const res = await fetch(`${API_BASE}/plantilla/${tipo}`);
+  const res = await fetchAuth(`${API_BASE}/plantilla/${tipo}`);
   if (!res.ok) throw new Error("Error al descargar plantilla");
 
   const blob = await res.blob();

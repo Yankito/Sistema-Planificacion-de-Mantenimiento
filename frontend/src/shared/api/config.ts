@@ -6,4 +6,5 @@ export const API_ENDPOINTS = {
   SEGUIMIENTO: `${BASE_URL}/seguimiento`,
   MASIVO: `${BASE_URL}/masivo`,
   CONTROL_GASTOS: `${BASE_URL}/control-gastos`,
+  AUTH: `${BASE_URL}/auth`,
 };
