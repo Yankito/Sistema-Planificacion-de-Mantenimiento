@@ -2,129 +2,146 @@
 import { withConnection } from '../../db/config.js';
 
 export interface PresupuestoRow {
-    activo: string;
-    tipoFila: string;
-    mes: number;
-    anio: number;
-    montoBodega?: number;
-    montoServExt?: number;
-    montoCorrectivo?: number;
-    centroCosto?: string; // Calculado al recuperar
-    claseContable?: string;
-    mantenible?: string;
-    frecuencia?: string;
+  activo: string;
+  mes: number;
+  anio: number;
+  frecuencia: string;
+  montoBodega?: number;
+  montoServExt?: number;
+  montoCorrectivo?: number;
+  centroCosto?: string; // Calculado al recuperar
+  claseContable?: string;
+  mantenible?: string;
 }
 
 export interface GastoConsolidadoRow {
-    tipo: string;
-    numeroOt: string;
-    tipoOt: string;
-    nroActivo: string;
-    fechaTrx: Date | string;
-    descripcionArticulo: string;
-    costoTrx: number;
-    alertaFecha?: number;
-    // Campos calculados
-    centroCosto?: string;
-    anio?: number;
-    mes?: number;
-    tipoGasto?: string; // BODEGA, SERV_EXT, CORRECTIVO
-    fechaOtPro?: Date | string;
-    descripcionOt?: string;
-    estadoTrabajo?: string;
-    esHito?: boolean;
-    planta?: string;
-    claseContable?: string;
-    mantenible?: string;
+  tipo: string;
+  numeroOt: string;
+  tipoOt: string;
+  nroActivo: string;
+  fechaTrx: Date | string;
+  descripcionArticulo: string;
+  costoTrx: number;
+  alertaFecha?: number;
+  // Campos calculados
+  centroCosto?: string;
+  anio?: number;
+  mes?: number;
+  tipoGasto?: string; // BODEGA, SERV_EXT, CORRECTIVO
+  fechaOtPro?: Date | string;
+  descripcionOt?: string;
+  estadoTrabajo?: string;
+  esHito?: boolean;
+  planta?: string;
+  claseContable?: string;
+  mantenible?: string;
 }
 
+const FRECUENCIAS_PREDEFINIDAS = [
+  'semanal', 'quincenal', 'mensual', 'bimensual',
+  'trimestral', 'semestral', 'anual', 'hito'
+];
+
+const normalizeFrecuencia = (f: string): string => {
+  if (!f) return '';
+  const low = f.toLowerCase().trim();
+  if (low.startsWith('quinc')) return 'quincenal';
+  if (low === 'men' || low.startsWith('mensu')) return 'mensual';
+  if (low.startsWith('semes')) return 'semestral';
+  if (low === 'trime' || low.startsWith('trimes') || low.startsWith('trim')) return 'trimestral';
+  if (low.startsWith('hito')) return 'hito';
+  return low;
+};
+
+
 export const ControlGastosRepository = {
-    getOTDetails: async (ots: string[]): Promise<Map<string, { descripcion: string, fechaProg?: Date, estado?: string }>> => {
-        if (ots.length === 0) return new Map();
+  getOTDetails: async (ots: string[]): Promise<Map<string, { descripcion: string, fechaProg?: Date, estado?: string }>> => {
+    if (ots.length === 0) return new Map();
 
-        const uniqueOts = [...new Set(ots)];
-        const map = new Map<string, { descripcion: string, fechaProg?: Date, estado?: string }>();
+    const uniqueOts = [...new Set(ots)];
+    const map = new Map<string, { descripcion: string, fechaProg?: Date, estado?: string }>();
 
-        await withConnection(async (connection) => {
-            for (let i = 0; i < uniqueOts.length; i += 1000) {
-                const chunk = uniqueOts.slice(i, i + 1000);
-                const binds: any = {};
-                chunk.forEach((ot, idx) => binds[`ot${idx}`] = ot);
-                const keys = chunk.map((_, idx) => `:ot${idx}`).join(',');
+    await withConnection(async (connection) => {
+      for (let i = 0; i < uniqueOts.length; i += 1000) {
+        const chunk = uniqueOts.slice(i, i + 1000);
+        const binds: any = {};
+        chunk.forEach((ot, idx) => binds[`ot${idx}`] = ot);
+        const keys = chunk.map((_, idx) => `:ot${idx}`).join(',');
 
-                const sql = `SELECT PEDIDO_TRABAJO, DESCRIPCION, FECHA_INICIAL_PROGRAMADA, ESTADO FROM PF_EAM_PEDIDOS WHERE PEDIDO_TRABAJO IN (${keys})`;
+        const sql = `SELECT PEDIDO_TRABAJO, DESCRIPCION, FECHA_INICIAL_PROGRAMADA, ESTADO FROM PF_EAM_PEDIDOS WHERE PEDIDO_TRABAJO IN (${keys})`;
 
-                const result = await connection.execute(sql, binds);
+        const result = await connection.execute(sql, binds);
 
-                (result.rows || []).forEach((r: any) => {
-                    const ot = r.PEDIDO_TRABAJO || r[0];
-                    const desc = r.DESCRIPCION || r[1];
-                    const fProg = r.FECHA_INICIAL_PROGRAMADA || r[2];
-                    const estado = r.ESTADO || r[3];
-                    if (ot) map.set(String(ot).trim(), {
-                        descripcion: desc,
-                        fechaProg: fProg ? new Date(fProg) : undefined,
-                        estado
-                    });
-                });
-            }
+        (result.rows || []).forEach((r: any) => {
+          const ot = r.PEDIDO_TRABAJO || r[0];
+          const desc = r.DESCRIPCION || r[1];
+          const fProg = r.FECHA_INICIAL_PROGRAMADA || r[2];
+          const estado = r.ESTADO || r[3];
+          if (ot) map.set(String(ot).trim(), {
+            descripcion: desc,
+            fechaProg: fProg ? new Date(fProg) : undefined,
+            estado
+          });
         });
-        return map;
-    },
-    saveGastosConsolidados: async (rows: GastoConsolidadoRow[]) => {
-        if (rows.length === 0) return;
+      }
+    });
+    return map;
+  },
+  saveGastosConsolidados: async (rows: GastoConsolidadoRow[]) => {
+    if (rows.length === 0) return;
 
-        await withConnection(async (connection) => {
-            const sql = `INSERT INTO PF_EAM_GASTOS_CONSOLIDADOS 
-                (TIPO, NUMERO_OT, TIPO_OT, NRO_ACTIVO, FECHA_TRANSACCION, DESCRIP_ARTICULO, COSTO_TRX)
-                VALUES (:tipo, :numeroOt, :tipoOt, :nroActivo, :fechaTrx, :descripcionArticulo, :costoTrx)`;
+    await withConnection(async (connection) => {
+      const sql = `INSERT INTO PF_EAM_GASTOS_CONSOLIDADOS 
+                (TIPO, NUMERO_OT, TIPO_OT, NRO_ACTIVO, FECHA_TRANSACCION, DESCRIP_ARTICULO, COSTO_TRX, MANTENIBLE)
+                VALUES (:tipo, :numeroOt, :tipoOt, :nroActivo, :fechaTrx, :descripcionArticulo, :costoTrx, :mantenible)`;
 
-            const binds = rows.map(r => ({
-                tipo: r.tipo,
-                numeroOt: r.numeroOt,
-                tipoOt: r.tipoOt,
-                nroActivo: r.nroActivo,
-                descripcionArticulo: r.descripcionArticulo?.substring(0, 500) || '',
-                fechaTrx: r.fechaTrx,
-                costoTrx: r.costoTrx,
-            }));
+      const binds = rows.map(r => ({
+        tipo: r.tipo,
+        numeroOt: r.numeroOt,
+        tipoOt: r.tipoOt,
+        nroActivo: r.nroActivo,
+        descripcionArticulo: r.descripcionArticulo?.substring(0, 500) || '',
+        fechaTrx: r.fechaTrx,
+        costoTrx: r.costoTrx,
+        mantenible: r.mantenible
+      }));
 
-            const batchSize = 1000;
-            for (let i = 0; i < binds.length; i += batchSize) {
-                const batch = binds.slice(i, i + batchSize);
-                await connection.executeMany(sql, batch, { autoCommit: true });
-            }
+      const batchSize = 1000;
+      for (let i = 0; i < binds.length; i += batchSize) {
+        const batch = binds.slice(i, i + batchSize);
+        await connection.executeMany(sql, batch, { autoCommit: true });
+      }
 
-            console.log(`Inserted ${rows.length} rows into PF_EAM_GASTOS_CONSOLIDADOS`);
-        });
-    },
+      console.log(`Inserted ${rows.length} rows into PF_EAM_GASTOS_CONSOLIDADOS`);
+    });
+  },
 
-    savePresupuesto: async (rows: PresupuestoRow[]) => {
-        if (rows.length === 0) return;
+  savePresupuesto: async (rows: PresupuestoRow[]) => {
+    if (rows.length === 0) return;
 
-        await withConnection(async (connection) => {
-            const sql = `INSERT INTO PF_GASTOS_PRESUPUESTO 
-                (ACTIVO_COD, TIPO_FILA, MES, ANIO, MONTO_BODEGA, MONTO_SERV_EXT, MONTO_CORRECTIVO)
-                VALUES (:activo, :tipoFila, :mes, :anio, :montoBodega, :montoServExt, :montoCorrectivo)`;
+    await withConnection(async (connection) => {
+      const sql = `INSERT INTO PF_GASTOS_PRESUPUESTO 
+                (ACTIVO_COD, FRECUENCIA, MES, ANIO, MONTO_BODEGA, MONTO_SERV_EXT, MONTO_CORRECTIVO)
+                VALUES (:activo, :frecuencia, :mes, :anio, :montoBodega, :montoServExt, :montoCorrectivo)`;
 
-            const binds = rows.map(r => ({
-                activo: r.activo,
-                tipoFila: r.tipoFila,
-                mes: r.mes,
-                anio: r.anio,
-                montoBodega: r.montoBodega || 0,
-                montoServExt: r.montoServExt || 0,
-                montoCorrectivo: r.montoCorrectivo || 0
-            }));
+      const binds = rows.map(r => ({
+        activo: r.activo,
+        frecuencia: normalizeFrecuencia(r.frecuencia || ''),
+        mes: r.mes,
+        anio: r.anio,
+        montoBodega: r.montoBodega || 0,
+        montoServExt: r.montoServExt || 0,
+        montoCorrectivo: r.montoCorrectivo || 0,
+      }));
 
-            await connection.executeMany(sql, binds, { autoCommit: true });
-            console.log(`Inserted ${rows.length} rows into PF_GASTOS_PRESUPUESTO`);
-        });
-    },
+      await connection.executeMany(sql, binds, { autoCommit: true });
+      console.log(`Inserted ${rows.length} rows into PF_GASTOS_PRESUPUESTO`);
+    });
+  },
 
-    getGastosConsolidados: async (anio: number, planta?: string): Promise<GastoConsolidadoRow[]> => {
-        return await withConnection(async (connection) => {
-            const sql = `
+  getGastosConsolidados: async (anio: number, planta?: string): Promise<GastoConsolidadoRow[]> => {
+    return await withConnection(async (connection) => {
+      const sql = `
                 WITH DataCalculada AS (
                     SELECT 
                         g.TIPO, 
@@ -203,90 +220,90 @@ export const ControlGastosRepository = {
                 WHERE (:plantaFiltro IS NULL OR PLANTA_CALC = :planta)
             `;
 
-            const result = await connection.execute(sql, { anio, plantaFiltro: planta || null, planta: planta || null }, { outFormat: 4002 });
-            const rows = result.rows || [];
+      const result = await connection.execute(sql, { anio, plantaFiltro: planta || null, planta: planta || null }, { outFormat: 4002 });
+      const rows = result.rows || [];
 
-            const results: GastoConsolidadoRow[] = [];
+      const results: GastoConsolidadoRow[] = [];
 
-            for (const row of rows) {
-                const tipo = String(row.TIPO || '');
-                const tipoOt = String(row.TIPO_OT || '').trim();
-                const descPedido = (row.DESC_OT || '');
-                const fechaProgPedido = row.FECHA_PROG ? new Date(row.FECHA_PROG) : null;
-                const estadoPedido = row.ESTADO_OT;
-                let tipoGasto = '';
-                // Determinamos si es HITO exclusivamente por la descripción
-                const esHitoValue = descPedido.startsWith('HITO') || descPedido.startsWith('(HITO)');
+      for (const row of rows) {
+        const tipo = String(row.TIPO || '');
+        const tipoOt = String(row.TIPO_OT || '').trim();
+        const descPedido = (row.DESC_OT || '');
+        const fechaProgPedido = row.FECHA_PROG ? new Date(row.FECHA_PROG) : null;
+        const estadoPedido = row.ESTADO_OT;
+        let tipoGasto = '';
+        // Determinamos si es HITO exclusivamente por la descripción
+        const esHitoValue = descPedido.startsWith('HITO') || descPedido.startsWith('(HITO)');
 
-                // Logica para clasificar la categoría (Bodega, Serv. Ext o Correctivo)
-                if (tipo === 'B' && (tipoOt === 'Preventivo' || tipoOt === 'Procedimientos')) {
-                    tipoGasto = 'BODEGA';
-                } else if (tipo === 'SER' && (tipoOt === 'Preventivo' || tipoOt === 'Procedimientos')) {
-                    tipoGasto = 'SERV_EXT';
-                } else if (tipo === 'B' || tipo === 'SER' || tipo === 'OC') {
-                    tipoGasto = 'CORRECTIVO';
-                }
+        // Logica para clasificar la categoría (Bodega, Serv. Ext o Correctivo)
+        if (tipo === 'B' && (tipoOt === 'Preventivo' || tipoOt === 'Procedimientos')) {
+          tipoGasto = 'BODEGA';
+        } else if (tipo === 'SER' && (tipoOt === 'Preventivo' || tipoOt === 'Procedimientos')) {
+          tipoGasto = 'SERV_EXT';
+        } else if (tipo === 'B' || tipo === 'SER' || tipo === 'OC') {
+          tipoGasto = 'CORRECTIVO';
+        }
 
-                // Si no coincide con ninguna categoria, lo salta
-                if (!tipoGasto) continue;
+        // Si no coincide con ninguna categoria, lo salta
+        if (!tipoGasto) continue;
 
-                // Priorizamos la fecha programada del Pedido (Base)
-                const dTrx = row.FECHA_TRANSACCION ? new Date(row.FECHA_TRANSACCION) : null;
-                const dPro = fechaProgPedido;
-                let alertaFecha = 0;
+        // Priorizamos la fecha programada del Pedido (Base)
+        const dTrx = row.FECHA_TRANSACCION ? new Date(row.FECHA_TRANSACCION) : null;
+        const dPro = fechaProgPedido;
+        let alertaFecha = 0;
 
-                if (dTrx && dPro) {
-                    if (dTrx.getMonth() !== dPro.getMonth() || dTrx.getFullYear() !== dPro.getFullYear()) {
-                        alertaFecha = 1;
-                    }
-                }
+        if (dTrx && dPro) {
+          if (dTrx.getMonth() !== dPro.getMonth() || dTrx.getFullYear() !== dPro.getFullYear()) {
+            alertaFecha = 1;
+          }
+        }
 
-                // Calcular centro de costo (usamos últimos 6 caracteres)
-                const centroCosto = row.NRO_ACTIVO ? String(row.NRO_ACTIVO).slice(-6) : '';
+        // Calcular centro de costo (usamos últimos 6 caracteres)
+        const centroCosto = row.NRO_ACTIVO ? String(row.NRO_ACTIVO).slice(-6) : '';
 
-                results.push({
-                    tipo: row.TIPO,
-                    planta: row.PLANTA_CALC,
-                    claseContable: row.CLASE_CONTABLE_ACTIVO,
-                    numeroOt: row.NUMERO_OT,
-                    tipoOt: row.TIPO_OT,
-                    nroActivo: row.NRO_ACTIVO,
-                    descripcionArticulo: row.DESCRIP_ARTICULO,
-                    fechaTrx: row.FECHA_TRANSACCION,
-                    fechaOtPro: dPro, // Usamos la fecha programada de base si existe
-                    costoTrx: row.COSTO_TRX,
-                    tipoGasto,
-                    centroCosto,
-                    anio: row.ANIO_CALC,
-                    mes: row.MES_CALC,
-                    alertaFecha,
-                    descripcionOt: descPedido,
-                    estadoTrabajo: estadoPedido,
-                    esHito: esHitoValue,
-                    mantenible: row.MANTENIBLE_ACTIVO
-                });
-            }
-            return results;
+        results.push({
+          tipo: row.TIPO,
+          planta: row.PLANTA_CALC,
+          claseContable: row.CLASE_CONTABLE_ACTIVO,
+          numeroOt: row.NUMERO_OT,
+          tipoOt: row.TIPO_OT,
+          nroActivo: row.NRO_ACTIVO,
+          descripcionArticulo: row.DESCRIP_ARTICULO,
+          fechaTrx: row.FECHA_TRANSACCION,
+          fechaOtPro: dPro, // Usamos la fecha programada de base si existe
+          costoTrx: row.COSTO_TRX,
+          tipoGasto,
+          centroCosto,
+          anio: row.ANIO_CALC,
+          mes: row.MES_CALC,
+          alertaFecha,
+          descripcionOt: descPedido,
+          estadoTrabajo: estadoPedido,
+          esHito: esHitoValue,
+          mantenible: row.MANTENIBLE_ACTIVO
         });
-    },
+      }
+      return results;
+    });
+  },
 
-    clearPresupuesto: async (anio: number) => {
-        await withConnection(async (connection) => {
-            await connection.execute(
-                `DELETE FROM PF_GASTOS_PRESUPUESTO WHERE ANIO = :anio`,
-                [anio],
-                { autoCommit: true }
-            );
-        });
-    },
+  clearPresupuesto: async (anio: number) => {
+    await withConnection(async (connection) => {
+      await connection.execute(
+        `DELETE FROM PF_GASTOS_PRESUPUESTO WHERE ANIO = :anio`,
+        [anio],
+        { autoCommit: true }
+      );
+    });
+  },
 
-    getPresupuesto: async (anio: number, planta?: string): Promise<PresupuestoRow[]> => {
-        return await withConnection(async (connection) => {
-            const sql = `
+  getPresupuesto: async (anio: number, planta?: string): Promise<PresupuestoRow[]> => {
+    return await withConnection(async (connection) => {
+      const sql = `
                 WITH DataPresupuesto AS (
                     SELECT 
                         ACTIVO_COD as "activo", 
-                        TIPO_FILA as "tipoFila", 
+                        FRECUENCIA as "frecuencia", 
                         MES as "mes", 
                         ANIO as "anio", 
                         MONTO_BODEGA as "montoBodega", 
@@ -379,60 +396,60 @@ export const ControlGastosRepository = {
                 ORDER BY "activo", "mes"
             `;
 
-            const result = await connection.execute(sql, { anio, plantaFiltro: planta || null, planta: planta || null }, { outFormat: 4002 });
+      const result = await connection.execute(sql, { anio, plantaFiltro: planta || null, planta: planta || null }, { outFormat: 4002 });
 
-            return (result.rows || []).map((row: any) => {
-                const activo = row.activo || row.ACTIVO;
-                // Usamos los últimos 6 caracteres para el centro de costo
-                const centroCosto = activo ? String(activo).slice(-6) : '';
-                return {
-                    activo,
-                    centroCosto,
-                    tipoFila: row.tipoFila,
-                    mes: row.mes,
-                    anio: row.anio,
-                    montoBodega: row.montoBodega,
-                    montoServExt: row.montoServExt,
-                    montoCorrectivo: row.montoCorrectivo,
-                    claseContable: row.claseContable,
-                    mantenible: row.mantenible,
-                    frecuencia: row.frecuencia || row.FRECUENCIA
-                };
-            }) as PresupuestoRow[];
-        });
-    },
+      return (result.rows || []).map((row: any) => {
+        const activo = row.activo;
+        const centroCosto = activo ? String(activo).slice(-6) : '';
+        const frecuencia = row.frecuencia;
 
-    searchAssetsByCentroCosto: async (centroCosto: string): Promise<any[]> => {
-        return await withConnection(async (connection) => {
-            const sql = `SELECT nro_de_activo, clase_contable, organizacion 
+        return {
+          activo,
+          centroCosto,
+          frecuencia,
+          mes: row.mes,
+          anio: row.anio,
+          montoBodega: row.montoBodega,
+          montoServExt: row.montoServExt,
+          montoCorrectivo: row.montoCorrectivo,
+          claseContable: row.claseContable,
+          mantenible: row.mantenible,
+        };
+      }) as PresupuestoRow[];
+    });
+  },
+
+  searchAssetsByCentroCosto: async (centroCosto: string): Promise<any[]> => {
+    return await withConnection(async (connection) => {
+      const sql = `SELECT nro_de_activo, clase_contable, organizacion 
                          FROM PF_EAM_ACTIVOS 
                          WHERE nro_de_activo LIKE :ccPattern and mantenible = 'Si'
                          ORDER BY nro_de_activo`;
 
-            // Buscamos específicamente el código con paréntesis para mayor precisión
-            const result = await connection.execute(sql, { ccPattern: `%(${centroCosto})%` });
+      // Buscamos específicamente el código con paréntesis para mayor precisión
+      const result = await connection.execute(sql, { ccPattern: `%(${centroCosto})%` });
 
-            return (result.rows || []).map((r: any) => ({
-                activo: r.NRO_DE_ACTIVO || r[0],
-                claseContable: r.CLASE_CONTABLE || r[1],
-                organizacion: r.ORGANIZACION || r[2]
-            }));
-        });
-    },
+      return (result.rows || []).map((r: any) => ({
+        activo: r.NRO_DE_ACTIVO || r[0],
+        claseContable: r.CLASE_CONTABLE || r[1],
+        organizacion: r.ORGANIZACION || r[2]
+      }));
+    });
+  },
 
-    updatePresupuestoAssetName: async (oldName: string, newName: string, anio: number): Promise<void> => {
-        await withConnection(async (connection) => {
-            const sql = `UPDATE PF_GASTOS_PRESUPUESTO 
+  updatePresupuestoAssetName: async (oldName: string, newName: string, anio: number): Promise<void> => {
+    await withConnection(async (connection) => {
+      const sql = `UPDATE PF_GASTOS_PRESUPUESTO 
                          SET ACTIVO_COD = :newName 
                          WHERE ACTIVO_COD = :oldName AND ANIO = :anio`;
-            await connection.execute(sql, { oldName, newName, anio }, { autoCommit: true });
-        });
-    },
+      await connection.execute(sql, { oldName, newName, anio }, { autoCommit: true });
+    });
+  },
 
-    autoFixPresupuestoAssets: async (anio: number): Promise<{ fixed: number, total: number }> => {
-        return await withConnection(async (connection) => {
-            // 1. Obtener activos del presupuesto que no tienen coincidencia exacta
-            const sqlMissing = `
+  autoFixPresupuestoAssets: async (anio: number): Promise<{ fixed: number, total: number }> => {
+    return await withConnection(async (connection) => {
+      // 1. Obtener activos del presupuesto que no tienen coincidencia exacta
+      const sqlMissing = `
                 SELECT DISTINCT ACTIVO_COD 
                 FROM PF_GASTOS_PRESUPUESTO 
                 WHERE ANIO = :anio 
@@ -441,40 +458,89 @@ export const ControlGastosRepository = {
                     WHERE TRIM(UPPER(nro_de_activo)) = TRIM(UPPER(ACTIVO_COD))
                 )
             `;
-            const resultMissing = await connection.execute(sqlMissing, { anio });
-            const missingAssets = (resultMissing.rows || []).map((r: any) => r.ACTIVO_COD || r[0]);
+      const resultMissing = await connection.execute(sqlMissing, { anio });
+      const missingAssets = (resultMissing.rows || []).map((r: any) => r.ACTIVO_COD || r[0]);
 
-            let fixedCount = 0;
+      let fixedCount = 0;
 
-            for (const oldName of missingAssets) {
-                const match = String(oldName).match(/\((\d+)\)/);
-                if (!match) continue;
+      for (const oldName of missingAssets) {
+        const match = String(oldName).match(/\((\d+)\)/);
+        if (!match) continue;
 
-                const cc = match[1];
+        const cc = match[1];
 
-                // 2. Buscar si tiene exactamente una coincidencia mantenible
-                const sqlSearch = `
+        // 2. Buscar si tiene exactamente una coincidencia mantenible
+        const sqlSearch = `
                     SELECT nro_de_activo 
                     FROM PF_EAM_ACTIVOS 
                     WHERE nro_de_activo LIKE :ccPattern AND mantenible = 'Si'
                 `;
-                const resultSearch = await connection.execute(sqlSearch, { ccPattern: `%(${cc})%` });
+        const resultSearch = await connection.execute(sqlSearch, { ccPattern: `%(${cc})%` });
 
-                if (resultSearch.rows && resultSearch.rows.length === 1) {
-                    const newName = resultSearch.rows[0].NRO_DE_ACTIVO || resultSearch.rows[0][0];
+        if (resultSearch.rows && resultSearch.rows.length === 1) {
+          const newName = resultSearch.rows[0].NRO_DE_ACTIVO || resultSearch.rows[0][0];
 
-                    // 3. Actualizar
-                    const sqlUpdate = `
+          // 3. Actualizar
+          const sqlUpdate = `
                         UPDATE PF_GASTOS_PRESUPUESTO 
                         SET ACTIVO_COD = :newName 
                         WHERE ACTIVO_COD = :oldName AND ANIO = :anio
                     `;
-                    await connection.execute(sqlUpdate, { newName, oldName, anio }, { autoCommit: true });
-                    fixedCount++;
-                }
-            }
+          await connection.execute(sqlUpdate, { newName, oldName, anio }, { autoCommit: true });
+          fixedCount++;
+        }
+      }
 
-            return { fixed: fixedCount, total: missingAssets.length };
-        });
-    }
+      return { fixed: fixedCount, total: missingAssets.length };
+    });
+  },
+
+  saveManualPresupuesto: async (rows: PresupuestoRow[]) => {
+    if (rows.length === 0) return;
+    const { activo, anio } = rows[0];
+
+    await withConnection(async (connection) => {
+      // Borramos lo anterior del mismo activo/año para reemplazo completo desde el modal manual
+      await connection.execute(
+        `DELETE FROM PF_GASTOS_PRESUPUESTO WHERE ACTIVO_COD = :activo AND ANIO = :anio`,
+        { activo, anio }
+      );
+
+      const sql = `INSERT INTO PF_GASTOS_PRESUPUESTO 
+                (ACTIVO_COD, FRECUENCIA, MES, ANIO, MONTO_BODEGA, MONTO_SERV_EXT, MONTO_CORRECTIVO)
+                VALUES (:activo, :frecuencia, :mes, :anio, :montoBodega, :montoServExt, :montoCorrectivo)`;
+
+      const binds = rows.map(r => ({
+        activo: r.activo,
+        frecuencia: normalizeFrecuencia(r.frecuencia || ''),
+        mes: r.mes,
+        anio: r.anio,
+        montoBodega: r.montoBodega || 0,
+        montoServExt: r.montoServExt || 0,
+        montoCorrectivo: r.montoCorrectivo || 0,
+      }));
+
+      await connection.executeMany(sql, binds, { autoCommit: true });
+    });
+  },
+
+  getMaintainableAssets: async (search?: string): Promise<any[]> => {
+    return await withConnection(async (connection) => {
+      let sql = `SELECT nro_de_activo, clase_contable, organizacion 
+                       FROM PF_EAM_ACTIVOS 
+                       WHERE mantenible = 'Si'`;
+      const binds: any = {};
+      if (search) {
+        sql += ` AND (UPPER(nro_de_activo) LIKE :search OR UPPER(clase_contable) LIKE :search)`;
+        binds.search = `%${search.toUpperCase()}%`;
+      }
+      sql += ` ORDER BY nro_de_activo FETCH FIRST 50 ROWS ONLY`;
+      const result = await connection.execute(sql, binds);
+      return (result.rows || []).map((r: any) => ({
+        activo: r.NRO_DE_ACTIVO || r[0],
+        claseContable: r.CLASE_CONTABLE || r[1],
+        organizacion: r.ORGANIZACION || r[2]
+      }));
+    });
+  },
 }

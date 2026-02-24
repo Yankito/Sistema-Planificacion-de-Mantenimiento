@@ -10,7 +10,7 @@ export interface AssetExecutionDetail {
 
 export interface AssetExecutionGroup {
     activo: string;
-    tipoFila: string;
+    frecuencia: string;
     totalBudget: number;
     totalReal: number;
     details: AssetExecutionDetail[];

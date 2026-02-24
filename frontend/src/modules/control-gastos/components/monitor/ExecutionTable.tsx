@@ -174,7 +174,7 @@ export const ExecutionTable: React.FC<ExecutionTableProps> = ({
 
                                     {/* Assets grouped by type (Mensual, Hito, etc.) */}
                                     {isExpanded && (() => {
-                                        const types = Array.from(new Set(group.assets.map(a => a.tipoFila))).sort((a, b) => {
+                                        const types = Array.from(new Set(group.assets.map(a => a.frecuencia))).sort((a, b) => {
                                             const aLower = a.toLowerCase();
                                             const bLower = b.toLowerCase();
                                             if (aLower.includes('mensual')) return -1;
@@ -199,8 +199,8 @@ export const ExecutionTable: React.FC<ExecutionTableProps> = ({
                                                     </td>
                                                 </tr>
 
-                                                {group.assets.filter(a => a.tipoFila === type).map((asset, assetIdx) => {
-                                                    const isHito = asset.tipoFila.toLowerCase().includes('hito');
+                                                {group.assets.filter(a => a.frecuencia === type).map((asset, assetIdx) => {
+                                                    const isHito = asset.frecuencia.toLowerCase().includes('hito');
                                                     return (
                                                         <Fragment key={`${group.centroCosto}-${asset.activo}-${assetIdx}`}>
                                                             <tr className="bg-white hover:bg-slate-50 transition-colors">

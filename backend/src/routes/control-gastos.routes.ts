@@ -14,5 +14,7 @@ router.get('/gastos-consolidados', (req, res) => controller.getGastosConsolidado
 router.get('/search-assets-cc', (req, res) => controller.searchAssetsByCentroCosto(req, res));
 router.post('/update-asset-name', (req, res) => controller.updateAssetPresupuesto(req, res));
 router.post('/auto-fix-assets', (req, res) => controller.autoFixAssets(req, res));
+router.get('/maintainable-assets', (req, res) => controller.getMaintainableAssets(req, res));
+router.post('/save-manual-presupuesto', (req, res) => controller.saveManualPresupuesto(req, res));
 
 export default router;

@@ -147,7 +147,7 @@ describe('ControlGastosRepository', () => {
             const mockRows = [
                 {
                     ACTIVO: 'ACTIVO DE PRUEBA (20002)',
-                    TIPOFILA: 'P',
+                    FRECUENCIA: 'MENSUAL',
                     MES: 1,
                     ANIO: 2026,
                     MONTOBODEGA: 100,

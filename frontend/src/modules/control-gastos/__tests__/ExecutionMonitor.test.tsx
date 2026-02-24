@@ -26,7 +26,7 @@ describe('ExecutionMonitor Component', () => {
         const ccTest = 'CC-TEST';
 
         mockGetPresupuesto.mockResolvedValue([
-            { activo: 'ACT-01', centroCosto: ccTest, tipoFila: 'Mensual', mes: mesActual, montoBodega: 1000 }
+            { activo: 'ACT-01', centroCosto: ccTest, frecuencia: 'Mensual', mes: mesActual, montoBodega: 1000 }
         ]);
         mockGetGastosConsolidados.mockResolvedValue([
             { nroActivo: 'ACT-01', tipoGasto: 'BODEGA', costoTrx: 500, mes: mesActual, centroCosto: ccTest, esHito: false, planta: 'PF1' }

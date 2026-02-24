@@ -76,7 +76,7 @@ export const ExecutionMonitor = ({ selectedYear, selectedPlanta }: ExecutionMoni
             // 1. Organizar presupuesto por Centro de Costo y Activo
             monthlyBudget.forEach(row => {
                 const cc = row.centroCosto || 'Sin Centro Costo';
-                const isHitoRow = row.tipoFila?.toLowerCase().includes('hito');
+                const isHitoRow = row.frecuencia?.toLowerCase().includes('hito');
 
                 if (!groups[cc]) {
                     groups[cc] = { centroCosto: cc, assets: [], totalBudget: 0, totalReal: 0, deviation: 0 };
@@ -120,7 +120,7 @@ export const ExecutionMonitor = ({ selectedYear, selectedPlanta }: ExecutionMoni
 
                 groups[cc].assets.push({
                     activo: row.activo,
-                    tipoFila: row.tipoFila || 'Mensual',
+                    frecuencia: row.frecuencia || 'Mensual',
                     totalBudget: rowBudget,
                     totalReal: rowReal,
                     details: assetDetails,
@@ -146,12 +146,12 @@ export const ExecutionMonitor = ({ selectedYear, selectedPlanta }: ExecutionMoni
                     groups[cc] = { centroCosto: cc, assets: [], totalBudget: 0, totalReal: 0, deviation: 0 };
                 }
 
-                let assetRow = groups[cc].assets.find(a => a.activo === g.nroActivo && a.tipoFila === 'No Presupuestado');
+                let assetRow = groups[cc].assets.find(a => a.activo === g.nroActivo && a.frecuencia === 'No Presupuestado');
 
                 if (!assetRow) {
                     assetRow = {
                         activo: g.nroActivo,
-                        tipoFila: 'No Presupuestado',
+                        frecuencia: 'No Presupuestado',
                         totalBudget: 0,
                         totalReal: 0,
                         details: [],
