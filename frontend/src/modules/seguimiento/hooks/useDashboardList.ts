@@ -8,7 +8,7 @@ export const useDashboardList = (
   techStats: TechStats[] | null,
   itemsPerPage: number = 50
 ) => {
-  const [activeTab, setActiveTab] = useState<"FLOW" | "TECNICOS">("FLOW");
+  const [activeTab, setActiveTab] = useState<"FLOW" | "TECNICOS">("TECNICOS");
   const [subTabFlow, setSubTabFlow] = useState<"NUEVAS" | "CAMBIOS" | "FINALIZADAS">("NUEVAS");
   const [searchTerm, setSearchTerm] = useState("");
   const [filterPlanta, setFilterPlanta] = useState("TODAS");
