@@ -246,6 +246,8 @@ export const MassiveController = {
             // 4. Procesar FALLAS (Común)
             if (sheetNames.includes('Detalle MTBF MTTR')) {
                 console.log(`[MASIVO] ⚠️ Procesando fallas...`);
+                try { await query("TRUNCATE TABLE PF_IM_FALLAS"); } catch (e) { console.warn("Tabla fallas no existe o error truncate", e); }
+
                 // Import dinámico para evitar dependencias circulares si las hubiera
                 const { processFallasData } = await import('../fallas/logic/fallasProcessor.js');
                 const { FallasRepository } = await import('../fallas/repository.js');

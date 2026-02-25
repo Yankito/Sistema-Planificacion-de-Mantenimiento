@@ -24,28 +24,29 @@ export const ControlGastosView = () => {
     return (
         <div className="space-y-6 animate-fade-in-up">
             {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white p-6 rounded-[2.5rem] border border-pf-neutral-100 shadow-sm">
                 <div>
-                    <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Control de Gastos</h1>
+                    <h1 className="text-3xl font-black text-pf-neutral-800 tracking-tight uppercase italic leading-none">Control de Gastos</h1>
+                    <p className="text-[10px] font-black text-pf-neutral-400 uppercase tracking-[0.2em] mt-2 pl-0.5">Gestión y Visualización Presupuestaria</p>
                 </div>
-                <div className="flex items-center gap-4">
-                    <div className="flex flex-col">
-                        <label className="text-[10px] font-black text-slate-400 uppercase mb-1 px-1">Planta</label>
+                <div className="flex items-center gap-4 bg-pf-neutral-50 p-2 rounded-2xl border border-pf-neutral-100 shadow-inner">
+                    <div className="flex flex-col min-w-[140px]">
+                        <label className="text-[9px] font-black text-pf-neutral-400 uppercase mb-1 px-1 tracking-widest">Planta</label>
                         <select
                             value={selectedPlanta}
                             onChange={(e) => setSelectedPlanta(e.target.value)}
-                            className="px-4 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                            className="px-4 py-2.5 bg-white border border-pf-neutral-200 rounded-xl text-xs font-black text-pf-neutral-700 outline-none focus:border-pf-red/30 transition-all shadow-sm"
                         >
                             {plantas.map(p => <option key={p} value={p}>{p}</option>)}
                         </select>
                     </div>
 
-                    <div className="flex flex-col">
-                        <label className="text-[10px] font-black text-slate-400 uppercase mb-1 px-1">Año</label>
+                    <div className="flex flex-col min-w-[100px]">
+                        <label className="text-[9px] font-black text-pf-neutral-400 uppercase mb-1 px-1 tracking-widest">Año</label>
                         <select
                             value={selectedYear}
                             onChange={(e) => setSelectedYear(Number(e.target.value))}
-                            className="px-4 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                            className="px-4 py-2.5 bg-white border border-pf-neutral-200 rounded-xl text-xs font-black text-pf-neutral-700 outline-none focus:border-pf-red/30 transition-all shadow-sm"
                         >
                             {years.map((year: number) => (
                                 <option key={year} value={year}>{year}</option>
@@ -53,15 +54,15 @@ export const ControlGastosView = () => {
                         </select>
                     </div>
 
-                    <div className="flex flex-col">
-                        <label className="text-[10px] font-black text-slate-400 uppercase mb-1 px-1">Mes</label>
+                    <div className="flex flex-col min-w-[160px]">
+                        <label className="text-[9px] font-black text-pf-neutral-400 uppercase mb-1 px-1 tracking-widest">Periodo</label>
                         <select
                             value={activeTab === 'config' ? '' : (selectedMonth ?? '')}
                             disabled={activeTab === 'config'}
                             onChange={(e) => setSelectedMonth(e.target.value === '' ? undefined : Number(e.target.value))}
-                            className={`px-4 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm min-w-[140px] ${activeTab === 'config' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            className={`px-4 py-2.5 bg-white border border-pf-neutral-200 rounded-xl text-xs font-black text-pf-neutral-700 outline-none focus:border-pf-red/30 transition-all shadow-sm ${activeTab === 'config' ? 'opacity-40 cursor-not-allowed bg-pf-neutral-100' : ''}`}
                         >
-                            {activeTab !== 'monitor' && <option value="">Todo el año</option>}
+                            {activeTab !== 'monitor' && <option value="">Anual</option>}
                             {months.filter(m => m.val !== undefined).map(m => (
                                 <option key={m.val} value={m.val}>{m.label}</option>
                             ))}
@@ -71,52 +72,48 @@ export const ControlGastosView = () => {
             </div>
 
             {/* Pestañas de navegacion */}
-            <div className="border-b border-slate-200">
-                <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+            <div className="border-b border-pf-neutral-200">
+                <nav className="-mb-px flex space-x-10" aria-label="Tabs">
                     <button
                         onClick={() => {
                             setActiveTab('monitor');
                             if (selectedMonth === undefined) setSelectedMonth(new Date().getMonth() + 1);
                         }}
                         className={`
-                            whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 transition-colors
+                            whitespace-nowrap py-5 px-1 border-b-[3px] font-black text-[11px] uppercase tracking-widest flex items-center gap-2.5 transition-all
                             ${activeTab === 'monitor'
-                                ? 'border-pf-red text-pf-red'
-                                : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'}
+                                ? 'border-pf-red text-pf-neutral-900'
+                                : 'border-transparent text-pf-neutral-400 hover:text-pf-neutral-700 hover:border-pf-neutral-200'}
                         `}
                     >
-                        <Activity size={18} />
+                        <Activity size={18} className={activeTab === 'monitor' ? 'text-pf-red shadow-sm' : ''} />
                         Monitoreo de Ejecución
                     </button>
 
                     <button
                         onClick={() => setActiveTab('breakdown')}
                         className={`
-                            whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 transition-colors
+                            whitespace-nowrap py-5 px-1 border-b-[3px] font-black text-[11px] uppercase tracking-widest flex items-center gap-2.5 transition-all
                             ${activeTab === 'breakdown'
-                                ? 'border-pf-red text-pf-red'
-                                : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'}
+                                ? 'border-pf-red text-pf-neutral-900'
+                                : 'border-transparent text-pf-neutral-400 hover:text-pf-neutral-700 hover:border-pf-neutral-200'}
                         `}
                     >
-                        <PieChart size={18} />
+                        <PieChart size={18} className={activeTab === 'breakdown' ? 'text-pf-red shadow-sm' : ''} />
                         Desglose y Análisis
                     </button>
 
                     <button
-                        onClick={() => {
-                            setActiveTab('config');
-                            // Si veníamos de monitor y no teníamos mes seleccionado (aunque ahora siempre tiene),
-                            // nos aseguramos que para presupuesto sea anual
-                        }}
+                        onClick={() => setActiveTab('config')}
                         className={`
-                            whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 transition-colors
+                            whitespace-nowrap py-5 px-1 border-b-[3px] font-black text-[11px] uppercase tracking-widest flex items-center gap-2.5 transition-all
                             ${activeTab === 'config'
-                                ? 'border-pf-red text-pf-red'
-                                : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'}
+                                ? 'border-pf-red text-pf-neutral-900'
+                                : 'border-transparent text-pf-neutral-400 hover:text-pf-neutral-700 hover:border-pf-neutral-200'}
                         `}
                     >
-                        <Settings size={18} />
-                        Configuración Presupuestaria
+                        <Settings size={18} className={activeTab === 'config' ? 'text-pf-red shadow-sm' : ''} />
+                        Parámetros Presupuestarios
                     </button>
                 </nav>
             </div>

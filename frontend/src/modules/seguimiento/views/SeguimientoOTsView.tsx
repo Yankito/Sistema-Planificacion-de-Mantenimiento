@@ -202,22 +202,22 @@ export const SeguimientoOTsView = () => {
   }, [serverStats, dataDashboard, selectedYear, selectedSemana]);
 
   return (
-    <div className="relative p-6 h-full overflow-y-auto bg-slate-50/50 flex flex-col gap-4">
+    <div className="relative p-6 h-full overflow-y-auto bg-pf-neutral-50 flex flex-col gap-4">
       {isLoading && <LoadingOverlay message="Procesando datos..." />}
 
       {/* CABECERA PRINCIPAL */}
-      <header className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col gap-6">
+      <header className="bg-white p-5 rounded-2xl shadow-sm border border-pf-neutral-200 flex flex-col gap-6">
 
         {/* NIVEL 1: GESTIÓN DE REPORTES */}
-        <div className="flex justify-between items-center pb-4 border-b border-slate-100">
+        <div className="flex justify-between items-center pb-4 border-b border-pf-neutral-100">
           <div className="flex items-center gap-6">
             <div>
-              <h1 className="text-xl font-black text-slate-800 uppercase tracking-tight">Seguimiento OTs</h1>
-              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Control de Gestión Operativa (Tiempo Real)</p>
+              <h1 className="text-xl font-black text-pf-neutral-800 uppercase tracking-tight">Seguimiento OTs</h1>
+              <p className="text-[10px] text-pf-neutral-400 font-bold uppercase tracking-widest">Control de Gestión Operativa (Tiempo Real)</p>
             </div>
 
             <div className="flex flex-col gap-1">
-              <span className="text-[9px] font-black text-slate-400 uppercase bg-slate-100 px-3 py-1 rounded-full">
+              <span className="text-[9px] font-black text-pf-neutral-400 uppercase bg-pf-neutral-100 px-3 py-1 rounded-full">
                 DATA EN VIVO
               </span>
             </div>
@@ -234,40 +234,40 @@ export const SeguimientoOTsView = () => {
         </div>
 
         {/* NIVEL 2: FILTROS DE FECHA (CALENDARIO Y ATAJOS) */}
-        <div className="flex flex-wrap items-end gap-6 pb-2 border-b border-slate-50">
+        <div className="flex flex-wrap items-end gap-6 pb-2 border-b border-pf-neutral-50/50">
           <div className="flex items-center gap-4">
             <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+              <label className="text-[10px] font-black text-pf-neutral-400 uppercase tracking-wider flex items-center gap-1.5">
                 <CalendarIcon size={12} className="text-pf-red" /> Fecha Inicio
               </label>
               <input
                 type="date"
                 value={fechaInicio}
                 onChange={(e) => setFechaInicio(e.target.value)}
-                className="bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold rounded-xl px-3 py-2 outline-none focus:border-pf-red focus:ring-1 focus:ring-pf-red/20 transition-all"
+                className="bg-pf-neutral-50 border border-pf-neutral-200 text-pf-neutral-700 text-xs font-bold rounded-xl px-3 py-2 outline-none focus:border-pf-red focus:ring-1 focus:ring-pf-red/20 transition-all"
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+              <label className="text-[10px] font-black text-pf-neutral-400 uppercase tracking-wider flex items-center gap-1.5">
                 <CalendarIcon size={12} className="text-pf-red" /> Fecha Fin
               </label>
               <input
                 type="date"
                 value={fechaFin}
                 onChange={(e) => setFechaFin(e.target.value)}
-                className="bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold rounded-xl px-3 py-2 outline-none focus:border-pf-red focus:ring-1 focus:ring-pf-red/20 transition-all"
+                className="bg-pf-neutral-50 border border-pf-neutral-200 text-pf-neutral-700 text-xs font-bold rounded-xl px-3 py-2 outline-none focus:border-pf-red focus:ring-1 focus:ring-pf-red/20 transition-all"
               />
             </div>
             <button
               onClick={handleBuscarPorFecha}
-              className="mt-auto bg-slate-800 text-white p-2.5 rounded-xl hover:bg-black transition-colors shadow-sm active:scale-95"
+              className="mt-auto bg-pf-neutral-800 text-white p-2.5 rounded-xl hover:bg-black transition-colors shadow-sm active:scale-95"
               title="Buscar"
             >
               <Search size={16} />
             </button>
             <button
               onClick={handleResetFiltros}
-              className="mt-auto bg-slate-100 text-slate-500 p-2.5 rounded-xl hover:bg-slate-200 transition-colors shadow-sm active:scale-95 border border-slate-200"
+              className="mt-auto bg-pf-neutral-100 text-pf-neutral-500 p-2.5 rounded-xl hover:bg-pf-neutral-200 transition-colors shadow-sm active:scale-95 border border-pf-neutral-200"
               title="Limpiar Filtros"
             >
               <RotateCcw size={16} />
@@ -289,7 +289,7 @@ export const SeguimientoOTsView = () => {
             resetViewDetail={() => setViewDetail(null)}
           />
 
-          <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
+          <div className="flex items-center gap-2 bg-pf-neutral-50 p-1.5 rounded-2xl border border-pf-neutral-100">
             {/* EXPORTAR IMAGEN (Dashboard) */}
             <ExportButton
               elementId="dashboard-atrasos-container"
@@ -300,14 +300,14 @@ export const SeguimientoOTsView = () => {
               reportTitle={modoVista === "ATRASOS" ? "Tablero de Atrasos" : "Tablero de Cumplimiento"}
             />
 
-            <div className="w-px h-6 bg-slate-200 mx-1" />
+            <div className="w-px h-6 bg-pf-neutral-200 mx-1" />
 
             {/* EXPORTAR EXCEL (Datos) */}
             {modoVista === "ATRASOS" && (
               <button
                 onClick={handleExportarExcelCompleto}
 
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl transition-all shadow-lg active:scale-95 border border-slate-800 bg-slate-900 text-white hover:bg-black hover:shadow-pf-red/20`}
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl transition-all shadow-lg active:scale-95 border border-pf-neutral-800 bg-pf-neutral-900 text-white hover:bg-black hover:shadow-pf-red/20 font-bold uppercase tracking-tighter text-xs`}
               >
                 <FileText size={14} />
                 DESCARGAR EXCEL
@@ -344,8 +344,9 @@ export const SeguimientoOTsView = () => {
               ))}
             </div>
 
+            {/* SEPARADOR EVOLUCIÓN */}
             {!isLoading && serverStats.flowStats && (
-              <div className="mb-12 border-t border-slate-200 pt-8">
+              <div className="mb-12 border-t border-pf-neutral-200 pt-8">
                 <EvolutionDashboard
                   nuevas={serverStats.flowStats.nuevas}
                   finalizadas={serverStats.flowStats.finalizadas}
@@ -359,7 +360,7 @@ export const SeguimientoOTsView = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-in fade-in duration-700 delay-100">
               {[{ t: "OM", es: false }, { t: "OB", es: true }].map(tipo => (
                 <div key={tipo.t}>
-                  <h3 className="text-xs font-black text-slate-400 mb-4 uppercase flex items-center gap-2"><Factory size={14} /> Plantas ({tipo.t})</h3>
+                  <h3 className="text-xs font-black text-pf-neutral-400 mb-4 uppercase flex items-center gap-2"><Factory size={14} /> Plantas ({tipo.t})</h3>
                   {LISTA_PLANTAS_INDIVIDUALES.map(p => (
                     <ResumenTable
                       key={p} titulo={p}
@@ -376,12 +377,12 @@ export const SeguimientoOTsView = () => {
         ) : (
           <div className="animate-in zoom-in-95 duration-300">
             <div className="flex items-center gap-2 mb-6">
-              <PieChart className="text-green-600" />
-              <h3 className="text-lg font-black uppercase text-slate-700">Tablero de Cumplimiento</h3>
-              <span className="text-sm font-bold text-slate-400">({selectedSemana === "TODAS" ? "Consolidado" : selectedSemana})</span>
+              <PieChart className="text-pf-success-600" />
+              <h3 className="text-lg font-black uppercase text-pf-neutral-700">Tablero de Cumplimiento</h3>
+              <span className="text-sm font-bold text-pf-neutral-400">({selectedSemana === "TODAS" ? "Consolidado" : selectedSemana})</span>
             </div>
             <div className="mb-10">
-              <h4 className="text-sm font-black text-slate-500 mb-4 uppercase border-b pb-2">Mantención (OM)</h4>
+              <h4 className="text-sm font-black text-pf-neutral-500 mb-4 uppercase border-b border-pf-neutral-100 pb-2">Mantención (OM)</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {LISTA_CUMPLIMIENTO.map(p => (
                   <ComplianceCard key={`om-${p}`} planta={p} esOB={false} dataSemanaActual={dataDashboard} onClick={() => setViewDetail({ id: p, esOB: false })} />
@@ -389,7 +390,7 @@ export const SeguimientoOTsView = () => {
               </div>
             </div>
             <div>
-              <h4 className="text-sm font-black text-slate-500 mb-4 uppercase border-b pb-2">Infraestructura (OB)</h4>
+              <h4 className="text-sm font-black text-pf-neutral-500 mb-4 uppercase border-b border-pf-neutral-100 pb-2">Infraestructura (OB)</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {LISTA_CUMPLIMIENTO.map(p => (
                   <ComplianceCard key={`ob-${p}`} planta={p} esOB={true} dataSemanaActual={dataDashboard} onClick={() => setViewDetail({ id: p, esOB: true })} />

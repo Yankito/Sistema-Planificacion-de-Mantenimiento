@@ -97,10 +97,10 @@ export const ExpenseBreakdown = ({ selectedYear, selectedPlanta, selectedMonth }
     // Calculate conic gradient slices
     let cumulativePercent = 0;
     const categoryColors: Record<string, string> = {
-        'Bodega': '#3b82f6',
-        'Servicios Externos': '#10b981',
-        'Gasto Correctivo': '#ef4444',
-        'Hito': '#f59e0b'
+        'Bodega': '#3b82f6', // pf-blue-500
+        'Servicios Externos': '#14b8a6', // pf-success-500
+        'Gasto Correctivo': '#e11d48', // pf-red
+        'Hito': '#f59e0b' // pf-warning-500
     };
 
     const slices = Object.entries(categoryTotals).map(([cat, val]) => {
@@ -108,71 +108,77 @@ export const ExpenseBreakdown = ({ selectedYear, selectedPlanta, selectedMonth }
         const start = cumulativePercent;
         const end = cumulativePercent + (val / totalValue) * 100;
         cumulativePercent = end;
-        return `${categoryColors[cat] || '#cbd5e1'} ${start}% ${end}%`;
+        return `${categoryColors[cat] || '#94a3b8'} ${start}% ${end}%`;
     }).filter(Boolean).join(', ');
 
-    const chartStyle = slices ? { background: `conic-gradient(${slices})` } : { background: '#f1f5f9' };
+    const chartStyle = slices ? { background: `conic-gradient(${slices})` } : { background: '#f8fafc' };
 
     const formatCurrency = (val: number) => {
         return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(val);
     };
 
     return (
-        <div className="space-y-6 relative min-h-[400px]">
+        <div className="space-y-8 relative min-h-[500px] animate-in fade-in duration-500">
             {loading && (
-                <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-50 flex flex-col items-center justify-center rounded-2xl min-h-[400px]">
-                    <Loader2 className="animate-spin text-pf-red mb-4" size={40} />
-                    <p className="text-slate-600 font-bold uppercase tracking-wider text-xs animate-pulse">Analizando transacciones...</p>
+                <div className="absolute inset-0 bg-white/40 backdrop-blur-md z-50 flex flex-col items-center justify-center rounded-[2.5rem] transition-all duration-500">
+                    <div className="relative">
+                        <Loader2 className="animate-spin text-pf-red mb-6" size={48} />
+                        <div className="absolute inset-0 bg-pf-red opacity-10 animate-ping rounded-full"></div>
+                    </div>
+                    <p className="text-pf-neutral-800 font-black uppercase tracking-[0.3em] text-[10px] animate-pulse">Auditando Transacciones...</p>
                 </div>
             )}
 
             {/* Controls */}
-            <div className="flex gap-4 items-center bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-                <div className="relative flex-1">
-                    <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <div className="flex flex-col md:flex-row gap-5 items-center bg-white p-6 rounded-[2rem] shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-pf-neutral-100">
+                <div className="relative flex-1 w-full group">
+                    <Search size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-pf-neutral-300 group-focus-within:text-pf-red transition-colors" />
                     <input
                         type="text"
-                        placeholder="Buscar por Activo o Concepto..."
-                        className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-300 outline-none text-sm text-slate-700 placeholder:text-slate-400"
+                        placeholder="Filtrar por Maestro de Activo o Concepto OT..."
+                        className="w-full pl-12 pr-6 py-3.5 bg-pf-neutral-50/50 border border-pf-neutral-100 rounded-[1.25rem] focus:ring-4 focus:ring-pf-red/5 focus:border-pf-red outline-none text-sm font-medium text-pf-neutral-800 placeholder:text-pf-neutral-300 transition-all"
                         onChange={(e) => setSelectedAsset(e.target.value || 'Todos')}
                     />
                 </div>
-                <div className="flex items-center gap-2">
-                    <Filter size={18} className="text-slate-400" />
+                <div className="flex items-center gap-4 w-full md:w-auto">
+                    <div className="p-3.5 bg-pf-neutral-900 rounded-[1.25rem] text-white shadow-lg shadow-pf-neutral-900/10">
+                        <Filter size={18} />
+                    </div>
                     <select
-                        className="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5"
+                        className="flex-1 md:w-56 bg-pf-neutral-50 border border-pf-neutral-100 text-pf-neutral-800 text-[11px] font-black uppercase tracking-widest rounded-[1.25rem] focus:ring-4 focus:ring-pf-neutral-900/5 focus:border-pf-neutral-900 block p-3.5 outline-none transition-all cursor-pointer"
                         value={selectedAsset}
                         onChange={(e) => setSelectedAsset(e.target.value)}
                     >
                         <option value="Todos">Todos los Activos</option>
-                        <option value="Maquinaria">Maquinaria</option>
-                        <option value="Redes">Redes</option>
-                        <option value="Infra">Infraestructura</option>
+                        <option value="Maquinaria">MAQUINARIA INDUSTRIAL</option>
+                        <option value="Redes">REDES Y SERVICIOS</option>
+                        <option value="Infra">INFRAESTRUCTURA GENERAL</option>
                     </select>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col items-center justify-center">
-                    <h3 className="text-lg font-bold text-slate-700 mb-6 self-start">Distribución del Gasto Real</h3>
-                    <div className="relative w-64 h-64 flex items-center justify-center">
-                        <div className="w-full h-full rounded-full transition-all duration-700" style={chartStyle}></div>
-                        <div className="absolute w-44 h-44 bg-white rounded-full flex flex-col items-center justify-center shadow-inner">
-                            <span className="text-slate-400 text-[10px] font-medium uppercase tracking-wider">Total Ejecutado</span>
-                            <span className="text-xl font-black text-slate-800">{formatCurrency(totalValue)}</span>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-pf-neutral-100 flex flex-col items-center justify-center relative overflow-hidden group/chart">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-pf-neutral-50 rounded-bl-full opacity-50 group-hover/chart:bg-pf-red/5 transition-colors"></div>
+                    <h3 className="text-sm font-black text-pf-neutral-800 uppercase tracking-[0.2em] mb-10 self-start italic pl-2 border-l-4 border-pf-red">Distribución del Gasto Real</h3>
+                    <div className="relative w-72 h-72 flex items-center justify-center">
+                        <div className="w-full h-full rounded-full transition-all duration-1000 shadow-[0_0_40px_rgba(0,0,0,0.05)] cursor-pointer hover:scale-105 active:scale-95" style={chartStyle}></div>
+                        <div className="absolute w-52 h-52 bg-white rounded-full flex flex-col items-center justify-center shadow-[inset_0_2px_15px_rgba(0,0,0,0.08)] border border-pf-neutral-50">
+                            <span className="text-pf-neutral-400 text-[10px] font-black uppercase tracking-[0.25em] mb-1">Total Ejecutado</span>
+                            <span className="text-2xl font-black text-pf-neutral-800 italic">{formatCurrency(totalValue)}</span>
                         </div>
                     </div>
 
-                    <div className="mt-8 grid grid-cols-2 gap-4 w-full">
+                    <div className="mt-12 grid grid-cols-2 gap-6 w-full">
                         {Object.entries(categoryTotals).map(([cat, amount]) => (
-                            <div key={cat} className="flex items-center gap-2">
-                                <div className={`w-3 h-3 rounded-full ${cat === 'Bodega' ? 'bg-blue-500' :
-                                    cat === 'Servicios Externos' ? 'bg-emerald-500' :
-                                        cat === 'Gasto Correctivo' ? 'bg-red-500' : 'bg-orange-500'
+                            <div key={cat} className="flex items-center gap-4 bg-pf-neutral-50/50 p-3 rounded-2xl border border-pf-neutral-50 transition-all hover:bg-white hover:shadow-md active:scale-95 cursor-default group/item">
+                                <div className={`w-3.5 h-3.5 rounded-full shadow-sm group-hover/item:scale-125 transition-transform ${cat === 'Bodega' ? 'bg-pf-blue-500 shadow-pf-blue-200' :
+                                    cat === 'Servicios Externos' ? 'bg-pf-success-500 shadow-pf-success-200' :
+                                        cat === 'Gasto Correctivo' ? 'bg-pf-red shadow-pf-red/30' : 'bg-pf-warning-500 shadow-pf-warning-200'
                                     }`}></div>
                                 <div className="flex flex-col">
-                                    <span className="text-xs text-slate-500">{cat}</span>
-                                    <span className="text-sm font-bold text-slate-700">{formatCurrency(amount)}</span>
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-pf-neutral-400 mb-0.5">{cat}</span>
+                                    <span className="text-sm font-black text-pf-neutral-800 italic tracking-tight">{formatCurrency(amount)}</span>
                                 </div>
                             </div>
                         ))}
@@ -180,40 +186,40 @@ export const ExpenseBreakdown = ({ selectedYear, selectedPlanta, selectedMonth }
                 </div>
 
                 {/* Tabla de detalles */}
-                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
-                    <div className="p-6 border-b border-slate-100">
-                        <h3 className="text-lg font-bold text-slate-800">Detalle de Asignaciones</h3>
+                <div className="bg-white rounded-[2.5rem] shadow-sm border border-pf-neutral-100 flex flex-col overflow-hidden group/table">
+                    <div className="p-8 border-b border-pf-neutral-100 bg-white group-hover/table:bg-pf-neutral-50/30 transition-colors">
+                        <h3 className="text-sm font-black text-pf-neutral-800 uppercase tracking-[0.2em] italic border-l-4 border-pf-red pl-2">Detalle de Asignaciones</h3>
                     </div>
-                    <div className="flex-1 overflow-auto max-h-[500px]">
+                    <div className="flex-1 overflow-auto max-h-[600px] custom-scrollbar">
                         <table className="w-full text-sm text-left">
-                            <thead className="bg-slate-50 text-slate-500 font-medium sticky top-0">
+                            <thead className="bg-pf-neutral-900 text-pf-neutral-400 font-black uppercase tracking-widest text-[9px] sticky top-0 z-10 shadow-sm">
                                 <tr>
-                                    <th className="px-6 py-3">Concepto / Clasificación</th>
-                                    <th className="px-6 py-3">Tipo Gasto</th>
-                                    <th className="px-6 py-3 text-right">Monto</th>
-                                    <th className="px-6 py-3 text-right">Fecha Ref.</th>
+                                    <th className="px-8 py-5">Concepto / Clasificación</th>
+                                    <th className="px-6 py-5">Categoría Trx</th>
+                                    <th className="px-6 py-5 text-right">Monto</th>
+                                    <th className="px-8 py-5 text-right">Fecha Registro</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-100">
+                            <tbody className="divide-y divide-pf-neutral-100">
                                 {filteredDetails.length === 0 && (
                                     <tr>
-                                        <td colSpan={4} className="text-center py-8 text-slate-500">
-                                            No hay datos cargados.
+                                        <td colSpan={4} className="text-center py-24 text-pf-neutral-300 font-black uppercase tracking-[0.4em] text-[10px]">
+                                            No se detectan transacciones.
                                         </td>
                                     </tr>
                                 )}
                                 {filteredDetails.map((item) => (
-                                    <tr key={item.id} className="hover:bg-slate-50 transition-colors">
-                                        <td className="px-6 py-3">
-                                            <div className="font-medium text-slate-800">{item.concepto}</div>
-                                            <div className="flex items-center gap-2 mt-1">
-                                                <span className="text-[10px] text-slate-400 font-mono">{item.otId}</span>
+                                    <tr key={item.id} className="hover:bg-pf-neutral-50/80 transition-all group/row cursor-default">
+                                        <td className="px-8 py-5">
+                                            <div className="font-black text-pf-neutral-800 text-sm italic tracking-tight group-hover/row:text-pf-red transition-colors">{item.concepto}</div>
+                                            <div className="flex items-center gap-3 mt-2">
+                                                <span className="text-[10px] text-pf-neutral-400 font-black tracking-widest p-1 bg-pf-neutral-50 border border-pf-neutral-100 rounded-md">ID: {item.otId}</span>
                                                 {item.assetCategory && (
-                                                    <span className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold border uppercase
-                                                        ${item.assetCategory === 'Maquinaria' ? 'bg-blue-50 text-blue-600 border-blue-100' :
-                                                            item.assetCategory === 'Redes' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
-                                                                item.assetCategory === 'Infra' ? 'bg-indigo-50 text-indigo-600 border-indigo-100' :
-                                                                    'bg-slate-50 text-slate-500 border-slate-100'}
+                                                    <span className={`flex items-center gap-2 px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border
+                                                        ${item.assetCategory === 'Maquinaria' ? 'bg-pf-blue-500 text-white border-pf-blue-600 shadow-sm' :
+                                                            item.assetCategory === 'Redes' ? 'bg-pf-success-500 text-white border-pf-success-600 shadow-sm' :
+                                                                item.assetCategory === 'Infra' ? 'bg-pf-warning-500 text-white border-pf-warning-600 shadow-sm' :
+                                                                    'bg-pf-neutral-800 text-white border-pf-neutral-900'}
                                                     `}>
                                                         {item.assetCategory === 'Maquinaria' && <Box size={10} />}
                                                         {item.assetCategory === 'Redes' && <Share2 size={10} />}
@@ -223,19 +229,19 @@ export const ExpenseBreakdown = ({ selectedYear, selectedPlanta, selectedMonth }
                                                 )}
                                             </div>
                                         </td>
-                                        <td className="px-6 py-3">
-                                            <span className={`inline-flex px-2 py-1 rounded text-xs font-bold
-                                                ${item.categoria === 'Gasto Correctivo' ? 'bg-red-100 text-red-700' :
-                                                    item.categoria === 'Hito' ? 'bg-orange-100 text-orange-700' :
-                                                        'bg-slate-100 text-slate-600'}
+                                        <td className="px-6 py-5">
+                                            <span className={`inline-flex px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest border
+                                                ${item.categoria === 'Gasto Correctivo' ? 'bg-pf-red/10 text-pf-red border-pf-red/20 shadow-sm shadow-pf-red/10' :
+                                                    item.categoria === 'Hito' ? 'bg-pf-warning-500/10 text-pf-warning-600 border-pf-warning-200 shadow-sm shadow-pf-warning-200/10' :
+                                                        'bg-pf-neutral-50 text-pf-neutral-500 border-pf-neutral-100'}
                                             `}>
                                                 {item.categoria}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-3 text-right font-mono text-slate-700">
+                                        <td className="px-6 py-5 text-right font-black text-pf-neutral-800 text-base italic tracking-tighter">
                                             {formatCurrency(item.monto)}
                                         </td>
-                                        <td className="px-6 py-3 text-right text-slate-500">
+                                        <td className="px-8 py-5 text-right text-pf-neutral-400 font-black uppercase tracking-tighter text-[10px]">
                                             {item.fecha}
                                         </td>
                                     </tr>

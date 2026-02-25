@@ -65,30 +65,30 @@ export const PanelLateral = ({
   }, [diaSeleccionado]);
 
   return (
-    <div className="w-96 flex flex-col">
-      <div className="bg-white rounded-[2.5rem] border border-pf-border shadow-xl flex-1 flex flex-col overflow-hidden">
-        <div className="p-6 border-b flex justify-between items-center bg-slate-900 text-white">
+    <div className="w-96 flex flex-col h-full">
+      <div className="bg-white rounded-[2.5rem] border border-pf-neutral-100 shadow-2xl flex-1 flex flex-col overflow-hidden">
+        <div className="p-7 border-b border-white/10 flex justify-between items-center bg-pf-neutral-900 text-white shadow-lg">
           <div>
-            <h4 className="font-black uppercase tracking-tighter text-lg leading-none">
+            <h4 className="font-black uppercase tracking-tight text-xl leading-none">
               {tituloPanel}
             </h4>
-            <p className="text-[10px] font-bold text-slate-200 uppercase mt-1">
+            <p className="text-[10px] font-black text-white/60 uppercase mt-2 tracking-widest pl-0.5">
               {diaSeleccionado
                 ? `${ordenesVisualizadas.length} Órdenes ${mostrarSoloVacantes ? 'Incompletas' : 'Asignadas'}`
-                : "Sin turno de noche"}
+                : "Pendientes de Planificar"}
             </p>
           </div>
           {diaSeleccionado && (
             <button
               onClick={() => setDiaSeleccionado(null)}
-              className="p-2 hover:bg-white/10 rounded-full transition-colors"
+              className="p-2.5 hover:bg-white/10 rounded-xl transition-all active:scale-90"
             >
               <X size={20} />
             </button>
           )}
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50/30">
+        <div className="flex-1 overflow-y-auto p-6 space-y-5 bg-pf-neutral-50/40 custom-scrollbar">
           {diaSeleccionado ? (
             ordenesVisualizadas.length > 0 ? (
               ordenesVisualizadas.map((orden, i) => (
@@ -102,12 +102,12 @@ export const PanelLateral = ({
                 />
               ))
             ) : (
-              <div className="flex flex-col items-center justify-center py-12 text-slate-400 opacity-60">
-                <Calendar size={40} className="mb-2 stroke-1" />
-                <span className="text-xs font-bold uppercase tracking-wider text-center">
+              <div className="flex flex-col items-center justify-center py-16 text-pf-neutral-300">
+                <Calendar size={48} className="mb-4 stroke-[1.5] opacity-20" />
+                <span className="text-[11px] font-black uppercase tracking-[0.2em] text-center max-w-[200px] leading-relaxed">
                   {mostrarSoloVacantes
                     ? "Todas las órdenes completas"
-                    : "Sin órdenes esta semana"}
+                    : "Sin órdenes planificadas"}
                 </span>
               </div>
             )
@@ -129,9 +129,9 @@ export const PanelLateral = ({
         </div>
 
         {!diaSeleccionado && (
-          <div className="p-6 bg-slate-900 border-t border-slate-800 flex items-start gap-3">
+          <div className="p-6 bg-pf-neutral-900 border-t border-white/5 flex items-start gap-3 shadow-2xl">
             <Info size={16} className="text-pf-red mt-0.5" />
-            <p className="text-[10px] text-slate-400 font-medium leading-relaxed">
+            <p className="text-[10px] text-pf-neutral-400 font-bold leading-relaxed tracking-wide uppercase">
               <strong className="text-white">Tip de Gestión:</strong> Arrastra estas órdenes a los días resaltados con una <strong className="text-pf-red">Luna</strong>.
             </p>
           </div>

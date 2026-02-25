@@ -23,6 +23,7 @@ interface BudgetMatrixItem {
     totalAnnual: number;
     found: boolean;
     claseContable?: string;
+    centroCosto?: string;
     organizacion?: string;
     monthly: {
         [month: number]: {
@@ -72,6 +73,7 @@ export const BudgetConfig = ({ selectedYear, selectedPlanta, selectedMonth }: Bu
                         totalAnnual: 0,
                         found: !!(row.claseContable || row.mantenible),
                         claseContable: row.claseContable,
+                        centroCosto: row.centroCosto,
                         organizacion: row.organizacion,
                         monthly: {}
                     };
@@ -181,11 +183,14 @@ export const BudgetConfig = ({ selectedYear, selectedPlanta, selectedMonth }: Bu
     const months = MONTHS;
 
     return (
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 relative min-h-[400px]">
+        <div className="bg-white p-8 rounded-[2.5rem] border border-pf-neutral-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative min-h-[500px]">
             {loading && (
-                <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-50 flex flex-col items-center justify-center rounded-2xl min-h-[400px]">
-                    <Loader2 className="animate-spin text-pf-red mb-4" size={40} />
-                    <p className="text-slate-600 font-bold uppercase tracking-wider text-xs animate-pulse">Cargando presupuesto...</p>
+                <div className="absolute inset-0 bg-white/40 backdrop-blur-md z-50 flex flex-col items-center justify-center rounded-[2.5rem] transition-all duration-500">
+                    <div className="relative">
+                        <Loader2 className="animate-spin text-pf-red mb-6" size={48} />
+                        <div className="absolute inset-0 animate-ping opacity-20 bg-pf-red rounded-full"></div>
+                    </div>
+                    <p className="text-pf-neutral-800 font-black uppercase tracking-[0.3em] text-[10px] animate-pulse">Sincronizando Presupuesto...</p>
                 </div>
             )}
 

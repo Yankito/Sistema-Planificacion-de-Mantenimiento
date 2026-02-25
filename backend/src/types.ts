@@ -110,7 +110,7 @@ export interface FallaRow {
     estadoPedido: string;
     tipoPedido: string;
     tecnico: string;
-    ot?: string;
+    pedidoTrabajo?: string;
     duracionMinutos: number;
     gasto: number;
     perdidaKg: number;

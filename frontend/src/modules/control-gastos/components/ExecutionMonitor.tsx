@@ -427,7 +427,7 @@ export const ExecutionMonitor = ({ selectedYear, selectedPlanta, selectedMonth }
                 totalPlanReal={totalPlanReal}
                 totalCorrectivoBudget={totalCorrectivoBudget}
                 totalCorrectivoReal={totalCorrectivoReal}
-                groupedData={groupedData}
+                groupedData={filteredAndSortedData}
                 categorySummaries={categorySummaries}
                 monthName={months.find(m => m.id === currentMonth)?.name || ''}
                 formatCurrency={formatCurrency}

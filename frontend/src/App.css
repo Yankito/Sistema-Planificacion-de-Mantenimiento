@@ -1,19 +1,95 @@
 @import "tailwindcss";
 
 @theme {
-  --color-pf-red: #fe0d01;
-  --color-pf-red-hover: #C10511;
-  --color-pf-light: #F8FAFC;
-  /* Fondo principal claro */
-  --color-pf-sidebar: #FFFFFF;
-  /* Sidebar blanco puro */
-  --color-pf-border: #E2E8F0;
-  /* Bordes suaves */
+  /* PF Alimentos - Primary Red (#fe0d01) */
+  --color-pf-red-50: #fff1f0;
+  --color-pf-red-100: #ffdedb;
+  --color-pf-red-200: #ffc2bd;
+  --color-pf-red-300: #ff9991;
+  --color-pf-red-400: #ff5e52;
+  --color-pf-red-500: #fe0d01;
+  --color-pf-red-600: #e10b00;
+  --color-pf-red-700: #bc0900;
+  --color-pf-red-800: #980800;
+  --color-pf-red-900: #7e0c07;
 
-  --color-pf-blue: #001689;
+  /* PF Alimentos - Secondary Blue (#001689) */
+  --color-pf-blue-50: #eff3ff;
+  --color-pf-blue-100: #dbe4ff;
+  --color-pf-blue-200: #bdcdff;
+  --color-pf-blue-300: #91aeff;
+  --color-pf-blue-400: #5e84ff;
+  --color-pf-blue-500: #2b56ff;
+  --color-pf-blue-600: #001689;
+  --color-pf-blue-700: #00116b;
+  --color-pf-blue-800: #000c4d;
+  --color-pf-blue-900: #000833;
+
+  /* Semantic - Success (Green) */
+  --color-pf-success-50: #f0fdf4;
+  --color-pf-success-100: #dcfce7;
+  --color-pf-success-200: #bbf7d0;
+  --color-pf-success-300: #86efac;
+  --color-pf-success-400: #4ade80;
+  --color-pf-success-500: #22c55e;
+  --color-pf-success-600: #16a34a;
+  --color-pf-success-700: #15803d;
+  --color-pf-success-800: #166534;
+  --color-pf-success-900: #14532d;
+
+  /* Semantic - Warning (Amber) */
+  --color-pf-warning-50: #fffbeb;
+  --color-pf-warning-100: #fef3c7;
+  --color-pf-warning-200: #fde68a;
+  --color-pf-warning-300: #fcd34d;
+  --color-pf-warning-400: #fbbf24;
+  --color-pf-warning-500: #f59e0b;
+  --color-pf-warning-600: #d97706;
+  --color-pf-warning-700: #b45309;
+  --color-pf-warning-800: #92400e;
+  --color-pf-warning-900: #78350f;
+
+  /* Semantic - Info (Blue/Cyan) */
+  --color-pf-info-50: #eff6ff;
+  --color-pf-info-100: #dbeafe;
+  --color-pf-info-200: #bfdbfe;
+  --color-pf-info-300: #93c5fd;
+  --color-pf-info-400: #60a5fa;
+  --color-pf-info-500: #3b82f6;
+  --color-pf-info-600: #2563eb;
+  --color-pf-info-700: #1d4ed8;
+  --color-pf-info-800: #1e40af;
+  --color-pf-info-900: #1e3a8a;
+
+  /* Neutral - Slate based for modern feel */
+  --color-pf-neutral-50: #f8fafc;
+  --color-pf-neutral-100: #f1f5f9;
+  --color-pf-neutral-200: #e2e8f0;
+  --color-pf-neutral-300: #cbd5e1;
+  --color-pf-neutral-400: #94a3b8;
+  --color-pf-neutral-500: #64748b;
+  --color-pf-neutral-600: #475569;
+  --color-pf-neutral-700: #334155;
+  --color-pf-neutral-800: #1e293b;
+  --color-pf-neutral-900: #0f172a;
+
+  /* Layout and UI aliases */
+  --color-pf-primary: var(--color-pf-red-500);
+  --color-pf-secondary: var(--color-pf-blue-600);
+
+  --color-pf-light: var(--color-pf-neutral-50);
+  --color-pf-sidebar: #ffffff;
+  --color-pf-border: var(--color-pf-neutral-200);
+  --color-pf-text: var(--color-pf-neutral-800);
+  --color-pf-text-muted: var(--color-pf-neutral-500);
+
+  /* Legacy & Helper Aliases */
+  --color-pf-red: var(--color-pf-red-500);
+  --color-pf-blue: var(--color-pf-blue-600);
+  --color-pf-red-hover: var(--color-pf-red-600);
 }
 
 body {
-  @apply bg-pf-light text-slate-800 antialiased;
+  @apply bg-pf-light text-pf-text antialiased;
   user-select: none;
 }

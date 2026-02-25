@@ -3,7 +3,10 @@
 // UTILIDADES DE FORMATO
 export const clp = (v: number) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(v);
 export const num = (v: number) => new Intl.NumberFormat('es-CL').format(v);
-export const fechaFmt = (d: Date) => d.toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit' });
+export const fechaFmt = (d: Date | string) => {
+  const dateObj = typeof d === 'string' ? new Date(d) : d;
+  return dateObj.toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit' });
+};
 
 // LÓGICA DE SEMANAS
 export const getWeekID = (date: Date): string => {

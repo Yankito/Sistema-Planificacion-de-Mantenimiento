@@ -54,77 +54,80 @@ export const TransactionSidePanel: React.FC<TransactionSidePanelProps> = ({
     const getGastoStyles = (tipo?: string) => {
         const t = (tipo || '').toUpperCase();
         if (t === 'BODEGA') return {
-            bg: 'bg-blue-50',
-            border: 'border-blue-100',
-            text: 'text-blue-700',
-            dot: 'bg-blue-500',
-            label: 'text-blue-600',
-            checkbox: 'border-blue-300'
+            bg: 'bg-pf-blue-50',
+            border: 'border-pf-blue-100',
+            text: 'text-pf-blue-700',
+            dot: 'bg-pf-blue-500',
+            label: 'text-pf-blue-600',
+            checkbox: 'border-pf-blue-300'
         };
         if (t === 'SERV_EXT') return {
-            bg: 'bg-emerald-50',
-            border: 'border-emerald-100',
-            text: 'text-emerald-700',
-            dot: 'bg-emerald-500',
-            label: 'text-emerald-600',
-            checkbox: 'border-emerald-300'
+            bg: 'bg-pf-success-50',
+            border: 'border-pf-success-100',
+            text: 'text-pf-success-700',
+            dot: 'bg-pf-success-500',
+            label: 'text-pf-success-600',
+            checkbox: 'border-pf-success-300'
         };
         if (t === 'CORRECTIVO') return {
-            bg: 'bg-red-50',
-            border: 'border-red-100',
-            text: 'text-red-700',
-            dot: 'bg-red-500',
-            label: 'text-red-600',
-            checkbox: 'border-red-300'
+            bg: 'bg-pf-red-50',
+            border: 'border-pf-red-100',
+            text: 'text-pf-red-700',
+            dot: 'bg-pf-red',
+            label: 'text-pf-red-600',
+            checkbox: 'border-pf-red-300'
         };
         return {
-            bg: 'bg-slate-50',
-            border: 'border-slate-100',
-            text: 'text-slate-700',
-            dot: 'bg-slate-500',
-            label: 'text-slate-600',
-            checkbox: 'border-slate-300'
+            bg: 'bg-pf-neutral-50',
+            border: 'border-pf-neutral-100',
+            text: 'text-pf-neutral-700',
+            dot: 'bg-pf-neutral-500',
+            label: 'text-pf-neutral-600',
+            checkbox: 'border-pf-neutral-300'
         };
     };
 
     return (
         <div className="fixed inset-0 z-[100] overflow-hidden flex justify-end">
-            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" onClick={onClose}></div>
+            <div className="absolute inset-0 bg-pf-neutral-900/40 backdrop-blur-md transition-opacity duration-500" onClick={onClose}></div>
 
-            <div className="relative w-full max-w-2xl bg-white shadow-2xl h-full flex flex-col animate-in slide-in-from-right duration-300">
+            <div className="relative w-full max-w-2xl bg-white shadow-[0_0_50px_rgba(0,0,0,0.1)] h-full flex flex-col animate-in slide-in-from-right duration-500 rounded-l-[3rem] border-l border-pf-neutral-100">
                 {/* Panel Header */}
-                <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-white shadow-sm z-10">
+                <div className="px-8 py-6 border-b border-pf-neutral-100 flex items-center justify-between bg-white/80 backdrop-blur-md rounded-tl-[3rem] sticky top-0 z-10">
                     <div>
-                        <h3 className="text-lg font-bold text-slate-800 select-text">{title}</h3>
-                        <p className="text-xs text-slate-500">Haz clic en las tarjetas para sumar y comparar contra el presupuesto</p>
+                        <h3 className="text-xl font-black text-pf-neutral-800 select-text uppercase tracking-tight">{title}</h3>
+                        <p className="text-[10px] text-pf-neutral-400 font-black uppercase tracking-widest mt-1">Suma y compara transacciones contra presupuesto</p>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-4">
                         {selectedIndices.size > 0 && (
                             <button
                                 onClick={clearSelection}
-                                className="text-[10px] font-bold text-blue-600 hover:text-blue-800 px-3 py-1.5 bg-blue-50 rounded-lg transition-colors uppercase tracking-wider"
+                                className="text-[10px] font-black text-pf-blue-600 hover:text-white px-4 py-2 bg-pf-blue-50 border border-pf-blue-100 hover:bg-pf-blue-600 rounded-xl transition-all uppercase tracking-widest flex items-center gap-2 active:scale-95"
                             >
-                                Limpiar Selección ({selectedIndices.size})
+                                <X size={12} />
+                                Limpiar ({selectedIndices.size})
                             </button>
                         )}
                         <button
                             onClick={onClose}
-                            className="p-2 hover:bg-slate-100 rounded-full transition-colors"
+                            className="p-3 hover:bg-pf-neutral-900 hover:text-white rounded-2xl transition-all active:scale-95 text-pf-neutral-400 border border-transparent hover:border-pf-neutral-900"
                         >
-                            <X size={20} className="text-slate-500" />
+                            <X size={20} />
                         </button>
                     </div>
                 </div>
 
                 {/* Panel Content (Scrollable Table) */}
-                <div className="flex-1 overflow-y-auto p-4 pb-48">
+                <div className="flex-1 overflow-y-auto p-8 pb-48 custom-scrollbar">
                     {transactions.length === 0 ? (
-                        <div className="h-full flex flex-col items-center justify-center text-slate-400 italic gap-2">
-                            <Info size={40} className="opacity-20" />
-                            <p>No hay transacciones individuales registradas.</p>
+                        <div className="h-full flex flex-col items-center justify-center text-pf-neutral-300 gap-6">
+                            <div className="p-8 bg-pf-neutral-50 rounded-full border border-pf-neutral-100 shadow-inner">
+                                <Info size={48} className="opacity-30" />
+                            </div>
+                            <p className="font-black uppercase tracking-[0.2em] text-xs">No hay registros detallados</p>
                         </div>
                     ) : (
-                        <div className="space-y-4">
+                        <div className="space-y-5">
                             {transactions.map((trx, tIdx) => {
                                 const styles = getGastoStyles(trx.tipoGasto);
                                 const isSelected = selectedIndices.has(tIdx);
@@ -132,81 +135,84 @@ export const TransactionSidePanel: React.FC<TransactionSidePanelProps> = ({
                                     <div
                                         key={tIdx}
                                         onClick={() => toggleSelection(tIdx)}
-                                        className={`bg-white border rounded-xl overflow-hidden shadow-sm group/card hover:shadow-md transition-all cursor-pointer relative ${isSelected ? 'ring-2 ring-blue-500 scale-[0.99] shadow-inner' : styles.border}`}
+                                        className={`bg-white border rounded-[1.5rem] overflow-hidden shadow-sm group/card hover:shadow-xl hover:scale-[1.01] transition-all cursor-pointer relative ${isSelected ? 'ring-4 ring-pf-blue-500/10 border-pf-blue-500 shadow-pf-blue-100' : styles.border}`}
                                     >
-                                        <div className={`px-4 py-2 border-b flex justify-between items-center ${styles.bg} ${styles.border}`}>
-                                            <div className="flex items-center gap-3">
-                                                <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${isSelected ? 'bg-blue-600 border-blue-600' : 'bg-white ' + styles.checkbox}`}>
+                                        <div className={`px-5 py-3 border-b flex justify-between items-center ${styles.bg} ${styles.border}`}>
+                                            <div className="flex items-center gap-4">
+                                                <div className={`w-5 h-5 rounded-lg border flex items-center justify-center transition-all ${isSelected ? 'bg-pf-blue-600 border-pf-blue-600 rotate-12 scale-110 shadow-lg shadow-pf-blue-200' : 'bg-white ' + styles.checkbox}`}>
                                                     {isSelected && <div className="w-1.5 h-1.5 bg-white rounded-full"></div>}
                                                 </div>
-                                                <div className="flex items-center gap-2">
-                                                    <div className={`w-2 h-2 rounded-full ${styles.dot}`}></div>
-                                                    <span className={`text-[10px] font-black uppercase tracking-wider ${styles.label}`}>
+                                                <div className="flex items-center gap-2.5">
+                                                    <div className={`w-2.5 h-2.5 rounded-full shadow-sm ${styles.dot}`}></div>
+                                                    <span className={`text-[10px] font-black uppercase tracking-[0.15em] ${styles.label}`}>
                                                         {trx.tipoGasto}
                                                     </span>
                                                 </div>
                                             </div>
-                                            <span className="text-xs font-bold text-slate-400">
-                                                ID: {trx.numeroOt || 'N/A'}
+                                            <span className="text-[10px] font-black text-pf-neutral-400 uppercase tracking-widest bg-white/50 px-2 py-1 rounded-md">
+                                                OT: {trx.numeroOt || 'SIN ID'}
                                             </span>
                                         </div>
 
-                                        <div className="p-4">
-                                            <div className="flex justify-between items-start mb-3">
-                                                <h4 className="text-sm font-bold text-slate-800 flex-1 leading-tight">{trx.descripcionArticulo}</h4>
-                                                <span className={`text-sm font-black ml-4 ${isSelected ? 'text-blue-600' : 'text-slate-900'}`}>
-                                                    {formatCurrency(trx.costoTrx)}
-                                                </span>
+                                        <div className="p-5">
+                                            <div className="flex justify-between items-start mb-5 gap-6">
+                                                <h4 className="text-sm font-black text-pf-neutral-800 flex-1 leading-tight tracking-tight">{trx.descripcionArticulo}</h4>
+                                                <div className="flex flex-col items-end">
+                                                    <span className={`text-lg font-black tracking-tighter ${isSelected ? 'text-pf-blue-600' : 'text-black'}`}>
+                                                        {formatCurrency(trx.costoTrx)}
+                                                    </span>
+                                                    <span className="text-[8px] font-black text-pf-neutral-300 uppercase tracking-[0.2em]">Costo Transacción</span>
+                                                </div>
                                             </div>
 
-                                            <div className="grid grid-cols-2 gap-y-2 gap-x-4 mt-4 border-t border-slate-50 pt-3">
+                                            <div className="grid grid-cols-2 gap-y-4 gap-x-6 mt-4 border-t border-pf-neutral-50 pt-5">
                                                 <div className="flex flex-col">
-                                                    <span className="text-[9px] text-slate-400 uppercase font-bold">OT Relacionada</span>
-                                                    <div className="flex items-center gap-1 text-xs font-semibold text-slate-600 select-text">
+                                                    <span className="text-[9px] text-pf-neutral-400 uppercase font-black tracking-widest mb-1.5">OT EAM</span>
+                                                    <div className="flex items-center gap-2 text-xs font-bold text-pf-neutral-700 select-text">
                                                         {trx.numeroOt || 'N/A'}
-                                                        {trx.numeroOt && <ExternalLink size={10} className="text-slate-400 opacity-0 group-hover/card:opacity-100 transition-opacity" />}
+                                                        {trx.numeroOt && <ExternalLink size={12} className="text-pf-neutral-300 opacity-0 group-hover/card:opacity-100 transition-opacity cursor-help" />}
                                                     </div>
                                                 </div>
                                                 <div className="flex flex-col">
-                                                    <span className="text-[9px] text-slate-400 uppercase font-bold">Tipo OT</span>
-                                                    <div className="flex items-center gap-1 text-xs font-semibold text-slate-600 select-text">
+                                                    <span className="text-[9px] text-pf-neutral-400 uppercase font-black tracking-widest mb-1.5">Categoría OT</span>
+                                                    <div className="flex items-center gap-1 text-xs font-bold text-pf-neutral-700 select-text">
                                                         {trx.tipoOt || 'N/A'}
                                                     </div>
                                                 </div>
                                                 <div className="flex flex-col">
-                                                    <span className="text-[9px] text-slate-400 uppercase font-bold">Estado Trabajo</span>
-                                                    <div className={`flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-md w-fit ${trx.estadoTrabajo === 'LIBERADO' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' :
-                                                        trx.estadoTrabajo === 'Liberado' ? 'bg-blue-50 text-blue-600 border border-blue-100' :
-                                                            trx.estadoTrabajo === 'Finalizar - Sin Cargos' ? 'bg-slate-100 text-slate-600 border border-slate-200' :
-                                                                'bg-white text-slate-600 border border-slate-100'
+                                                    <span className="text-[9px] text-pf-neutral-400 uppercase font-black tracking-widest mb-1.5">Estado Gestión</span>
+                                                    <div className={`flex items-center gap-1 text-[9px] font-black px-2 py-1 rounded-lg w-fit border uppercase tracking-widest shadow-sm ${trx.estadoTrabajo === 'LIBERADO' ? 'bg-pf-success-50 text-pf-success-600 border-pf-success-100' :
+                                                        trx.estadoTrabajo === 'Liberado' ? 'bg-pf-blue-50 text-pf-blue-600 border-pf-blue-100' :
+                                                            trx.estadoTrabajo === 'Finalizar - Sin Cargos' ? 'bg-pf-neutral-50 text-pf-neutral-400 border-pf-neutral-100' :
+                                                                'bg-white text-pf-neutral-600 border-pf-neutral-100'
                                                         }`}>
                                                         {trx.estadoTrabajo || 'N/A'}
                                                     </div>
                                                 </div>
                                                 <div className="flex flex-col">
-                                                    <span className="text-[9px] text-slate-400 uppercase font-bold">Fecha Programada</span>
-                                                    <span className={`text-xs font-semibold ${trx.alertaFecha === 1 ? 'text-indigo-600' : 'text-slate-600'}`}>
+                                                    <span className="text-[9px] text-pf-neutral-400 uppercase font-black tracking-widest mb-1.5">Fecha Programa</span>
+                                                    <span className={`text-xs font-bold ${trx.alertaFecha === 1 ? 'text-pf-blue-500' : 'text-pf-neutral-600'}`}>
                                                         {trx.fechaOtPro ? new Date(trx.fechaOtPro).toLocaleDateString('es-CL') : 'N/A'}
                                                     </span>
                                                 </div>
                                                 <div className="flex flex-col">
-                                                    <span className="text-[9px] text-slate-400 uppercase font-bold">Fecha Transacción</span>
-                                                    <span className="text-xs font-semibold text-slate-600 select-text">
+                                                    <span className="text-[9px] text-pf-neutral-400 uppercase font-black tracking-widest mb-1.5">Registro Contable</span>
+                                                    <span className="text-xs font-bold text-pf-neutral-600 select-text">
                                                         {trx.fechaTrx ? new Date(trx.fechaTrx).toLocaleDateString('es-CL') : 'N/A'}
                                                     </span>
                                                 </div>
-                                                <div className="flex flex-col col-span-2 bg-slate-50/50 p-2 rounded-lg mt-1">
-                                                    <span className="text-[9px] text-slate-400 uppercase font-bold mb-1">Descripción OT</span>
-                                                    <span className="text-xs text-slate-500 italic leading-snug select-text">
-                                                        {trx.descripcionOt || 'Sin descripción'}
+                                                <div className="flex flex-col col-span-2 bg-pf-neutral-50/50 p-3 rounded-xl mt-1 border border-pf-neutral-100/50">
+                                                    <span className="text-[9px] text-pf-neutral-400 uppercase font-black tracking-widest mb-1.5">Resumen de Trabajo</span>
+                                                    <span className="text-xs text-pf-neutral-500 leading-snug select-text">
+                                                        {trx.descripcionOt || 'Descripción de OT no disponible en el sistema.'}
                                                     </span>
                                                 </div>
                                             </div>
 
                                             {trx.alertaFecha === 1 && (
-                                                <div className="mt-3 flex items-center gap-2 bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-lg border border-indigo-100 text-[10px] font-medium">
-                                                    <AlertCircle size={12} />
-                                                    La fecha de programa no coincide con el periodo de transacción.
+                                                <div className="mt-4 flex items-center gap-3 bg-pf-blue-50 text-pf-blue-700 px-4 py-2 rounded-xl border border-pf-blue-100 text-[10px] font-black uppercase tracking-widest shadow-sm">
+                                                    <AlertCircle size={14} className="animate-pulse" />
+                                                    Desfase Temporal: Gastos fuera de periodo programado.
                                                 </div>
                                             )}
                                         </div>
@@ -218,40 +224,43 @@ export const TransactionSidePanel: React.FC<TransactionSidePanelProps> = ({
                 </div>
 
                 {/* Panel Footer */}
-                <div className="absolute bottom-0 left-0 right-0 p-4 bg-white/90 backdrop-blur-md border-t border-slate-100 shadow-2xl">
+                <div className="absolute bottom-0 left-0 right-0 p-6 bg-white/90 backdrop-blur-xl border-t border-pf-neutral-100 shadow-[0_-20px_40px_rgba(0,0,0,0.05)] rounded-t-[2.5rem]">
                     {selectedIndices.size > 0 ? (
-                        <div className="bg-slate-900 text-white rounded-2xl p-4 shadow-2xl flex flex-col gap-3 animate-in slide-in-from-bottom-4 duration-300">
+                        <div className="bg-pf-neutral-900 text-white rounded-[2rem] p-6 shadow-2xl flex flex-col gap-4 animate-in slide-in-from-bottom-6 duration-500 ring-4 ring-pf-neutral-900/5">
                             <div className="flex items-center justify-between">
                                 <div className="flex flex-col">
-                                    <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-400 mb-1">Suma Seleccionada</span>
-                                    <h4 className="text-2xl font-black tabular-nums">{formatCurrency(selectedSum)}</h4>
+                                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-pf-blue-400 mb-1.5">Suma Comparativa</span>
+                                    <h4 className="text-3xl font-black tabular-nums tracking-tighter">{formatCurrency(selectedSum)}</h4>
                                 </div>
                                 <button
                                     onClick={clearSelection}
-                                    className="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-colors border border-slate-700"
+                                    className="bg-pf-neutral-800 hover:bg-pf-red text-white px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border border-pf-neutral-700 active:scale-95 shadow-lg"
                                 >
-                                    Desmarcar
+                                    Reiniciar
                                 </button>
                             </div>
 
                             {totalContextBudget !== undefined && (
-                                <div className="space-y-2 border-t border-slate-800 pt-3">
-                                    <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider">
-                                        <span className="text-slate-400">Consumo de Presupuesto ({title})</span>
-                                        <span className={selectedSum > totalContextBudget ? 'text-pf-red' : 'text-emerald-400'}>
+                                <div className="space-y-3 border-t border-pf-neutral-800 pt-4">
+                                    <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
+                                        <span className="text-pf-neutral-400">Consumo Proporcional ({title})</span>
+                                        <span className={selectedSum > totalContextBudget ? 'text-pf-red shadow-sm' : 'text-pf-success-400'}>
                                             {((selectedSum / (totalContextBudget || 1)) * 100).toFixed(1)}%
                                         </span>
                                     </div>
-                                    <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden border border-slate-700">
+                                    <div className="w-full bg-pf-neutral-800 rounded-full h-3 overflow-hidden border border-pf-neutral-700 p-0.5">
                                         <div
-                                            className={`h-full rounded-full transition-all duration-500 ${selectedSum > totalContextBudget ? 'bg-pf-red' : 'bg-emerald-500'}`}
+                                            className={`h-full rounded-full transition-all duration-700 shadow-sm ${selectedSum > totalContextBudget ? 'bg-pf-red shadow-pf-red/20' : 'bg-pf-success-500 shadow-pf-success-500/20'}`}
                                             style={{ width: `${Math.min((selectedSum / (totalContextBudget || 1)) * 100, 100)}%` }}
                                         />
                                     </div>
-                                    <div className="flex justify-between items-center text-[10px] text-slate-500 font-medium">
-                                        <span>Presupuesto: {formatCurrency(totalContextBudget)}</span>
-                                        <span className={selectedSum > totalContextBudget ? 'text-pf-red' : 'text-slate-400'}>
-                                            {selectedSum > totalContextBudget ? 'Exceso: ' : 'Resto: '}
+                                    <div className="flex justify-between items-center text-[10px] text-pf-neutral-500 font-bold uppercase tracking-tighter">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-pf-neutral-600"></div>
+                                            <span>Meta: {formatCurrency(totalContextBudget)}</span>
+                                        </div>
+                                        <span className={selectedSum > totalContextBudget ? 'text-pf-red animate-pulse' : 'text-pf-neutral-400'}>
+                                            {selectedSum > totalContextBudget ? 'Sobregiro: ' : 'Remanente: '}
                                             {formatCurrency(Math.abs(totalContextBudget - selectedSum))}
                                         </span>
                                     </div>
@@ -259,32 +268,35 @@ export const TransactionSidePanel: React.FC<TransactionSidePanelProps> = ({
                             )}
                         </div>
                     ) : (
-                        <div className="flex flex-col gap-3">
-                            <div className="flex items-center justify-between px-2">
+                        <div className="flex flex-col gap-4 px-2">
+                            <div className="flex items-center justify-between">
                                 <div className="flex flex-col">
-                                    <span className="text-[10px] font-bold text-slate-400 uppercase">Resumen del grupo</span>
-                                    <span className="text-xs font-bold text-slate-600">{transactions.length} transacciones</span>
+                                    <span className="text-[10px] font-black text-pf-neutral-400 uppercase tracking-widest mb-1">Métricas de Grupo</span>
+                                    <span className="text-xs font-black text-pf-neutral-600 tracking-tighter">{transactions.length} Transacciones registradas</span>
                                 </div>
                                 <div className="flex flex-col items-end">
-                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Suma Total Real</span>
-                                    <span className={`text-lg font-black ${totalContextBudget && totalTransactionsSum > totalContextBudget ? 'text-pf-red' : 'text-slate-800'}`}>
+                                    <span className="text-[10px] font-black text-pf-neutral-400 uppercase tracking-widest mb-1">Gasto Total Real</span>
+                                    <span className={`text-2xl font-black tabular-nums tracking-tighter ${totalContextBudget && totalTransactionsSum > totalContextBudget ? 'text-pf-red' : 'text-pf-neutral-800'}`}>
                                         {formatCurrency(totalTransactionsSum)}
                                     </span>
                                 </div>
                             </div>
 
                             {totalContextBudget !== undefined && (
-                                <div className="px-2 space-y-1.5">
-                                    <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
+                                <div className="space-y-2">
+                                    <div className="w-full bg-pf-neutral-100 rounded-full h-2 overflow-hidden border border-pf-neutral-200/50 p-0.5 shadow-inner">
                                         <div
-                                            className={`h-full rounded-full transition-all duration-500 ${totalTransactionsSum > totalContextBudget ? 'bg-pf-red' : 'bg-emerald-500'}`}
+                                            className={`h-full rounded-full transition-all duration-700 ${totalTransactionsSum > totalContextBudget ? 'bg-pf-red shadow-pf-red/10' : 'bg-pf-success-500/80 shadow-pf-success-500/10'}`}
                                             style={{ width: `${Math.min((totalTransactionsSum / (totalContextBudget || 1)) * 100, 100)}%` }}
                                         />
                                     </div>
-                                    <div className="flex justify-between text-[9px] font-black uppercase text-slate-400 tracking-tighter">
-                                        <span>Presupuesto: {formatCurrency(totalContextBudget)}</span>
-                                        <span className={totalTransactionsSum > totalContextBudget ? 'text-pf-red' : 'text-emerald-600'}>
-                                            Ejecución: {((totalTransactionsSum / (totalContextBudget || 1)) * 100).toFixed(1)}%
+                                    <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-pf-neutral-400">
+                                        <span className="flex items-center gap-2">
+                                            <Info size={12} className="text-pf-neutral-300" />
+                                            Presupuesto Asignado: {formatCurrency(totalContextBudget)}
+                                        </span>
+                                        <span className={totalTransactionsSum > totalContextBudget ? 'text-pf-red' : 'text-pf-success-600'}>
+                                            Efectividad: {((totalTransactionsSum / (totalContextBudget || 1)) * 100).toFixed(1)}%
                                         </span>
                                     </div>
                                 </div>

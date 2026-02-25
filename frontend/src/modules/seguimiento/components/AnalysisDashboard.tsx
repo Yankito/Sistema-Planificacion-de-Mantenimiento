@@ -12,28 +12,28 @@ const OTDetailView = ({ otItem, allData, onBack, onTechClick }: { otItem: OTFlow
 
   return (
     <div className="flex flex-col h-full bg-white">
-      <div className="p-6 border-b border-slate-100 sticky top-0 z-10 bg-white">
-        <button onClick={onBack} className="flex items-center gap-1 text-xs font-bold text-slate-400 hover:text-slate-600 mb-4 transition-colors"><ChevronLeft size={16} /> VOLVER A LISTA</button>
+      <div className="p-6 border-b border-pf-neutral-100 sticky top-0 z-10 bg-white">
+        <button onClick={onBack} className="flex items-center gap-1 text-xs font-bold text-pf-neutral-400 hover:text-pf-neutral-600 mb-4 transition-colors"><ChevronLeft size={16} /> VOLVER A LISTA</button>
         <div className="flex items-center gap-2 mb-2">
-          <span className="bg-blue-50 text-blue-600 px-2 py-0.5 rounded text-[10px] font-black border border-blue-100">{otItem.planta}</span>
-          <span className={`px-2 py-0.5 rounded text-[10px] font-black border ${otItem.tipoMovimiento === 'NUEVA' ? 'bg-red-50 text-red-600 border-red-100' : 'bg-green-50 text-green-600 border-green-100'}`}>{otItem.tipoMovimiento}</span>
+          <span className="bg-pf-blue-50 text-pf-blue-600 px-2 py-0.5 rounded text-[10px] font-black border border-pf-blue-100/50">{otItem.planta}</span>
+          <span className={`px-2 py-0.5 rounded text-[10px] font-black border ${otItem.tipoMovimiento === 'NUEVA' ? 'bg-pf-red-50 text-pf-red-600 border-pf-red-100/50' : 'bg-pf-success-50 text-pf-success-600 border-pf-success-100/50'}`}>{otItem.tipoMovimiento}</span>
         </div>
-        <h2 className="text-2xl font-mono font-black text-slate-800 tracking-tight mb-2">{otItem.ot}</h2>
-        <p className="text-sm text-slate-600 font-medium leading-relaxed bg-slate-50 p-3 rounded-lg border border-slate-100">{otItem.descripcion}</p>
+        <h2 className="text-2xl font-mono font-black text-pf-neutral-800 tracking-tight mb-2">{otItem.ot}</h2>
+        <p className="text-sm text-pf-neutral-600 font-medium leading-relaxed bg-pf-neutral-50 p-3 rounded-lg border border-pf-neutral-100">{otItem.descripcion}</p>
 
-        <div className="mt-4 flex items-center justify-between text-xs pt-2 border-t border-slate-50">
-          <span className="font-bold text-slate-400 uppercase">Evolución</span>
+        <div className="mt-4 flex items-center justify-between text-xs pt-2 border-t border-pf-neutral-50">
+          <span className="font-bold text-pf-neutral-400 uppercase tracking-widest">Evolución</span>
           <div className="flex items-center gap-2">
-            <span className="text-slate-400 line-through">{otItem.estadoAnterior || "-"}</span>
-            <ArrowRight size={12} className="text-slate-300" />
-            <span className="font-black text-blue-600 bg-blue-50 px-2 py-1 rounded">{otItem.estadoActual}</span>
+            <span className="text-pf-neutral-400 line-through">{otItem.estadoAnterior || "-"}</span>
+            <ArrowRight size={12} className="text-pf-neutral-300" />
+            <span className="font-black text-pf-blue-600 bg-pf-blue-50 px-2 py-1 rounded border border-pf-blue-100/50">{otItem.estadoActual}</span>
           </div>
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-2">
-        <h3 className="text-xs font-black text-slate-400 uppercase mb-2 px-1">Técnicos Asignados</h3>
-        {tecnicos.length === 0 ? <div className="text-center py-8 text-slate-300 italic text-xs">Sin asignación</div> : tecnicos.map((t, i) => (
+        <h3 className="text-[10px] font-black text-pf-neutral-400 uppercase mb-3 px-1 tracking-widest">Técnicos Asignados</h3>
+        {tecnicos.length === 0 ? <div className="text-center py-8 text-pf-neutral-300 italic text-xs">Sin asignación</div> : tecnicos.map((t, i) => (
           <div
             key={i}
             role="button"
@@ -45,13 +45,13 @@ const OTDetailView = ({ otItem, allData, onBack, onTechClick }: { otItem: OTFlow
                 onTechClick(t.tecnico.nombre);
               }
             }}
-            className="flex justify-between items-center p-3 rounded-xl border border-slate-100 hover:border-purple-200 hover:shadow-md cursor-pointer transition-all bg-white group focus:outline-none focus:ring-2 focus:ring-purple-400"
+            className="flex justify-between items-center p-3 rounded-xl border border-pf-neutral-100 hover:border-pf-blue-200 hover:shadow-md cursor-pointer transition-all bg-white group focus:outline-none focus:ring-2 focus:ring-pf-blue-400"
           >
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-xs font-black text-slate-500 group-hover:bg-purple-100 group-hover:text-purple-600">{t.tecnico.nombre.substring(0, 2)}</div>
-              <span className="text-sm font-bold text-slate-700 group-hover:text-purple-700">{t.tecnico.nombre}</span>
+              <div className="w-8 h-8 rounded-lg bg-pf-neutral-100 flex items-center justify-center text-xs font-black text-pf-neutral-500 group-hover:bg-pf-blue-100 group-hover:text-pf-blue-600">{t.tecnico.nombre.substring(0, 2)}</div>
+              <span className="text-sm font-bold text-pf-neutral-700 group-hover:text-pf-blue-700">{t.tecnico.nombre}</span>
             </div>
-            {t.opFinalizada ? <CheckCircle2 size={16} className="text-green-500" /> : <div className="w-4 h-4 rounded-full border-2 border-slate-200"></div>}
+            {t.opFinalizada ? <CheckCircle2 size={16} className="text-pf-success-500" /> : <div className="w-4 h-4 rounded-full border-2 border-pf-neutral-200"></div>}
           </div>
         ))}
       </div>
@@ -158,12 +158,12 @@ export const AnalysisDashboard = ({
       <div role="button"
         tabIndex={-1}
         aria-label="Cerrar modal"
-        className={`absolute inset-0 bg-slate-900/40 backdrop-blur-[1px] transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0'}`}
+        className={`absolute inset-0 bg-pf-neutral-900/40 backdrop-blur-[1px] transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0'}`}
         onClick={onClose} onKeyDown={(e) => e.key === 'Escape' && onClose()}
       />
 
       {/* PANEL LATERAL */}
-      <div className={`relative w-full max-w-2xl bg-white h-full shadow-2xl flex flex-col transform transition-transform duration-300 ease-out border-l border-slate-100 ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+      <div className={`relative w-full max-w-2xl bg-white h-full shadow-2xl flex flex-col transform transition-transform duration-300 ease-out border-l border-pf-neutral-100 ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
 
         {/* VISTA 1: DETALLE OT */}
         {currentView.type === 'OT_DETAIL' && (

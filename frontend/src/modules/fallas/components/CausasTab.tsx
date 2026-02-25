@@ -5,7 +5,7 @@ import type { FiltroDrill, GrupoMecanicoStats } from "../types";
 interface CausasTabProps {
   analytics: {
     porCausa: GrupoMecanicoStats[];
-    totalEventos: number;
+    totalFallas: number;
   };
   filtroDrill: FiltroDrill | null;
   setFiltroDrill: (f: FiltroDrill | null) => void;
@@ -29,7 +29,7 @@ export const CausasTab = ({ analytics, filtroDrill, setFiltroDrill }: CausasTabP
               </div>
               <div className="text-right">
                 <div className="font-black text-blue-600 text-lg">{item.count}</div>
-                <div className="text-[9px] text-slate-400 uppercase font-bold">Eventos</div>
+                <div className="text-[9px] text-slate-400 uppercase font-bold">Fallas</div>
               </div>
             </div>
           ))}
@@ -39,7 +39,7 @@ export const CausasTab = ({ analytics, filtroDrill, setFiltroDrill }: CausasTabP
         <div className="p-4 bg-amber-50 rounded-full text-amber-500 mb-4"><AlertTriangle size={32} /></div>
         <h3 className="text-lg font-bold text-slate-800">Insight de Causas</h3>
         <p className="text-slate-500 text-sm max-w-xs mt-2">
-          La causa <b>"{analytics.porCausa[0]?.label}"</b> representa el <b className="text-blue-600">{((analytics.porCausa[0]?.count / analytics.totalEventos) * 100).toFixed(1)}%</b> de todos los incidentes.
+          La causa <b>"{analytics.porCausa[0]?.label}"</b> representa el <b className="text-blue-600">{((analytics.porCausa[0]?.count / analytics.totalFallas) * 100).toFixed(1)}%</b> de todos los incidentes.
         </p>
         {filtroDrill?.tipo === 'CAUSA' && (
           <button onClick={() => setFiltroDrill(null)} className="mt-6 px-4 py-2 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-200">Limpiar Filtro</button>

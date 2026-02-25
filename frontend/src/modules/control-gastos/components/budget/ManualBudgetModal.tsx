@@ -205,131 +205,137 @@ export const ManualBudgetModal: React.FC<ManualBudgetModalProps> = React.memo(({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[70] flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col animate-in fade-in zoom-in duration-200">
-        <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+    <div className="fixed inset-0 bg-pf-neutral-900/80 backdrop-blur-md z-[70] flex items-center justify-center p-4">
+      <div className="bg-white rounded-[2.5rem] shadow-2xl border border-pf-neutral-200 w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col animate-in fade-in zoom-in duration-300">
+        <div className="p-6 border-b border-pf-neutral-100 flex justify-between items-center bg-white">
           <div>
-            <h3 className="font-bold text-slate-800">Gestionar Presupuesto Manual</h3>
-            <p className="text-[10px] text-slate-500">Solo para activos marcados como <span className="text-emerald-600 font-bold">Mantenibles</span></p>
+            <h3 className="text-xl font-black text-pf-neutral-800 uppercase tracking-tight">Gestionar Presupuesto Manual</h3>
+            <p className="text-[10px] text-pf-neutral-400 font-bold uppercase tracking-widest mt-1">Configuración personalizada de recursos por activo</p>
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-slate-200 rounded-lg text-slate-400 transition-colors"
+            className="p-3 hover:bg-pf-red hover:text-white rounded-2xl text-pf-neutral-400 transition-all active:scale-95 border border-transparent hover:border-pf-red shadow-sm"
           >
-            <X size={18} />
+            <X size={20} />
           </button>
         </div>
 
         <div className="p-6 overflow-y-auto flex-1 custom-scrollbar">
           {!selectedAsset ? (
-            <div className="space-y-4">
-              <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest">Seleccionar Activo</label>
-              <div className="relative">
+            <div className="space-y-6">
+              <label className="block text-[10px] font-black text-pf-neutral-400 uppercase tracking-[0.2em] ml-1">Buscar Activo Maestro</label>
+              <div className="relative group">
                 {searchLoading ? (
-                  <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-500 animate-spin" size={18} />
+                  <Loader2 className="absolute left-5 top-1/2 -translate-y-1/2 text-pf-red animate-spin" size={20} />
                 ) : (
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                  <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-pf-neutral-300 group-focus-within:text-pf-red transition-colors" size={20} />
                 )}
                 <input
                   type="text"
-                  placeholder="Buscar por nombre o clase..."
+                  placeholder="Escriba nombre del activo o clase contable..."
                   value={assetSearch}
                   onChange={(e) => handleSearchInternal(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                  className="w-full pl-14 pr-6 py-4 bg-pf-neutral-50/50 border border-pf-neutral-200 rounded-[1.5rem] text-sm font-medium focus:ring-4 focus:ring-pf-red/5 focus:border-pf-red outline-none transition-all placeholder:text-pf-neutral-300"
                 />
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
                 {maintainableAssets.map(asset => (
                   <button
                     key={asset.activo}
                     onClick={() => setSelectedAsset(asset)}
-                    className="flex flex-col p-3 border border-slate-100 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all text-left group cursor-pointer"
+                    className="flex flex-col p-5 border border-pf-neutral-100 rounded-[1.5rem] hover:border-pf-red hover:bg-pf-red/5 transition-all text-left group cursor-pointer relative overflow-hidden active:scale-[0.98] shadow-sm hover:shadow-md"
                   >
-                    <span className="font-bold text-slate-700 group-hover:text-blue-700">{asset.activo}</span>
-                    <span className="text-[10px] text-slate-400">{asset.claseContable} • {asset.organizacion}</span>
+                    <div className="absolute right-0 top-0 w-16 h-16 bg-pf-red/5 rounded-bl-full translate-x-8 -translate-y-8 group-hover:bg-pf-red/10 transition-colors"></div>
+                    <span className="font-black text-pf-neutral-800 tracking-tight text-base mb-1 group-hover:text-pf-red transition-colors">{asset.activo}</span>
+                    <span className="text-[10px] font-black text-pf-neutral-400 uppercase tracking-widest">{asset.claseContable} • {asset.organizacion}</span>
                   </button>
                 ))}
                 {assetSearch.length > 2 && maintainableAssets.length === 0 && (
-                  <div className="col-span-full py-8 text-center text-slate-400 text-xs">No se encontraron activos mantenibles.</div>
+                  <div className="col-span-full py-16 text-center text-pf-neutral-300 font-black uppercase tracking-[0.3em] text-[10px]">No se encontraron activos para esta búsqueda.</div>
                 )}
                 {assetSearch.length <= 2 && (
-                  <div className="col-span-full py-8 text-center text-slate-400 text-xs italic">Escriba al menos 3 caracteres para buscar...</div>
+                  <div className="col-span-full py-16 text-center text-pf-neutral-300 font-black uppercase tracking-[0.2em] text-[10px]">Escriba al menos 3 caracteres para iniciar búsqueda ministerial...</div>
                 )}
               </div>
             </div>
           ) : (
-            <div className="space-y-8 animate-in slide-in-from-right-4 duration-300 pb-12">
-              <div className="flex items-center justify-between bg-blue-50 p-4 rounded-xl border border-blue-100 sticky top-0 z-20">
-                <div>
-                  <p className="text-[10px] uppercase font-bold text-blue-400 mb-1">Activo Seleccionado</p>
-                  <h4 className="font-bold text-blue-900">{selectedAsset.activo}</h4>
+            <div className="space-y-8 animate-in slide-in-from-right-10 duration-500 pb-12">
+              <div className="flex flex-col sm:flex-row items-center justify-between bg-pf-neutral-50 p-6 rounded-[1.5rem] border border-pf-neutral-200 top-0 z-20 shadow-sm gap-4">
+                <div className="text-center sm:text-left">
+                  <p className="text-[10px] uppercase font-black text-pf-neutral-400 tracking-widest mb-1.5 opacity-60">Ficha Presupuestaria de Activo</p>
+                  <h4 className="font-black text-pf-neutral-800 text-lg tracking-tight">{selectedAsset.activo}</h4>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-4 items-center justify-center">
                   <button
-                    onClick={() => setManualEntries([...manualEntries, createEmptyEntry(`Tarea ${manualEntries.length + 1}`)])}
-                    className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer"
+                    onClick={() => setManualEntries([...manualEntries, createEmptyEntry(`Plan ${manualEntries.length + 1}`)])}
+                    className="px-5 py-2.5 bg-pf-red text-white rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2.5 transition-all hover:bg-black active:scale-95 shadow-lg shadow-pf-red/10"
                   >
-                    <Plus size={14} /> Agregar Fila
+                    <Plus size={16} /> Nuevo Plan
                   </button>
-                  <button onClick={() => setSelectedAsset(null)} className="text-xs text-blue-600 font-bold hover:underline cursor-pointer">Cambiar Activo</button>
+                  <button onClick={() => setSelectedAsset(null)} className="text-[10px] text-pf-neutral-400 font-black uppercase tracking-widest border-b border-pf-neutral-200 hover:border-pf-red hover:text-pf-red transition-all cursor-pointer px-1">Cambiar Activo</button>
                 </div>
               </div>
 
               {dataLoading ? (
-                <div className="py-20 flex flex-col items-center justify-center space-y-4">
-                  <Loader2 className="w-12 h-12 text-blue-500 animate-spin" />
-                  <p className="text-sm font-medium text-slate-500">Cargando presupuesto del activo...</p>
+                <div className="py-32 flex flex-col items-center justify-center space-y-6">
+                  <div className="relative">
+                    <Loader2 className="w-16 h-16 text-pf-red animate-spin" />
+                    <div className="absolute inset-0 bg-pf-red opacity-10 blur-xl animate-pulse rounded-full"></div>
+                  </div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-pf-neutral-300 animate-pulse pl-1">Extrayendo datos financieros...</p>
                 </div>
               ) : (
-                <div className="space-y-6">
+                <div className="space-y-8">
                   {manualEntries.map((entry, entryIdx) => (
-                    <div key={entry.id} className="bg-slate-50 rounded-2xl border border-slate-200 relative group/entry shadow-sm overflow-hidden">
-                      <div className="bg-white px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-                        <div className="flex items-center gap-4">
+                    <div key={entry.id} className="bg-pf-neutral-50/30 rounded-[2rem] border border-pf-neutral-100 relative group/entry shadow-sm overflow-hidden transition-all hover:shadow-md">
+                      <div className="bg-white/80 backdrop-blur-sm px-8 py-5 border-b border-pf-neutral-100 flex items-center justify-between">
+                        <div className="flex items-center gap-5">
                           <button
                             onClick={() => {
                               const copy = [...manualEntries];
                               copy[entryIdx].collapsed = !copy[entryIdx].collapsed;
                               setManualEntries(copy);
                             }}
-                            className="p-1 hover:bg-slate-50 rounded-lg text-slate-400 transition-colors cursor-pointer"
+                            className={`p-1.5 hover:bg-pf-neutral-800 hover:text-white rounded-xl text-pf-neutral-400 transition-all cursor-pointer ${entry.collapsed ? '' : 'bg-pf-neutral-50 shadow-inner'}`}
                           >
                             {entry.collapsed ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
                           </button>
                           <div>
-                            <h5 className="font-bold text-slate-700 leading-none mb-1">
-                              {entry.frecuencia || 'Nueva Tarea'}
+                            <h5 className="font-black text-pf-neutral-800 uppercase tracking-tight mb-1">
+                              {entry.frecuencia || 'Tarea sin nombre'}
                             </h5>
-                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                              {entry.isPredefined ? (entry.frecuencia === 'hito' ? 'Presupuesto por Hito' : `Frecuencia ${entry.frecuencia}`) : 'Personalizado / Libre'}
-                            </p>
+                            <div className="flex items-center gap-2">
+                              <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${entry.isPredefined ? 'bg-pf-blue-500 text-white border-pf-blue-600' : 'bg-pf-neutral-800 text-white border-pf-neutral-900'}`}>
+                                {entry.isPredefined ? (entry.frecuencia === 'hito' ? 'HITO ESPECÍFICO' : `FREQ ${entry.frecuencia}`) : 'CATEGORÍA LIBRE'}
+                              </span>
+                            </div>
                           </div>
                         </div>
                         <div className="flex items-center gap-3">
                           <button
                             onClick={() => setManualEntries(manualEntries.filter(e => e.id !== entry.id))}
-                            className="p-2 text-slate-300 hover:text-pf-red transition-colors"
-                            title="Eliminar tarea"
+                            className="p-2.5 text-pf-neutral-300 hover:text-pf-red hover:bg-pf-red/10 rounded-xl transition-all active:scale-90"
+                            title="Eliminar planificación"
                           >
-                            <X size={16} />
+                            <X size={20} />
                           </button>
                         </div>
                       </div>
 
                       {!entry.collapsed && (
-                        <div className="p-6 animate-in slide-in-from-top-4 duration-300">
-                          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                        <div className="p-8 animate-in slide-in-from-top-4 duration-500">
+                          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10">
                             <div>
-                              <label className="block text-[10px] font-black uppercase text-slate-400 mb-2 tracking-wider">Tipo de Frecuencia</label>
+                              <label className="block text-[10px] font-black uppercase text-pf-neutral-400 mb-3 tracking-[0.2em] ml-1">Frecuencia</label>
                               <select
                                 value={FRECUENCIAS_PREDEFINIDAS.includes(entry.frecuencia.toLowerCase()) ? entry.frecuencia.toLowerCase() : 'personalizado'}
-                                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm"
+                                className="w-full px-4 py-3 bg-white border border-pf-neutral-200 rounded-xl text-[11px] font-black uppercase tracking-wider focus:ring-4 focus:ring-pf-blue-500/10 focus:border-pf-blue-500 transition-all outline-none"
                                 onChange={(e) => {
                                   const val = e.target.value;
                                   const copy = [...manualEntries];
                                   if (val === 'personalizado') {
                                     copy[entryIdx].isPredefined = false;
-                                    copy[entryIdx].frecuencia = 'Nueva Tarea';
+                                    copy[entryIdx].frecuencia = 'Nuevo Plan';
                                     for (let i = 1; i <= 12; i++) copy[entryIdx].monthlyData[i].locked = false;
                                     setManualEntries(copy);
                                   } else {
@@ -350,16 +356,16 @@ export const ManualBudgetModal: React.FC<ManualBudgetModalProps> = React.memo(({
                                 <option value="trimestral">Trimestral</option>
                                 <option value="semestral">Semestral</option>
                                 <option value="anual">Anual</option>
-                                <option value="hito">Hito / Mes Específico</option>
+                                <option value="hito">Hito</option>
                               </select>
                             </div>
 
                             {['bimensual', 'trimestral', 'semestral', 'anual', 'hito'].includes(entry.frecuencia.toLowerCase()) && (
-                              <div className="animate-in fade-in duration-300">
-                                <label className="block text-[10px] font-black uppercase text-slate-400 mb-2 tracking-wider">Empieza en Mes</label>
+                              <div className="animate-in fade-in slide-in-from-left-2 duration-500">
+                                <label className="block text-[10px] font-black uppercase text-pf-neutral-400 mb-3 tracking-[0.2em] ml-1">Mes de Inicio</label>
                                 <select
                                   value={entry.startMonth || 1}
-                                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm"
+                                  className="w-full px-4 py-3 bg-white border border-pf-neutral-200 rounded-xl text-[11px] font-black uppercase tracking-wider focus:ring-4 focus:ring-pf-blue-500/10 focus:border-pf-blue-500 transition-all outline-none"
                                   onChange={(e) => {
                                     const copy = [...manualEntries];
                                     const currentBaseAmounts = {
@@ -377,28 +383,29 @@ export const ManualBudgetModal: React.FC<ManualBudgetModalProps> = React.memo(({
                               </div>
                             )}
 
-                            <div className={['bimensual', 'trimestral', 'semestral', 'anual', 'hito'].includes(entry.frecuencia.toLowerCase()) ? 'md:col-span-1' : 'md:col-span-2'}>
-                              <label className="block text-[10px] font-black uppercase text-slate-400 mb-2 tracking-wider">Nombre de la Frecuencia</label>
-                              <input
-                                type="text"
-                                value={entry.frecuencia}
-                                disabled={entry.isPredefined}
-                                onChange={(e) => {
-                                  const copy = [...manualEntries];
-                                  copy[entryIdx].frecuencia = e.target.value;
-                                  setManualEntries(copy);
-                                }}
-                                placeholder="Ej: Mantenimiento Especial"
-                                className={`w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 outline-none transition-all ${entry.isPredefined ? 'bg-slate-100 text-slate-500 border-slate-100' : 'bg-white border-slate-200'}`}
-                              />
-                            </div>
+                            {!entry.isPredefined && (
+                              <div className="md:col-span-3 animate-in fade-in slide-in-from-right-2 duration-500">
+                                <label className="block text-[10px] font-black uppercase text-pf-neutral-400 mb-3 tracking-[0.2em] ml-1">Nombre de Gasto Personalizado</label>
+                                <input
+                                  type="text"
+                                  value={entry.frecuencia}
+                                  onChange={(e) => {
+                                    const copy = [...manualEntries];
+                                    copy[entryIdx].frecuencia = e.target.value;
+                                    setManualEntries(copy);
+                                  }}
+                                  placeholder="Ej: Mantención Refinería 01, Insumos Especiales, etc."
+                                  className="w-full px-5 py-3.5 bg-white border border-pf-neutral-200 rounded-xl text-sm font-black uppercase tracking-wider focus:ring-4 focus:ring-pf-red/5 focus:border-pf-red outline-none transition-all"
+                                />
+                              </div>
+                            )}
 
-                            {entry.frecuencia !== 'personalizado' && (
-                              <div className="flex items-end gap-2 animate-in fade-in duration-300">
-                                <div className="flex-1">
-                                  <label className="block text-[10px] font-black uppercase text-slate-400 mb-2 tracking-wider text-center">Montos de Referencia</label>
-                                  <div className="flex gap-1">
-                                    <input type="number" placeholder="Bod." className="w-1/3 p-2 text-[10px] bg-white border rounded"
+                            {entry.isPredefined && (
+                              <div className={`${['bimensual', 'trimestral', 'semestral', 'anual', 'hito'].includes(entry.frecuencia.toLowerCase()) ? 'md:col-span-2' : 'md:col-span-3'} animate-in fade-in slide-in-from-right-2 duration-500`}>
+                                <label className="block text-[10px] font-black uppercase text-pf-neutral-400 mb-3 tracking-[0.2em]">Montos de Referencia (Automáticos)</label>
+                                <div className="grid grid-cols-3 gap-6">
+                                  <div className="relative">
+                                    <input type="number" placeholder="Bodega" className="w-full pl-5 pr-4 py-3.5 text-sm font-black bg-white border border-pf-neutral-200 rounded-xl focus:border-pf-blue-500 focus:ring-4 focus:ring-pf-blue-500/5 outline-none transition-all placeholder:text-[9px] shadow-sm"
                                       value={entry.monthlyData[entry.startMonth || 1]?.bodega || ''}
                                       onChange={(e) => {
                                         const copy = [...manualEntries];
@@ -406,7 +413,10 @@ export const ManualBudgetModal: React.FC<ManualBudgetModalProps> = React.memo(({
                                         applyFrequencyLogic(entryIdx, entry.frecuencia, { b: Number(e.target.value), s: copy[entryIdx].monthlyData[sm].servExt, c: copy[entryIdx].monthlyData[sm].correctivo }, sm);
                                       }}
                                     />
-                                    <input type="number" placeholder="Serv." className="w-1/3 p-2 text-[10px] bg-white border rounded"
+                                    <div className="absolute -top-1.5 -right-1 w-2.5 h-2.5 rounded-full bg-pf-blue-500 border-2 border-white shadow-sm"></div>
+                                  </div>
+                                  <div className="relative">
+                                    <input type="number" placeholder="Serv." className="w-full pl-5 pr-4 py-3.5 text-sm font-black bg-white border border-pf-neutral-200 rounded-xl focus:border-pf-success-500 focus:ring-4 focus:ring-pf-success-500/5 outline-none transition-all placeholder:text-[9px] shadow-sm"
                                       value={entry.monthlyData[entry.startMonth || 1]?.servExt || ''}
                                       onChange={(e) => {
                                         const copy = [...manualEntries];
@@ -414,7 +424,10 @@ export const ManualBudgetModal: React.FC<ManualBudgetModalProps> = React.memo(({
                                         applyFrequencyLogic(entryIdx, entry.frecuencia, { b: copy[entryIdx].monthlyData[sm].bodega, s: Number(e.target.value), c: copy[entryIdx].monthlyData[sm].correctivo }, sm);
                                       }}
                                     />
-                                    <input type="number" placeholder="Corr." className="w-1/3 p-2 text-[10px] bg-white border rounded"
+                                    <div className="absolute -top-1.5 -right-1 w-2.5 h-2.5 rounded-full bg-pf-success-500 border-2 border-white shadow-sm"></div>
+                                  </div>
+                                  <div className="relative">
+                                    <input type="number" placeholder="Corr." className="w-full pl-5 pr-4 py-3.5 text-sm font-black bg-white border border-pf-neutral-200 rounded-xl focus:border-pf-red focus:ring-4 focus:ring-pf-red/5 outline-none transition-all placeholder:text-[9px] shadow-sm"
                                       value={entry.monthlyData[entry.startMonth || 1]?.correctivo || ''}
                                       onChange={(e) => {
                                         const copy = [...manualEntries];
@@ -422,31 +435,32 @@ export const ManualBudgetModal: React.FC<ManualBudgetModalProps> = React.memo(({
                                         applyFrequencyLogic(entryIdx, entry.frecuencia, { b: copy[entryIdx].monthlyData[sm].bodega, s: copy[entryIdx].monthlyData[sm].servExt, c: Number(e.target.value) }, sm);
                                       }}
                                     />
+                                    <div className="absolute -top-1.5 -right-1 w-2.5 h-2.5 rounded-full bg-pf-red border-2 border-white shadow-sm"></div>
                                   </div>
                                 </div>
                               </div>
                             )}
                           </div>
 
-                          <div className="overflow-x-auto bg-white rounded-xl border border-slate-200">
-                            <table className="w-full text-left text-[10px]">
-                              <thead className="bg-slate-50 border-b border-slate-100">
-                                <tr className="text-slate-400 font-black">
-                                  <th className="py-2 px-3 w-16">Mes</th>
-                                  <th className="py-2 px-1">Bodega</th>
-                                  <th className="py-2 px-1">Serv. Ext</th>
-                                  <th className="py-2 px-1">Correctivo</th>
+                          <div className="overflow-x-auto bg-white/50 backdrop-blur-sm rounded-[1.5rem] border border-pf-neutral-100 shadow-inner">
+                            <table className="w-full text-left text-[10px] min-w-[500px]">
+                              <thead className="bg-pf-neutral-50 border-b border-pf-neutral-100">
+                                <tr className="text-pf-neutral-400 font-black uppercase tracking-widest bg-pf-neutral-50/50">
+                                  <th className="py-5 px-6 w-32 border-r border-pf-neutral-100">Mes Período</th>
+                                  <th className="py-5 px-6 text-pf-blue-500 border-r border-pf-neutral-100">Presupuesto Bodega</th>
+                                  <th className="py-5 px-6 text-pf-success-600 border-r border-pf-neutral-100">Servicios Externos</th>
+                                  <th className="py-5 px-6 text-pf-red">Correctivo</th>
                                 </tr>
                               </thead>
-                              <tbody className="divide-y divide-slate-50">
+                              <tbody className="divide-y divide-pf-neutral-100/50">
                                 {months.map((m, mIdx) => {
                                   const monthNum = mIdx + 1;
                                   const data = entry.monthlyData[monthNum];
-                                  const isLocked = entry.frecuencia !== 'personalizado';
+                                  const isLocked = entry.isPredefined;
                                   return (
-                                    <tr key={monthNum} className={isLocked ? 'bg-slate-50/50' : ''}>
-                                      <td className="py-1.5 px-3 font-bold text-slate-500 uppercase">{m}</td>
-                                      <td className="py-1 px-1">
+                                    <tr key={monthNum} className={`transition-all duration-300 ${isLocked ? 'bg-pf-neutral-50/10' : 'hover:bg-pf-blue-50/20'}`}>
+                                      <td className="py-4 px-6 font-black text-pf-neutral-500 uppercase tracking-tighter border-r border-pf-neutral-100/50 bg-pf-neutral-50/30">{m}</td>
+                                      <td className="py-3 px-6 border-r border-pf-neutral-100/50">
                                         <input
                                           type="number"
                                           value={data.bodega || ''}
@@ -456,10 +470,10 @@ export const ManualBudgetModal: React.FC<ManualBudgetModalProps> = React.memo(({
                                             copy[entryIdx].monthlyData[monthNum].bodega = Number(e.target.value);
                                             setManualEntries(copy);
                                           }}
-                                          className={`w-full px-2 py-1 bg-white border ${isLocked ? 'border-transparent text-slate-400' : 'border-slate-100'} rounded text-right transition-all`}
+                                          className={`w-full px-5 py-3 bg-white border font-black text-sm ${isLocked ? 'border-transparent text-pf-neutral-300 bg-transparent' : 'border-pf-neutral-200 focus:border-pf-blue-500 focus:ring-4 focus:ring-pf-blue-500/5 outline-none shadow-sm'} rounded-xl text-right transition-all`}
                                         />
                                       </td>
-                                      <td className="py-1 px-1">
+                                      <td className="py-3 px-6 border-r border-pf-neutral-100/50">
                                         <input
                                           type="number"
                                           value={data.servExt || ''}
@@ -469,10 +483,10 @@ export const ManualBudgetModal: React.FC<ManualBudgetModalProps> = React.memo(({
                                             copy[entryIdx].monthlyData[monthNum].servExt = Number(e.target.value);
                                             setManualEntries(copy);
                                           }}
-                                          className={`w-full px-2 py-1 bg-white border ${isLocked ? 'border-transparent text-slate-400' : 'border-slate-100'} rounded text-right transition-all`}
+                                          className={`w-full px-5 py-3 bg-white border font-black text-sm ${isLocked ? 'border-transparent text-pf-neutral-300 bg-transparent' : 'border-pf-neutral-200 focus:border-pf-success-500 focus:ring-4 focus:ring-pf-success-500/5 outline-none shadow-sm'} rounded-xl text-right transition-all`}
                                         />
                                       </td>
-                                      <td className="py-1 px-1">
+                                      <td className="py-3 px-6">
                                         <input
                                           type="number"
                                           value={data.correctivo || ''}
@@ -482,7 +496,7 @@ export const ManualBudgetModal: React.FC<ManualBudgetModalProps> = React.memo(({
                                             copy[entryIdx].monthlyData[monthNum].correctivo = Number(e.target.value);
                                             setManualEntries(copy);
                                           }}
-                                          className={`w-full px-2 py-1 bg-white border ${isLocked ? 'border-transparent text-slate-400' : 'border-slate-100'} rounded text-right transition-all`}
+                                          className={`w-full px-5 py-3 bg-white border font-black text-sm ${isLocked ? 'border-transparent text-pf-neutral-300 bg-transparent' : 'border-pf-neutral-100/50 focus:border-pf-red focus:ring-4 focus:ring-pf-red/5 outline-none shadow-sm'} rounded-xl text-right transition-all`}
                                         />
                                       </td>
                                     </tr>
@@ -497,13 +511,16 @@ export const ManualBudgetModal: React.FC<ManualBudgetModalProps> = React.memo(({
                   ))}
 
                   {manualEntries.length === 0 && (
-                    <div className="py-12 border-2 border-dashed border-slate-200 rounded-2xl text-center">
-                      <p className="text-slate-400 text-sm">No hay líneas de presupuesto. Agregue una para comenzar.</p>
+                    <div className="py-24 border-2 border-dashed border-pf-neutral-100 rounded-[2.5rem] bg-pf-neutral-50/30 text-center flex flex-col items-center">
+                      <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center border border-pf-neutral-100 mb-6 shadow-sm">
+                        <Plus className="text-pf-neutral-300" size={32} />
+                      </div>
+                      <p className="text-pf-neutral-300 font-black uppercase tracking-[0.2em] text-[10px] mb-8">No hay líneas de planificación ministerial.</p>
                       <button
                         onClick={() => setManualEntries([createEmptyEntry('mensual')])}
-                        className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold"
+                        className="px-8 py-3 bg-pf-neutral-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all hover:bg-black hover:scale-105 active:scale-95 shadow-xl shadow-pf-neutral-200"
                       >
-                        Comenzar con Nueva Línea
+                        Iniciar Nueva Resolución
                       </button>
                     </div>
                   )}
@@ -513,10 +530,10 @@ export const ManualBudgetModal: React.FC<ManualBudgetModalProps> = React.memo(({
           )}
         </div>
 
-        <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
+        <div className="p-6 bg-pf-neutral-50/80 backdrop-blur-md border-t border-pf-neutral-100 flex justify-end gap-5">
           <button
             onClick={onClose}
-            className="px-5 py-2 text-sm font-bold text-slate-500 hover:bg-slate-200 rounded-xl transition-all"
+            className="px-8 py-3 text-[10px] font-black uppercase tracking-widest text-pf-neutral-400 hover:bg-pf-red hover:text-white rounded-2xl transition-all active:scale-95 border border-transparent hover:border-pf-red hover:shadow-lg hover:shadow-pf-red/20"
           >
             Cancelar
           </button>
@@ -524,10 +541,10 @@ export const ManualBudgetModal: React.FC<ManualBudgetModalProps> = React.memo(({
             <button
               onClick={handleSaveInternal}
               disabled={saveLoading}
-              className="px-6 py-2 bg-emerald-600 text-white rounded-xl text-sm font-bold hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-200 flex items-center gap-2 disabled:bg-slate-300 disabled:shadow-none"
+              className="px-10 py-3 bg-pf-success-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-3 transition-all hover:bg-pf-success-600 active:scale-95 shadow-xl shadow-pf-success-500/20 disabled:bg-pf-neutral-200 disabled:text-pf-neutral-400 disabled:shadow-none"
             >
               {saveLoading ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
-              Guardar Presupuesto
+              Confirmar Presupuesto
             </button>
           )}
         </div>

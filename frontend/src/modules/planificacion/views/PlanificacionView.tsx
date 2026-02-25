@@ -83,16 +83,16 @@ export const PlanificacionView = () => {
   return (
     <div className="flex flex-col h-full gap-4 relative">
       {/* HEADER CON FILTROS Y ALGORITMOS */}
-      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between bg-white p-6 rounded-[2.5rem] border border-pf-border shadow-sm gap-6">
+      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between bg-white p-6 rounded-[2.5rem] border border-pf-neutral-200 shadow-sm gap-6">
         <div className="flex items-center gap-6">
           <div className="flex flex-col w-56">
-            <label className="text-[10px] font-black text-slate-400 uppercase mb-1 px-1 flex items-center gap-1">
-              <CalendarDays size={12} /> Mes de Planificación
+            <label className="text-[10px] font-black text-pf-neutral-400 uppercase mb-1 px-1 flex items-center gap-1 tracking-widest">
+              <CalendarDays size={12} className="text-pf-red" /> Mes de Planificación
             </label>
             <select
               value={periodoSeleccionado}
               onChange={(e) => setPeriodoSeleccionado(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 font-bold text-slate-700 outline-none"
+              className="w-full bg-pf-neutral-50 border border-pf-neutral-200 rounded-xl px-4 py-2.5 font-bold text-pf-neutral-700 outline-none focus:border-pf-red/30 transition-all shadow-sm"
             >
               {monthOpts.map(opt => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -101,13 +101,13 @@ export const PlanificacionView = () => {
           </div>
 
           <div className="flex flex-col w-48">
-            <label className="text-[10px] font-black text-slate-400 uppercase mb-1 px-1 flex items-center gap-1">
-              <div className="w-1 h-3 bg-pf-red rounded-full" /> Planta
+            <label className="text-[10px] font-black text-pf-neutral-400 uppercase mb-1 px-1 flex items-center gap-1 tracking-widest">
+              <div className="w-1.5 h-3 bg-pf-red rounded-full" /> Planta
             </label>
             <select
               value={plantaPlan}
               onChange={(e) => setPlantaPlan(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 font-bold text-slate-700 outline-none"
+              className="w-full bg-pf-neutral-50 border border-pf-neutral-200 rounded-xl px-4 py-2.5 font-bold text-pf-neutral-700 outline-none focus:border-pf-red/30 transition-all shadow-sm"
             >
               {plantas.map((p) => <option key={p} value={p}>{p}</option>)}
             </select>
@@ -115,27 +115,27 @@ export const PlanificacionView = () => {
         </div>
 
         {/* BOTONES DE EJECUCIÓN (Algoritmos) */}
-        <div className="flex items-center gap-3 bg-slate-50 p-2 rounded-2xl border border-slate-100">
+        <div className="flex items-center gap-3 bg-pf-neutral-50 p-2 rounded-2xl border border-pf-neutral-100 shadow-inner">
           <div className="hidden xl:block px-3">
-            <p className="text-[10px] font-black text-slate-400 uppercase leading-none">Algoritmos</p>
-            <p className="text-[8px] font-bold text-slate-300 uppercase mt-0.5 tracking-tighter">Auto-Planificación</p>
+            <p className="text-[10px] font-black text-pf-neutral-400 uppercase leading-none tracking-tighter">Algoritmos</p>
+            <p className="text-[8px] font-black text-pf-neutral-300 uppercase mt-0.5 tracking-widest">Auto-Plan</p>
           </div>
           <button
             onClick={() => planning.ejecutarPlanificacion('STRICT', periodoSeleccionado)}
-            className="flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-[10px] font-black uppercase transition-all active:scale-95 shadow-lg shadow-slate-200"
+            className="flex items-center gap-2 px-5 py-2.5 bg-pf-neutral-900 hover:bg-black text-white rounded-xl text-[10px] font-black uppercase transition-all active:scale-95 shadow-lg shadow-pf-neutral-200"
           >
             <CalendarDays size={14} className="text-pf-red" />
             Continuidad Técnico
           </button>
           <button
             onClick={() => planning.ejecutarPlanificacion('BALANCED', periodoSeleccionado)}
-            className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-[10px] font-black uppercase transition-all active:scale-95"
+            className="flex items-center gap-2 px-5 py-2.5 bg-white hover:bg-pf-neutral-100 text-pf-neutral-700 border border-pf-neutral-200 rounded-xl text-[10px] font-black uppercase transition-all active:scale-95 shadow-sm"
           >
             <div className="w-2 h-2 rounded-full bg-pf-red animate-pulse" />
             Balanceado
           </button>
 
-          <div className="w-px h-8 bg-slate-200 mx-2" />
+          <div className="w-px h-8 bg-pf-neutral-200 mx-1" />
 
           <button
             onClick={async () => {
@@ -143,7 +143,7 @@ export const PlanificacionView = () => {
               if (ok) toast.success("Planificación guardada en Oracle");
               else toast.error("Error al guardar la planificación en Oracle.");
             }}
-            className="flex items-center gap-2 px-4 py-2 bg-pf-red hover:bg-pf-red-dark text-white rounded-xl text-[10px] font-black uppercase transition-all active:scale-95 shadow-lg shadow-pf-red/20"
+            className="flex items-center gap-2 px-5 py-2.5 bg-pf-red hover:bg-pf-red-hover text-white rounded-xl text-[10px] font-black uppercase transition-all active:scale-95 shadow-lg shadow-pf-red/20 font-black"
           >
             Guardar Plan
           </button>
@@ -152,9 +152,12 @@ export const PlanificacionView = () => {
 
       <div className="flex flex-1 gap-6 relative min-h-0">
         {cargandoPlan && (
-          <div className="absolute inset-0 bg-white/50 backdrop-blur-sm z-[200] flex flex-col items-center justify-center rounded-[3rem] gap-4">
-            <Loader2 className="animate-spin text-pf-red" size={48} />
-            <p className="text-slate-600 font-black uppercase tracking-widest text-sm animate-pulse">Sincronizando Oracle...</p>
+          <div className="absolute inset-0 bg-white/70 backdrop-blur-md z-[200] flex flex-col items-center justify-center rounded-[3rem] gap-4 shadow-2xl transition-all animate-in fade-in duration-300">
+            <div className="relative">
+              <Loader2 className="animate-spin text-pf-red" size={56} />
+              <div className="absolute inset-0 animate-ping opacity-20 bg-pf-red rounded-full" />
+            </div>
+            <p className="text-pf-neutral-600 font-black uppercase tracking-[0.3em] text-[11px] animate-pulse">Sincronizando Oracle</p>
           </div>
         )}
 

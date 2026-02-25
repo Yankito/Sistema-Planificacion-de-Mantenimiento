@@ -30,7 +30,7 @@ const mockData: FallaRow[] = [
   createFalla({ planta: 'PF1', anio: 2026, equipo: 'MOTOR_A', gasto: 1000, duracionMinutos: 60, causa: 'ELECTRICO' }),
   createFalla({ planta: 'PF1', anio: 2026, equipo: 'MOTOR_A', gasto: 500, duracionMinutos: 30, causa: 'MECANICO' }),
   createFalla({ planta: 'PF2', anio: 2026, equipo: 'BOMBA_B', gasto: 200, duracionMinutos: 120, causa: 'OPERACIONAL' }),
-  
+
   // AÑO 2025 (Anterior - Para comparación)
   createFalla({ planta: 'PF1', anio: 2025, equipo: 'MOTOR_A', gasto: 800, duracionMinutos: 50, causa: 'ELECTRICO' }),
 ];
@@ -39,20 +39,20 @@ describe('useFallasData Hook', () => {
 
   it('debería inicializar configuraciones y seleccionar el año más reciente', () => {
     const { result } = renderHook(() => useFallasData(mockData));
-    
+
     expect(result.current.config.anios).toEqual([2026, 2025]);
     expect(result.current.config.plantas).toContain('PF1');
     expect(result.current.config.plantas).toContain('PF2');
     expect(result.current.anioFiltro).toBe(2026);
   });
 
-  it('debería calcular KPIs globales (Gasto, Eventos y MTTR) para el año seleccionado', () => {
+  it('debería calcular KPIs globales (Gasto, Fallas y MTTR) para el año seleccionado', () => {
     const { result } = renderHook(() => useFallasData(mockData));
     const { analytics } = result.current;
-    
+
     // Gasto 2026: 1000 + 500 + 200 = 1700
     expect(analytics.totalGasto).toBe(1700);
-    expect(analytics.totalEventos).toBe(3);
+    expect(analytics.totalFallas).toBe(3);
     // MTTR: (60 + 30 + 120) / 3 = 70
     expect(analytics.mttrGlobal).toBe(70);
   });
@@ -63,7 +63,7 @@ describe('useFallasData Hook', () => {
 
     // Gasto 2025: 800
     expect(analytics.totalGastoPrev).toBe(800);
-    
+
     // El ranking debe tener a MOTOR_A con su historia del año pasado
     const motorA = analytics.porFrecuencia.find(d => d.label === 'MOTOR_A');
     expect(motorA).toBeDefined();
@@ -75,7 +75,7 @@ describe('useFallasData Hook', () => {
     const { result } = renderHook(() => useFallasData(mockData));
 
     act(() => {
-        result.current.setPlantaFiltro('PF1');
+      result.current.setPlantaFiltro('PF1');
     });
 
     // PF1 en 2026 tiene 2 registros. Total gasto: 1500
@@ -86,7 +86,7 @@ describe('useFallasData Hook', () => {
   it('debería ordenar los rankings de equipos por costo de forma descendente', () => {
     const { result } = renderHook(() => useFallasData(mockData));
     const ranking = result.current.analytics.porCosto;
-    
+
     // MOTOR_A (1500) es más caro que BOMBA_B (200)
     expect(ranking[0].label).toBe('MOTOR_A');
     expect(ranking[0].gasto).toBe(1500);
@@ -97,7 +97,7 @@ describe('useFallasData Hook', () => {
     const { result } = renderHook(() => useFallasData(mockData));
 
     act(() => {
-        result.current.setFiltroDrill({ tipo: 'CAUSA', valor: 'ELECTRICO' });
+      result.current.setFiltroDrill({ tipo: 'CAUSA', valor: 'ELECTRICO' });
     });
 
     // Solo 1 falla eléctrica en 2026 (PF1, Motor A, 1000)

@@ -17,7 +17,7 @@ export interface GrupoMecanicoStats {
 
 interface HeroStats {
   totalGasto: number;
-  totalEventos: number;
+  totalFallas: number;
   totalTiempo: number;
   topCritico: GrupoMecanicoStats | null;
   topLista: GrupoMecanicoStats[];
@@ -29,9 +29,11 @@ export const useFallasData = (data: FallaRow[]) => {
   const config = useMemo(() => {
     if (data.length === 0) return { semanas: [] as number[], anios: [] as number[], plantas: [] as string[], anioDefault: new Date().getFullYear() };
 
-    const semanas = Array.from(new Set(data.map(d => d.semana))).sort((a, b) => b - a);
-    const anios = Array.from(new Set(data.map(d => d.anio))).sort((a, b) => b - a);
-    const plantas = Array.from(new Set(data.map(d => d.planta))).sort((a, b) => a.localeCompare(b));
+    const formatPlant = (p: string) => (p || "").trim().toUpperCase().replace("PLANTA ", "PF");
+
+    const semanas = Array.from(new Set(data.map(d => Number(d.semana)))).sort((a, b) => a - b);
+    const anios = Array.from(new Set(data.map(d => Number(d.anio)))).sort((a, b) => b - a);
+    const plantas = Array.from(new Set(data.map(d => formatPlant(d.planta)))).sort((a, b) => a.localeCompare(b));
 
     return { semanas, anios, plantas, anioDefault: anios[0] };
   }, [data]);
@@ -46,22 +48,25 @@ export const useFallasData = (data: FallaRow[]) => {
   // FILTRADO PRINCIPAL
   const { datosFiltrados, datosAnioAnterior } = useMemo(() => {
     const semanasAnioActual = data
-      .filter(d => d.anio === anioFiltro)
-      .map(d => d.semana);
-    
+      .filter(d => Number(d.anio) === anioFiltro)
+      .map(d => Number(d.semana));
+
     const maxSemana = semanasAnioActual.length > 0 ? Math.max(...semanasAnioActual) : 52;
+    const formatPlant = (p: string) => (p || "").trim().toUpperCase().replace("PLANTA ", "PF");
+
     const filtrar = (anioTarget: number, esAnioAnterior: boolean) => {
       return data.filter(d => {
-        const matchAnio = d.anio === anioTarget;
-        const matchPlanta = plantaFiltro === "TODAS" ? true : d.planta === plantaFiltro;
-        
+        const matchAnio = Number(d.anio) === anioTarget;
+        const mappedPlanta = formatPlant(d.planta);
+        const matchPlanta = plantaFiltro === "TODAS" ? true : mappedPlanta === plantaFiltro;
+
         // Si estamos filtrando el año anterior para COMPARATIVA GLOBAL (semana "TODAS"),
         // limitamos hasta la semana máxima que tiene el año actual para que el acumulado sea justo.
         let matchSemana = false;
         if (semanaFiltro === "TODAS") {
-          matchSemana = esAnioAnterior ? d.semana <= maxSemana : true;
+          matchSemana = esAnioAnterior ? Number(d.semana) <= maxSemana : true;
         } else {
-          matchSemana = d.semana === Number(semanaFiltro);
+          matchSemana = Number(d.semana) === Number(semanaFiltro);
         }
 
         let matchDrill = true;
@@ -84,13 +89,13 @@ export const useFallasData = (data: FallaRow[]) => {
   const analytics = useMemo(() => {
     const totalGasto = datosFiltrados.reduce((a, b) => a + b.gasto, 0);
     const totalTiempo = datosFiltrados.reduce((a, b) => a + b.duracionMinutos, 0);
-    const totalEventos = datosFiltrados.length;
-    const mttrGlobal = totalEventos > 0 ? totalTiempo / totalEventos : 0;
+    const totalFallas = datosFiltrados.length;
+    const mttrGlobal = totalFallas > 0 ? totalTiempo / totalFallas : 0;
 
     const totalGastoPrev = datosAnioAnterior.reduce((a, b) => a + b.gasto, 0);
     const totalTiempoPrev = datosAnioAnterior.reduce((a, b) => a + b.duracionMinutos, 0);
-    const totalEventosPrev = datosAnioAnterior.length;
-    const mttrGlobalPrev = totalEventosPrev > 0 ? totalTiempoPrev / totalEventosPrev : 0;
+    const totalFallasPrev = datosAnioAnterior.length;
+    const mttrGlobalPrev = totalFallasPrev > 0 ? totalTiempoPrev / totalFallasPrev : 0;
 
     // Mapa Año Anterior
     const prevMap = datosAnioAnterior.reduce((acc, curr) => {
@@ -134,23 +139,26 @@ export const useFallasData = (data: FallaRow[]) => {
     const porCausa = groupBy(d => (d.causa || "S/D").trim().toUpperCase()).sort((a, b) => b.count - a.count).slice(0, Math.max(topN, 10));
 
     const heroStats: HeroStats = {
-      totalGasto, totalEventos, totalTiempo,
+      totalGasto, totalFallas, totalTiempo,
       topCritico: porFrecuencia.length > 0 ? porFrecuencia[0] : null,
       topLista: groupBy(d => d.equipo).sort((a, b) => b.count - a.count).slice(0, 3)
     };
 
     return {
-      totalGasto, totalTiempo, totalEventos, mttrGlobal,
-      totalGastoPrev, totalTiempoPrev, totalEventosPrev, mttrGlobalPrev,
+      totalGasto, totalTiempo, totalFallas, mttrGlobal,
+      totalGastoPrev, totalTiempoPrev, totalFallasPrev, mttrGlobalPrev,
       porCosto, porFrecuencia, porMTTR, porTiempo, porCausa, heroStats
     };
   }, [datosFiltrados, datosAnioAnterior, topN]);
 
   // TIMELINE
   const timelineStats = useMemo(() => {
+    const formatPlant = (p: string) => (p || "").trim().toUpperCase().replace("PLANTA ", "PF");
+
     const datosTimeline = data.filter(d => {
-      const matchAnio = d.anio === anioFiltro;
-      const matchPlanta = plantaFiltro === "TODAS" ? true : d.planta === plantaFiltro;
+      const matchAnio = Number(d.anio) === anioFiltro;
+      const mappedPlanta = formatPlant(d.planta);
+      const matchPlanta = plantaFiltro === "TODAS" ? true : mappedPlanta === plantaFiltro;
       let matchDrill = true;
       if (filtroDrill) {
         if (filtroDrill.tipo === 'EQUIPO') matchDrill = d.equipo === filtroDrill.valor;
@@ -159,14 +167,14 @@ export const useFallasData = (data: FallaRow[]) => {
       return matchAnio && matchPlanta && matchDrill;
     });
 
-    if (datosTimeline.length === 0) return { chartData: [] as {semana: number, count: number, rango: string}[], maxVal: 0 };
+    if (datosTimeline.length === 0) return { chartData: [] as { semana: number, count: number, rango: string }[], maxVal: 0 };
 
     const groups = datosTimeline.reduce((acc, curr) => {
-      acc[curr.semana] = (acc[curr.semana] || 0) + 1;
+      acc[Number(curr.semana)] = (acc[Number(curr.semana)] || 0) + 1;
       return acc;
     }, {} as Record<number, number>);
 
-    const weeks = datosTimeline.map(d => d.semana);
+    const weeks = datosTimeline.map(d => Number(d.semana));
     const minW = Math.min(...weeks);
     const maxW = Math.max(...weeks);
     const chartData = [];
@@ -182,11 +190,14 @@ export const useFallasData = (data: FallaRow[]) => {
 
   const timelineStatsPrev = useMemo(() => {
     const anioPrevio = anioFiltro - 1;
-    
+
+    const formatPlant = (p: string) => (p || "").trim().toUpperCase().replace("PLANTA ", "PF");
+
     // Filtramos usando el año anterior pero manteniendo los otros criterios
     const datosTimeline = data.filter(d => {
-      const matchAnio = d.anio === anioPrevio;
-      const matchPlanta = plantaFiltro === "TODAS" ? true : d.planta === plantaFiltro;
+      const matchAnio = Number(d.anio) === anioPrevio;
+      const mappedPlanta = formatPlant(d.planta);
+      const matchPlanta = plantaFiltro === "TODAS" ? true : mappedPlanta === plantaFiltro;
       let matchDrill = true;
       if (filtroDrill) {
         if (filtroDrill.tipo === 'EQUIPO') matchDrill = d.equipo === filtroDrill.valor;
@@ -198,26 +209,26 @@ export const useFallasData = (data: FallaRow[]) => {
     if (datosTimeline.length === 0) return { chartData: [], maxVal: 0 };
 
     const groups = datosTimeline.reduce((acc, curr) => {
-      acc[curr.semana] = (acc[curr.semana] || 0) + 1;
+      acc[Number(curr.semana)] = (acc[Number(curr.semana)] || 0) + 1;
       return acc;
     }, {} as Record<number, number>);
 
     // Usamos el rango de semanas 1-52 (o el min/max detectado en la data global para consistencia)
     // Para simplificar, usamos el rango detectado en los datos del año previo
-    const weeks = datosTimeline.map(d => d.semana);
-    const minW = Math.min(...weeks); 
+    const weeks = datosTimeline.map(d => Number(d.semana));
+    const minW = Math.min(...weeks);
     const maxW = Math.max(...weeks);
-    
+
     const chartData = [];
     let maxVal = 0;
 
     for (let i = minW; i <= maxW; i++) {
       const countValue = groups[i] || 0;
       if (countValue > maxVal) maxVal = countValue;
-      chartData.push({ 
-          semana: i, 
-          count: countValue, 
-          rango: getRangoSemana(i, anioPrevio) 
+      chartData.push({
+        semana: i,
+        count: countValue,
+        rango: getRangoSemana(i, anioPrevio)
       });
     }
     return { chartData, maxVal };

@@ -75,9 +75,9 @@ export const ResumenTable = ({ titulo, dataset, datasetAnt, esOB, modoVista, isG
     if (!showComparison || !datasetAnt) return null;
 
     const diff = actual - anterior;
-    if (diff === 0) return <span className="text-slate-400 ml-1"><Minus size={10} /></span>;
+    if (diff === 0) return <span className="text-pf-neutral-400 ml-1"><Minus size={10} /></span>;
     const mejoro = modoVista === "CUMPLIDAS" ? diff > 0 : diff < 0;
-    const color = mejoro ? "text-green-600" : "text-red-600";
+    const color = mejoro ? "text-pf-success-600" : "text-pf-red-600";
     return (
       <span className={`flex items-center gap-0.5 font-black text-[10px] ml-1 ${color}`}>
         {diff > 0 ? <TrendingUp size={10} /> : <TrendingDown size={10} />} {Math.abs(diff)}
@@ -92,19 +92,19 @@ export const ResumenTable = ({ titulo, dataset, datasetAnt, esOB, modoVista, isG
   };
 
   return (
-    <div className="rounded-xl border overflow-hidden shadow-sm mb-6 bg-white">
+    <div className="rounded-xl border border-pf-neutral-200 overflow-hidden shadow-sm mb-6 bg-white">
       <table className="w-full text-[11px]">
         <thead>
           <tr
             onClick={() => onDetail()}
-            className={`${modoVista === 'ATRASOS' ? (isGlobal ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-900') : (isGlobal ? 'bg-green-800 text-white' : 'bg-green-50 text-slate-900')} font-black cursor-pointer group`}
+            className={`${modoVista === 'ATRASOS' ? (isGlobal ? 'bg-pf-neutral-800 text-white' : 'bg-pf-neutral-100 text-pf-neutral-900') : (isGlobal ? 'bg-pf-success-800 text-white' : 'bg-pf-success-50 text-pf-neutral-900')} font-black cursor-pointer group`}
           >
             <td className="px-3 py-2 text-xs uppercase flex items-center justify-between">
               <span className="flex items-center gap-2">{modoVista === 'CUMPLIDAS' && <CheckCircle size={12} />} {titulo} {esOB ? '(OB)' : '(OM)'}</span>
               <Search size={12} className="opacity-20 group-hover:opacity-100" />
             </td>
             {columnasPeriodo.map(p => (
-              <td key={p} className="w-24 py-1 text-center border-l border-white/10">
+              <td key={p} className="w-24 py-1 text-center border-l border-white/10 text-xs">
                 <div className="flex items-center justify-center">
                   {p}
                 </div>
@@ -115,10 +115,10 @@ export const ResumenTable = ({ titulo, dataset, datasetAnt, esOB, modoVista, isG
         <tbody>
           {modoVista === "ATRASOS" ? (
             <>
-              <tr className="border-b border-slate-100 bg-slate-50/30 font-black text-slate-900">
+              <tr className="border-b border-pf-neutral-100 bg-pf-neutral-50/30 font-black text-pf-neutral-900">
                 <td
                   onClick={() => onDetail(undefined, undefined)}
-                  className="px-3 py-2 uppercase text-left cursor-pointer hover:bg-slate-100"
+                  className="px-3 py-2 uppercase text-left cursor-pointer hover:bg-pf-neutral-100"
                 >
                   TOTAL ATRASOS
                 </td>
@@ -126,7 +126,7 @@ export const ResumenTable = ({ titulo, dataset, datasetAnt, esOB, modoVista, isG
                   <td
                     key={p}
                     onClick={() => onDetail(undefined, p)} // Filtra por periodo pero sin categoría
-                    className="text-center cursor-pointer hover:bg-indigo-50"
+                    className="text-center cursor-pointer hover:bg-pf-blue-50"
                   >
                     <div className="flex items-center justify-center">
                       {getCount(dataset, p)} {renderDiff(getCount(dataset, p), getCount(datasetAnt, p))}
@@ -135,10 +135,10 @@ export const ResumenTable = ({ titulo, dataset, datasetAnt, esOB, modoVista, isG
                 ))}
               </tr>
               {categorias.map(cat => (
-                <tr key={cat} className="border-b border-slate-50 text-slate-600">
+                <tr key={cat} className="border-b border-pf-neutral-50 text-pf-neutral-600">
                   <td
                     onClick={() => onDetail(cat, undefined)} // Filtra por categoría pero todos los periodos
-                    className="px-3 py-1.5 font-bold uppercase text-left pl-6 text-[10px] cursor-pointer hover:bg-slate-100"
+                    className="px-3 py-1.5 font-bold uppercase text-left pl-6 text-[10px] cursor-pointer hover:bg-pf-neutral-100"
                   >
                     {cat}
                   </td>
@@ -146,7 +146,7 @@ export const ResumenTable = ({ titulo, dataset, datasetAnt, esOB, modoVista, isG
                     <td
                       key={p}
                       onClick={() => onDetail(cat, p)} // Filtra por categoría Y periodo
-                      className="text-center cursor-pointer hover:bg-indigo-50 transition-colors"
+                      className="text-center cursor-pointer hover:bg-pf-blue-50 transition-colors"
                     >
                       <div className="flex items-center justify-center">
                         {getCount(dataset, p, cat)} {renderDiff(getCount(dataset, p, cat), getCount(datasetAnt, p, cat))}
@@ -157,10 +157,10 @@ export const ResumenTable = ({ titulo, dataset, datasetAnt, esOB, modoVista, isG
               ))}
             </>
           ) : (
-            <tr className="hover:bg-green-50/50 font-bold text-green-700">
+            <tr className="hover:bg-pf-success-50/50 font-bold text-pf-success-700">
               <td onClick={() => onDetail()} className="px-3 py-3 uppercase text-left cursor-pointer">TOTAL FINALIZADAS</td>
               {columnasPeriodo.map(p => (
-                <td key={p} onClick={() => onDetail(undefined, p)} className="text-center cursor-pointer hover:bg-green-100">
+                <td key={p} onClick={() => onDetail(undefined, p)} className="text-center cursor-pointer hover:bg-pf-success-100">
                   <div className="flex items-center justify-center text-lg">
                     {getCount(dataset, p)}
                   </div>

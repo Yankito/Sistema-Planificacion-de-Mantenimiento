@@ -58,40 +58,40 @@ export const FallasView = () => {
     }
 
     return (
-        <div className="space-y-6 animate-in fade-in duration-500 pb-20 font-sans text-slate-800">
+        <div className="space-y-6 animate-in fade-in duration-500 pb-20 font-sans text-pf-neutral-800">
 
             {/* HEADER Y FILTROS */}
-            <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm flex flex-col xl:flex-row justify-between items-center gap-6">
+            <div className="bg-white rounded-3xl p-6 border border-pf-neutral-100 shadow-sm flex flex-col xl:flex-row justify-between items-center gap-6">
                 <div>
                     <div className="flex items-center gap-3">
-                        <h2 className="text-2xl font-black text-slate-800 tracking-tight">Dashboard de Activos</h2>
+                        <h2 className="text-2xl font-black text-pf-neutral-800 tracking-tight leading-none uppercase italic">Dashboard de Activos</h2>
                         {filtroDrill && (
-                            <span className="px-3 py-1 bg-pf-red/10 text-pf-red rounded-full text-xs font-bold flex items-center gap-2 cursor-pointer hover:bg-pf-red/20 transition-colors" onClick={() => setFiltroDrill(null)}>
+                            <span className="px-3.5 py-1.5 bg-pf-red/10 text-pf-red rounded-full text-[10px] font-black flex items-center gap-2 cursor-pointer hover:bg-pf-red/20 transition-all shadow-sm border border-pf-red/10" onClick={() => setFiltroDrill(null)}>
                                 <Filter size={12} /> {filtroDrill.valor} <XCircle size={14} />
                             </span>
                         )}
                     </div>
 
-                    <div className="flex items-center gap-4 mt-2">
-                        <p className="text-sm text-slate-500 font-medium">
-                            Visualizando: <span className="font-bold text-slate-700">{rangoTextoHeader}</span>
+                    <div className="flex items-center gap-4 mt-3 pl-0.5">
+                        <p className="text-[11px] text-pf-neutral-500 font-bold uppercase tracking-wider">
+                            Rango: <span className="text-pf-neutral-700">{rangoTextoHeader}</span>
                         </p>
-                        <p className="text-sm text-slate-500 font-medium">
-                            Planta: <span className="font-bold text-slate-700">{plantaFiltro === "TODAS" ? "Todas las Plantas" : plantaFiltro}</span>
+                        <p className="text-[11px] text-pf-neutral-500 font-bold uppercase tracking-wider">
+                            Planta: <span className="text-pf-neutral-700">{plantaFiltro === "TODAS" ? "Global" : plantaFiltro}</span>
                         </p>
                         {filtroDrill?.tipo === 'EQUIPO' && (
-                            <button onClick={() => setActivoSeleccionado(filtroDrill.valor)} className="flex items-center gap-2 bg-slate-800 text-white text-xs font-bold px-3 py-1 rounded-lg hover:bg-slate-700 hover:scale-105 transition-all shadow-md animate-in fade-in slide-in-from-left-2">
-                                Ver Historial Detallado <ArrowRight size={12} />
+                            <button onClick={() => setActivoSeleccionado(filtroDrill.valor)} className="flex items-center gap-2 bg-pf-neutral-900 text-white text-[10px] font-black px-4 py-1.5 rounded-xl hover:bg-black hover:scale-105 transition-all shadow-lg shadow-pf-neutral-200 animate-in fade-in slide-in-from-left-2 uppercase tracking-widest">
+                                Historial Detallado <ArrowRight size={12} />
                             </button>
                         )}
                     </div>
                 </div>
 
                 <div className="flex flex-wrap gap-3 items-center justify-end">
-                    <div className="flex items-center bg-slate-100 p-1 rounded-xl">
-                        <span className="px-2 text-[10px] font-bold text-slate-400 uppercase">Top:</span>
+                    <div className="flex items-center bg-pf-neutral-100 p-1.5 rounded-2xl shadow-inner">
+                        <span className="px-2 text-[9px] font-black text-pf-neutral-400 uppercase tracking-widest">Top:</span>
                         {[5, 10, 20].map(n => (
-                            <button key={n} onClick={() => setTopN(n)} className={`w-7 h-7 rounded-lg text-xs font-bold transition-all ${topN === n ? 'bg-white text-pf-red shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>{n}</button>
+                            <button key={n} onClick={() => setTopN(n)} className={`w-8 h-8 rounded-xl text-xs font-black transition-all ${topN === n ? 'bg-white text-pf-red shadow-sm scale-110' : 'text-pf-neutral-400 hover:text-pf-neutral-600'}`}>{n}</button>
                         ))}
                     </div>
 
@@ -104,11 +104,11 @@ export const FallasView = () => {
                         reportTitle="Reporte de Fallas de Activos"
                     />
 
-                    <div className="h-8 w-[1px] bg-slate-200 hidden sm:block"></div>
-                    <div className="bg-slate-100 p-1 rounded-xl flex">
-                        <button onClick={() => setActiveTab('DASH')} className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${activeTab === 'DASH' ? 'bg-white text-pf-red shadow' : 'text-slate-400'}`}><LayoutDashboard size={14} /> <span className="hidden sm:inline">General</span></button>
-                        <button onClick={() => setActiveTab('CAUSAS')} className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${activeTab === 'CAUSAS' ? 'bg-white text-pf-red shadow' : 'text-slate-400'}`}><PieChart size={14} /> <span className="hidden sm:inline">Causas</span></button>
-                        <button onClick={() => setActiveTab('TABLA')} className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${activeTab === 'TABLA' ? 'bg-white text-pf-red shadow' : 'text-slate-400'}`}><TableIcon size={14} /> <span className="hidden sm:inline">Datos</span></button>
+                    <div className="h-8 w-[1px] bg-pf-neutral-200 hidden sm:block mx-1"></div>
+                    <div className="bg-pf-neutral-100 p-1.5 rounded-2xl flex shadow-inner">
+                        <button onClick={() => setActiveTab('DASH')} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${activeTab === 'DASH' ? 'bg-white text-pf-red shadow-md' : 'text-pf-neutral-400 hover:text-pf-neutral-600'}`}><LayoutDashboard size={14} /> <span className="hidden sm:inline">General</span></button>
+                        <button onClick={() => setActiveTab('CAUSAS')} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${activeTab === 'CAUSAS' ? 'bg-white text-pf-red shadow-md' : 'text-pf-neutral-400 hover:text-pf-neutral-600'}`}><PieChart size={14} /> <span className="hidden sm:inline">Causas</span></button>
+                        <button onClick={() => setActiveTab('TABLA')} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${activeTab === 'TABLA' ? 'bg-white text-pf-red shadow-md' : 'text-pf-neutral-400 hover:text-pf-neutral-600'}`}><TableIcon size={14} /> <span className="hidden sm:inline">Datos</span></button>
                     </div>
                     <div className="flex gap-2">
                         <SelectPill value={semanaFiltro} onChange={setSemanaFiltro} options={config.semanas} label="Semana" allLabel="Todas" />

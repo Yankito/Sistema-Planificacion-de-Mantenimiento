@@ -8,37 +8,17 @@ export const FallasRepository = {
 
         // 2. Insert new data (MERGE)
         const sql = `
-          MERGE INTO PF_IM_FALLAS f
-          USING DUAL ON (f.ot = :ot AND f.fecha = :fecha)
-          WHEN MATCHED THEN
-             UPDATE SET 
-                duracion_minutos = :duracionMinutos, 
-                gasto = :gasto,
-                planta = :planta,
-                area = :area,
-                linea = :linea,
-                equipo = :equipo,
-                causa = :causa,
-                estado_pedido = :estadoPedido,
-                tipo_pedido = :tipoPedido,
-                tecnico = :tecnico,
-                perdida_kg = :perdidaKg,
-                descripcion_operador = :descripcionOperador,
-                semana = :semana,
-                anio = :anio,
-                mes = :mes
-          WHEN NOT MATCHED THEN
-             INSERT (fecha, semana, anio, mes, planta, area, linea, equipo, 
-                     causa, estado_pedido, tipo_pedido, tecnico, ot, duracion_minutos, gasto, 
-                     perdida_kg, descripcion_operador)
-             VALUES (:fecha, :semana, :anio, :mes, :planta, :area, :linea, :equipo, 
-                     :causa, :estadoPedido, :tipoPedido, :tecnico, :ot, :duracionMinutos, :gasto, 
-                     :perdidaKg, :descripcionOperador)
+            INSERT INTO PF_IM_FALLAS (fecha, semana, anio, mes, planta, area, linea, equipo, 
+                    causa, estado_pedido, tipo_pedido, tecnico, pedido_trabajo, duracion_minutos, gasto, 
+                    perdida_kg, descripcion_operador)
+            VALUES (:fecha, :semana, :anio, :mes, :planta, :area, :linea, :equipo, 
+                    :causa, :estadoPedido, :tipoPedido, :tecnico, :pedidoTrabajo, :duracionMinutos, :gasto, 
+                    :perdidaKg, :descripcionOperador)
         `;
 
         const uniqueData = new Map<string, FallaRow>();
         data.forEach(row => {
-            const key = `${row.ot}-${row.fecha}`;
+            const key = `${row.pedidoTrabajo}-${row.fecha}`;
             if (!uniqueData.has(key)) {
                 uniqueData.set(key, row);
             }
@@ -58,7 +38,7 @@ export const FallasRepository = {
             estadoPedido: row.estadoPedido,
             tipoPedido: row.tipoPedido,
             tecnico: row.tecnico,
-            ot: row.ot,
+            pedidoTrabajo: row.pedidoTrabajo,
             duracionMinutos: row.duracionMinutos,
             gasto: row.gasto,
             perdidaKg: row.perdidaKg,

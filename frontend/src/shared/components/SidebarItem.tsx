@@ -14,7 +14,7 @@ interface SidebarItemProps {
 export const SidebarItem = ({
   to, label, icon: Icon, isCollapsed, locked, onClick, className = ""
 }: SidebarItemProps) => {
-  
+
   // Estilos base compartidos
   const baseClasses = `
     flex items-center w-full p-2 rounded-xl transition-all duration-200 group relative
@@ -29,9 +29,9 @@ export const SidebarItem = ({
   // Contenido interno del item
   const renderContent = (isActive: boolean) => (
     <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'space-x-4'}`}>
-      <Icon 
-        size={20} 
-        className={`min-w-[20px] transition-colors ${isActive && !locked ? 'text-pf-red' : ''}`} 
+      <Icon
+        size={20}
+        className={`min-w-[20px] transition-colors ${isActive && !locked ? 'text-pf-red' : ''}`}
       />
       <span className={`
         font-black whitespace-nowrap overflow-hidden transition-all duration-300 uppercase tracking-tight

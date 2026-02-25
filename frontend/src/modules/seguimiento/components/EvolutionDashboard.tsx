@@ -1,6 +1,6 @@
 
 
-import { ArrowRight, PlusCircle, CheckCircle2, ArrowRightCircle } from "lucide-react";
+import { ArrowRight, PlusCircle, CheckCircle2, ArrowRightCircle, AlertCircle } from "lucide-react";
 import type { OTFlowResult } from "../types";
 import { EvolutionGroup } from "./ui/EvolutionGroup";
 
@@ -13,14 +13,18 @@ interface EvolutionCardProps {
 }
 
 export const EvolutionDashboard = ({ nuevas, finalizadas, conAvance, semanaActual, semanaAnterior }: EvolutionCardProps) => {
-  if (!semanaAnterior) return <div className="p-4 bg-yellow-50 text-yellow-700 rounded-xl text-sm font-bold">Selecciona una semana de comparación en el filtro superior para ver la evolución.</div>;
+  if (!semanaAnterior) return (
+    <div className="p-4 bg-pf-warning-50 text-pf-warning-700 border border-pf-warning-100 rounded-xl text-sm font-bold flex items-center gap-2">
+      <AlertCircle size={18} /> Selecciona una semana de comparación para ver la evolución del flujo.
+    </div>
+  );
 
   return (
     <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex items-center gap-2 mb-2">
+      <div className="flex items-center gap-3 mb-2">
         <ArrowRightCircle className="text-pf-red" />
-        <h3 className="text-lg font-black uppercase text-slate-700">Flujo de OTs</h3>
-        <span className="text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200 px-3 py-0.5 rounded-full flex items-center gap-2">
+        <h3 className="text-lg font-black uppercase text-pf-neutral-700 tracking-tight">Flujo de Gestión</h3>
+        <span className="text-[10px] font-black bg-pf-neutral-100 text-pf-neutral-600 border border-pf-neutral-200 px-4 py-1 rounded-full flex items-center gap-2 shadow-sm">
           {semanaAnterior} <ArrowRight size={10} className="text-pf-red" /> {semanaActual}
         </span>
       </div>

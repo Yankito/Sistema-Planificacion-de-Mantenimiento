@@ -54,9 +54,9 @@ export const TrendChart = ({ timelineStats, timelineStatsPrev, showComparison, s
   // Si no hay datos, mostramos estado vacío
   if (!timelineStats || timelineStats.chartData.length === 0) {
     return (
-      <div className="bg-slate-50 border border-dashed border-slate-300 rounded-3xl p-8 text-center flex flex-col items-center gap-2">
-        <BarChart3 className="text-slate-300" size={32} />
-        <p className="text-slate-500 font-medium">No hay datos de tendencia para mostrar con los filtros actuales.</p>
+      <div className="bg-pf-neutral-50 border border-dashed border-pf-neutral-300 rounded-[2rem] p-12 text-center flex flex-col items-center gap-3">
+        <BarChart3 className="text-pf-neutral-300" size={40} />
+        <p className="text-pf-neutral-500 font-black uppercase tracking-widest text-[10px]">Sin datos de tendencia</p>
       </div>
     );
   }
@@ -66,36 +66,36 @@ export const TrendChart = ({ timelineStats, timelineStatsPrev, showComparison, s
 
       {/* --- HEADER DEL GRÁFICO --- */}
       <div
-        className="p-5 bg-slate-50/50 border-b border-slate-100 flex justify-between items-center cursor-pointer hover:bg-slate-50 transition-colors"
+        className="p-5 bg-pf-neutral-50/50 border-b border-pf-neutral-100 flex justify-between items-center cursor-pointer hover:bg-pf-neutral-50 transition-colors"
         onClick={() => setIsChartExpanded(!isChartExpanded)}
       >
-        <div className="flex items-center gap-3">
-          <div className={`p-2.5 rounded-xl shadow-sm transition-colors ${filtroDrill ? 'bg-blue-600 text-white' : (semanaFiltro !== "TODAS" ? 'bg-pf-red text-white' : 'bg-white border border-slate-200 text-slate-700')}`}>
+        <div className="flex items-center gap-4">
+          <div className={`p-2.5 rounded-xl shadow-lg transition-all ${filtroDrill ? 'bg-pf-blue-600 text-white shadow-pf-blue-200' : (semanaFiltro !== "TODAS" ? 'bg-pf-red text-white shadow-pf-red-200' : 'bg-white border border-pf-neutral-200 text-pf-neutral-700')}`}>
             <BarChart3 size={20} />
           </div>
           <div>
-            <h3 className="font-bold text-slate-800 text-base flex items-center gap-2">
+            <h3 className="font-black text-pf-neutral-800 text-base uppercase tracking-tight italic">
               {tituloGrafico}
             </h3>
-            <p className="text-xs text-slate-500 font-medium flex items-center gap-1">
-              {isChartExpanded ? "Evolución semanal de fallas." : "Click para desplegar gráfico."}
+            <p className="text-[10px] text-pf-neutral-500 font-black uppercase tracking-widest mt-0.5 pl-0.5">
+              {isChartExpanded ? "Evolución histórica de detenciones" : "Desplegar análisis temporal"}
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
           {semanaFiltro !== "TODAS" && (
-            <span onClick={(e) => { e.stopPropagation(); setSemanaFiltro("TODAS") }} className="px-3 py-1 bg-pf-red text-white rounded-full text-xs font-bold shadow-sm cursor-pointer hover:bg-red-700 flex items-center gap-1">
-              Semana {semanaFiltro} <XCircle size={12} />
+            <span onClick={(e) => { e.stopPropagation(); setSemanaFiltro("TODAS") }} className="px-3.5 py-1.5 bg-pf-red text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-md cursor-pointer hover:bg-pf-red-600 flex items-center gap-1.5 transition-all active:scale-95">
+              S{semanaFiltro} <XCircle size={14} />
             </span>
           )}
           {filtroDrill && (
-            <span onClick={(e) => { e.stopPropagation(); setFiltroDrill(null) }} className="px-3 py-1 bg-blue-600 text-white rounded-full text-xs font-bold shadow-sm cursor-pointer hover:bg-blue-700 flex items-center gap-1">
-              Filtro Activo <XCircle size={12} />
+            <span onClick={(e) => { e.stopPropagation(); setFiltroDrill(null) }} className="px-3.5 py-1.5 bg-pf-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-md cursor-pointer hover:bg-pf-blue-700 flex items-center gap-1.5 transition-all active:scale-95">
+              Activo <XCircle size={14} />
             </span>
           )}
-          <button className="text-slate-400 hover:text-slate-600 p-1">
-            {isChartExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+          <button className="text-pf-neutral-400 hover:text-pf-neutral-600 p-2 transition-colors">
+            {isChartExpanded ? <ChevronUp size={22} /> : <ChevronDown size={22} />}
           </button>
         </div>
       </div>
@@ -107,12 +107,12 @@ export const TrendChart = ({ timelineStats, timelineStatsPrev, showComparison, s
 
             {/* 1. EJE Y (FIJO) */}
             {/* Se queda quieto mientras las barras se mueven a la derecha */}
-            <div className="relative h-50 border-r border-slate-100 pr-3 select-none z-20 bg-white ">
-              <span className="absolute -top-3 right-1 text-[8px] font-bold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded">N° Fallas</span>
-              <div className="flex flex-col justify-between items-end h-full pt-6 pb-0 text-[10px] text-slate-400 font-mono">
+            <div className="relative h-50 border-r border-pf-neutral-100 pr-4 select-none z-20 bg-white">
+              <span className="absolute -top-3 right-1 text-[8px] font-black text-pf-neutral-600 bg-pf-neutral-100 px-1.5 py-0.5 rounded shadow-sm uppercase tracking-tighter">Fallas</span>
+              <div className="flex flex-col justify-between items-end h-full pt-6 pb-0 text-[10px] text-pf-neutral-400 font-mono font-bold">
                 <span className="-translate-y-1/2">{globalMax}</span>
                 <span className="-translate-y-1/2">{Math.round(globalMax / 2)}</span>
-                <span className="translate-y-0">0</span>
+                <span className="translate-y-0 text-pf-neutral-300">0</span>
               </div>
             </div>
 
@@ -121,18 +121,18 @@ export const TrendChart = ({ timelineStats, timelineStatsPrev, showComparison, s
 
               {/* CONTENEDOR DE BARRAS (ANCHO FORZADO) */}
               {/* min-w-[1500px] asegura que quepan 52 semanas holgadamente */}
-              <div className="h-48 flex items-end gap-2 px-4 relative pt-6 border-b border-slate-200 w-full">
+              <div className="h-48 flex items-end gap-2 px-6 relative pt-6 border-b border-pf-neutral-200 w-full overflow-x-auto hide-scrollbar">
 
                 {/* Líneas de fondo */}
-                <div className="absolute inset-0 w-full h-full flex flex-col justify-between pointer-events-none px-2 opacity-50">
-                  <div className="w-full h-[1px] bg-slate-100 border-t border-dashed border-slate-200"></div>
-                  <div className="w-full h-[1px] bg-slate-100 border-t border-dashed border-slate-200"></div>
-                  <div className="w-full h-[1px] bg-slate-100 border-t border-dashed border-slate-200"></div>
+                <div className="absolute inset-0 w-full h-full flex flex-col justify-between pointer-events-none px-2 opacity-30">
+                  <div className="w-full h-px border-t border-dashed border-pf-neutral-200"></div>
+                  <div className="w-full h-px border-t border-dashed border-pf-neutral-200"></div>
+                  <div className="w-full h-px border-t border-dashed border-pf-neutral-200"></div>
                 </div>
 
                 {/* Mapeo de Barras */}
                 {timelineStats.chartData.map((item: ChartDataItem) => {
-                  const itemPrev = showComparison && timelineStatsPrev 
+                  const itemPrev = showComparison && timelineStatsPrev
                     ? timelineStatsPrev.chartData.find((p: ChartDataItem) => p.semana === item.semana)
                     : null;
                   const countPrev = itemPrev ? itemPrev.count : 0;
@@ -149,15 +149,15 @@ export const TrendChart = ({ timelineStats, timelineStatsPrev, showComparison, s
                     <div
                       key={item.semana}
                       onClick={() => (item.count > 0 || countPrev > 0) && setSemanaFiltro(String(item.semana))}
-                                    className={`
+                      className={`
                                         relative flex-1 flex flex-col justify-end group h-full z-10 min-w-[20px] 
                                         ${isZero ? 'cursor-default' : 'cursor-pointer hover:scale-105 transition-transform'} 
                                         ${isDimmed ? 'opacity-30 grayscale' : 'opacity-100'}
                                     `}
-                                >
+                    >
                       {/* Etiqueta Valor */}
                       {!isZero && (
-                        <div className={`w-full text-center mb-1 text-[10px] font-black transition-all z-10 ${isSelected ? 'text-pf-red scale-110' : 'text-indigo-500 group-hover:text-black'}`}>
+                        <div className={`w-full text-center mb-1 text-[10px] font-black transition-all z-10 ${isSelected ? 'text-pf-red scale-125' : 'text-pf-blue-500 group-hover:text-pf-neutral-900 group-hover:scale-110'}`}>
                           {item.count}
                         </div>
                       )}
@@ -165,49 +165,46 @@ export const TrendChart = ({ timelineStats, timelineStatsPrev, showComparison, s
                       {showComparison && (
                         <>
                           <div
-                              style={{ height: countPrev === 0 ? '0px' : `${heightPercentPrev}%` }}
-                              className={`absolute bottom-0 w-full bg-slate-300 rounded-t-sm ${isBetter ? 'z-0' : 'z-20'} border border-slate-300 group-hover:bg-slate-400 transition-all`}
-                              title={`Año Pasado: ${countPrev}`}
-                            />
+                            style={{ height: countPrev === 0 ? '0px' : `${heightPercentPrev}%` }}
+                            className={`absolute bottom-0 w-full bg-pf-neutral-200 rounded-t-sm ${isBetter ? 'z-0' : 'z-20'} border border-pf-neutral-300 group-hover:bg-pf-neutral-300 transition-all`}
+                            title={`Año Pasado: ${countPrev}`}
+                          />
                         </>
                       )}
                       {/* Barra */}
                       {showComparison && !isZero ? (
                         <div
                           style={{ height: item.count === 0 ? '4px' : `${heightPercent}%` }}
-                          className={`w-full rounded-t-sm transition-all duration-300 z-10 ${
-                            isSelected
-                              ? isBetter
-                                ? 'bg-green-500 shadow-lg shadow-green-500/30'
-                                : 'bg-red-500 shadow-lg shadow-red-500/30'
-                              : isBetter
-                                ? 'bg-green-600 group-hover:bg-green-500 shadow-sm'
-                                : 'bg-red-400 group-hover:bg-red-500 shadow-sm'
-                          }`}
+                          className={`w-full rounded-t-lg transition-all duration-300 z-10 shadow-sm ${isSelected
+                            ? isBetter
+                              ? 'bg-pf-success-500 shadow-pf-success-200 shadow-xl'
+                              : 'bg-pf-red shadow-pf-red-200 shadow-xl'
+                            : isBetter
+                              ? 'bg-pf-success-600/80 group-hover:bg-pf-success-500'
+                              : 'bg-pf-red/60 group-hover:bg-pf-red-500'
+                            }`}
                         />
                       ) : (
                         <div
                           style={{ height: item.count === 0 ? '4px' : `${heightPercent}%` }}
-                          className={`w-full rounded-t-sm transition-all duration-300 z-10 ${
-                            isZero
-                              ? 'bg-slate-100'
-                              : isSelected
-                                ? 'bg-pf-red shadow-lg shadow-pf-red/30'
-                                : 'bg-indigo-500 group-hover:bg-indigo-600 shadow-sm'
-                          }`}
+                          className={`w-full rounded-t-lg transition-all duration-300 z-10 shadow-sm ${isZero
+                            ? 'bg-pf-neutral-50'
+                            : isSelected
+                              ? 'bg-pf-red shadow-lg shadow-pf-red/20 scale-105'
+                              : 'bg-pf-blue-500 group-hover:bg-pf-blue-600'
+                            }`}
                         />
                       )}
 
                       {/* Eje X: Semana */}
-                      <div className="absolute top-full left-0 w-full flex flex-col items-center mt-2">
-                        <span className={`text-[10px] font-bold font-mono transition-colors h-4 flex items-center justify-center whitespace-nowrap ${isSelected ? 'text-pf-red' : 'text-slate-400'}`}>
-                          {/* Mostramos todas las semanas si hay espacio, o simplificamos */}
+                      <div className="absolute top-full left-0 w-full flex flex-col items-center mt-3">
+                        <span className={`text-[10px] font-black font-mono transition-colors h-4 flex items-center justify-center whitespace-nowrap ${isSelected ? 'text-pf-red scale-110' : 'text-pf-neutral-400'}`}>
                           S{item.semana}
                         </span>
 
                         {/* Tooltip Fecha */}
                         {item.rango && (
-                          <span className="mt-1 text-[9px] font-medium whitespace-nowrap px-2 py-1 rounded shadow-lg z-50 hidden group-hover:block bg-slate-800 text-white absolute bottom-full mb-2 left-1/2 -translate-x-1/2 pointer-events-none">
+                          <span className="mt-1 text-[9px] font-black uppercase tracking-widest whitespace-nowrap px-3 py-2 rounded-xl shadow-2xl z-50 hidden group-hover:block bg-pf-neutral-900 text-white absolute bottom-full mb-3 left-1/2 -translate-x-1/2 pointer-events-none border border-white/10 backdrop-blur-md">
                             {item.rango}
                           </span>
                         )}
