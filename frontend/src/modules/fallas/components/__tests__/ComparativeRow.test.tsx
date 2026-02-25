@@ -19,11 +19,11 @@ const mockItem: GrupoMecanicoStats = {
 
 describe('ComparativeRow Component', () => {
   const formatFn = (v: number) => `${v}`;
-  const noop = () => {};
+  const noop = () => { };
 
   it('debería renderizar la etiqueta y el valor actual correctamente', () => {
     render(
-      <ComparativeRow 
+      <ComparativeRow
         item={mockItem}
         maxValGlobal={20}
         formatFn={formatFn}
@@ -42,7 +42,7 @@ describe('ComparativeRow Component', () => {
   it('debería mostrar barra ROJA si la frecuencia aumentó (Peor)', () => {
     // FREQ: 5 -> 10 es un aumento de fallas, por lo tanto es negativo (Rojo)
     render(
-      <ComparativeRow 
+      <ComparativeRow
         item={mockItem}
         maxValGlobal={20}
         formatFn={formatFn}
@@ -55,15 +55,15 @@ describe('ComparativeRow Component', () => {
     );
 
     const progressBar = screen.getByTestId('progress-bar');
-    expect(progressBar.className).toContain('bg-red-500');
+    expect(progressBar.className).toContain('bg-pf-red-500');
     // Verificamos que aparezca el indicador de tendencia
-    expect(screen.getByText('5')).toBeInTheDocument(); 
+    expect(screen.getByText('5')).toBeInTheDocument();
   });
 
   it('debería mostrar barra VERDE si el costo disminuyó (Mejor)', () => {
     // COST: 1200 -> 1000 es una baja en gasto, por lo tanto es positivo (Verde)
     render(
-      <ComparativeRow 
+      <ComparativeRow
         item={mockItem}
         maxValGlobal={2000}
         formatFn={formatFn}
@@ -76,13 +76,13 @@ describe('ComparativeRow Component', () => {
     );
 
     const progressBar = screen.getByTestId('progress-bar');
-    expect(progressBar.className).toContain('bg-emerald-500');
+    expect(progressBar.className).toContain('bg-pf-success-500');
     expect(screen.getByText('200')).toBeInTheDocument(); // La diferencia absoluta
   });
 
   it('debería aplicar clase de "active" cuando el prop es true', () => {
     render(
-      <ComparativeRow 
+      <ComparativeRow
         item={mockItem}
         maxValGlobal={20}
         formatFn={formatFn}
@@ -96,13 +96,13 @@ describe('ComparativeRow Component', () => {
 
     // Seguimos usando screen, que es la mejor práctica recomendada por Testing Library
     const mainDiv = screen.getByRole('button');
-    expect(mainDiv.className).toContain('bg-slate-50');
-    expect(mainDiv.className).toContain('border-slate-300');
+    expect(mainDiv.className).toContain('bg-pf-neutral-50');
+    expect(mainDiv.className).toContain('border-pf-neutral-200');
   });
 
   it('debería usar color PÚRPURA para MTTR cuando no hay comparación', () => {
     render(
-      <ComparativeRow 
+      <ComparativeRow
         item={mockItem}
         maxValGlobal={100}
         formatFn={formatFn}
@@ -115,6 +115,6 @@ describe('ComparativeRow Component', () => {
     );
 
     const progressBar = screen.getByTestId('progress-bar');
-    expect(progressBar.className).toContain('bg-purple-600');
+    expect(progressBar.className).toContain('bg-pf-blue-600');
   });
 });

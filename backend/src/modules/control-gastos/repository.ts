@@ -179,8 +179,8 @@ export const ControlGastosRepository = {
                     FROM PF_EAM_GASTOS_CONSOLIDADOS g
                     INNER JOIN PF_EAM_PEDIDOS p ON g.NUMERO_OT = p.PEDIDO_TRABAJO
                     LEFT JOIN PF_EAM_ACTIVOS a ON UPPER(g.NRO_ACTIVO) = UPPER(a.nro_de_activo)
-                    WHERE p.FECHA_INICIAL_PROGRAMADA >= TO_DATE(:startDate, 'YYYY-MM-DD')
-                      AND p.FECHA_INICIAL_PROGRAMADA <= TO_DATE(:endDate, 'YYYY-MM-DD')
+                    WHERE TRUNC(p.FECHA_INICIAL_PROGRAMADA) >= TO_DATE(:startDate, 'YYYY-MM-DD')
+                      AND TRUNC(p.FECHA_INICIAL_PROGRAMADA) <= TO_DATE(:endDate, 'YYYY-MM-DD')
                 )
                 SELECT * FROM DataCalculada
                 WHERE (:plantaFiltro IS NULL OR PLANTA_CALC = :planta)

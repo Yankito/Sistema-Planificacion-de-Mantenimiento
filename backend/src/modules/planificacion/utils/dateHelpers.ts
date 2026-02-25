@@ -42,7 +42,7 @@ export const getMonthFromWeekId = (weekId: string): { anio: number, mes: number 
     }
 
     // Default: Week format (YYYY-Sww or YYYY-Www)
-    const parts = weekId.split(/[-WS]/);
+    const parts = weekId.split(/[-S]/);
     if (parts.length >= 2) {
       const year = parseInt(parts[0], 10);
       const week = parseInt(parts[parts.length - 1], 10);

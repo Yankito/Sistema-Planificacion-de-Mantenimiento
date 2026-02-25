@@ -163,7 +163,7 @@ export const initDB = async () => {
           numero_activo VARCHAR2(100),
           grupo_activos VARCHAR2(200),
           descripcion VARCHAR2(500),
-          fecha_inicial_programada DATE,
+          fecha_inicial_programada TIMESTAMP,
           duracion_horas NUMBER,
           departamento_propiedad VARCHAR2(200),
           estado VARCHAR2(100),

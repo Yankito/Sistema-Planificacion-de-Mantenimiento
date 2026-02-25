@@ -4,7 +4,8 @@ import type { AtrasoRow, BacklogStats, TechStats } from "../types";
 import {
   toISODate,
   getStartOfPreviousYear,
-  getCurrentDate
+  getCurrentDate,
+  getWeekID
 } from "../../../shared/utils/dateUtils";
 import { toast } from "sonner";
 
@@ -51,11 +52,16 @@ export const useSeguimientoData = () => {
     }
   }, []);
 
+  const endDateCalculated = useMemo(() => {
+    const [y, m, d] = filtros.fechaFin.split("-").map(Number);
+    return new Date(y, m - 1, d);
+  }, [filtros.fechaFin]);
+
   return useMemo(() => ({
     dataActual,
     dataAnterior: [],
     serverStats,
-    reporteActual: "ACTUAL",
+    reporteActual: getWeekID(endDateCalculated),
     semanaComparar: "",
     isLoading,
     filtros, // Exportar filtros para valor inicial en la vista
@@ -63,5 +69,5 @@ export const useSeguimientoData = () => {
     cambiarComparacion: async () => { }, // No-op
     limpiarComparacion: () => { }, // No-op
     cargarDatos
-  }), [dataActual, serverStats, isLoading, filtros, cargarDatos]);
+  }), [dataActual, serverStats, isLoading, filtros, cargarDatos, endDateCalculated]);
 };

@@ -24,10 +24,12 @@ const STYLE_HEADER_MAIN = {
 };
 
 // LÓGICA DE COLORES DEL SEMÁFORO
-const getTrafficLightStyle = (current: number, previous: number, isBold: boolean = false, extraBorder?: unknown) => {
-  let color = "FFFF99";
-  if (current > previous) color = "FF8888";
-  if (current < previous) color = "90EE90";
+const getTrafficLightStyle = (current: number, previous: number, isBold: boolean = false, extraBorder?: unknown, disableColor: boolean = false) => {
+  let color = disableColor ? "FFFFFF" : "FFFF99";
+  if (!disableColor) {
+    if (current > previous) color = "FF8888";
+    if (current < previous) color = "90EE90";
+  }
 
   return {
     fill: { fgColor: { rgb: color } },
@@ -110,27 +112,40 @@ const normalizeDatasetPeriods = (data: OrdenTrabajo[]): OrdenTrabajo[] => {
     if (/^\d{4}$/.test(row.periodo)) return row;
 
     let year = 0;
+    let month = 0;
 
     // Caso 1: MMM-YY (ENE-25)
     if (/^[A-Z]{3}-\d{2}$/.test(row.periodo)) {
       const parts = row.periodo.split('-');
       const yy = parseInt(parts[1], 10);
       year = 2000 + yy;
+      const mNames = ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"];
+      month = mNames.indexOf(parts[0]) + 1;
     }
     // Caso 2: MM/YYYY (01/2025)
     else if (/^\d{1,2}\/\d{4}$/.test(row.periodo)) {
       const parts = row.periodo.split('/');
       year = parseInt(parts[1], 10);
+      month = parseInt(parts[0], 10);
     }
     // Caso 3: YYYY-MM (2025-01)
     else if (/^\d{4}-\d{1,2}$/.test(row.periodo)) {
       const parts = row.periodo.split('-');
       year = parseInt(parts[0], 10);
+      month = parseInt(parts[1], 10);
     }
 
     // Si detectamos un año y es menor al actual, lo transformamos a YYYY
     if (year > 0 && year < currentYear) {
       return { ...row, periodo: year.toString() };
+    }
+
+    // Convertir meses del año actual a formato MMM-YY
+    if (year === currentYear && month > 0) {
+      const meses = ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"];
+      const yy = year.toString().slice(-2);
+      const mName = meses[month - 1];
+      return { ...row, periodo: `${mName}-${yy}` };
     }
 
     return row;
@@ -147,6 +162,7 @@ export const generarExcelReporte = async (
   // 1. Normalizamos los periodos antes de filtrar
   const dataActualNorm = normalizeDatasetPeriods(dataActual);
   const dataAnteriorNorm = normalizeDatasetPeriods(dataAnterior);
+  const disableColorComparison = dataAnteriorNorm.length === 0;
 
   const datasetAct = dataActualNorm.filter(d => modoVista === "CUMPLIDAS" ? d.clasificacion === "CUMPLIDA" : d.clasificacion !== "CUMPLIDA");
   const datasetAnt = dataAnteriorNorm.filter(d => modoVista === "CUMPLIDAS" ? d.clasificacion === "CUMPLIDA" : d.clasificacion !== "CUMPLIDA");
@@ -165,28 +181,31 @@ export const generarExcelReporte = async (
       .sort(sortPeriods);
 
     // DETECCIÓN DINÁMICA DE AÑO
-    const anioFull = reporteActual.split('-')[0]; // "2026"
-    const anioShort = anioFull.slice(-2);        // "26"
+    const anioActual = reporteActual.split('-')[0]; // "2026"
+    const anioShort = anioActual.slice(-2);        // "26"
     const columnasPeriodos = [...periodosRaw];
+    console.log("anioActual", anioActual);
+    console.log("anioShort", anioShort);
+    console.log("columnasPeriodos", columnasPeriodos);
 
     // Buscar la frontera: El último periodo que NO sea del año actual (ni 2026 ni -26)
     const idxUltimoAnioAnterior = columnasPeriodos.findLastIndex(p =>
-      !p.includes(anioFull) && !p.endsWith(`-${anioShort}`)
+      !p.includes(anioActual) && !p.endsWith(`-${anioShort}`)
     );
 
     // Labels Dinámicos
-    const anioAnterior = (parseInt(anioFull) - 1).toString();
+    const anioAnterior = (parseInt(anioActual) - 1).toString();
     const headersLabels = [
       `REPORTE ${modoVista}`,
       ...columnasPeriodos,
-      `TOTAL ${anioFull}`,
-      `TOTAL ${anioAnterior}`,
+      `TOTAL ${anioActual}`,
+      `TOTAL ${anioActual} S/A`,
       "DELTA"
     ];
 
     // Letras para fórmulas SUM (Solo meses del año actual)
     const indicesAnioActual = columnasPeriodos
-      .map((p, idx) => (p.includes(anioFull) || p.endsWith(`-${anioShort}`)) ? idx + 1 : -1)
+      .map((p, idx) => (p.includes(anioActual) || p.endsWith(`-${anioShort}`)) ? idx + 1 : -1)
       .filter(idx => idx !== -1);
 
     const letraInicioActual = getColLetter(indicesAnioActual[0]);
@@ -209,10 +228,10 @@ export const generarExcelReporte = async (
       { label: "PF ALIMENTOS", id: "PF ALIMENTOS", isAgrupado: true }
     ];
 
-    const colIdxTotalAct = columnasPeriodos.length + 1;
-    const colIdxTotalAnt = colIdxTotalAct + 1;
-    const letraTotalAct = getColLetter(colIdxTotalAct);
-    const letraTotalAnt = getColLetter(colIdxTotalAnt);
+    const colIdxTotalSemanaAct = columnasPeriodos.length + 1;
+    const colIdxTotalSemanaAnt = colIdxTotalSemanaAct + 1;
+    const letraTotalSemanaAct = getColLetter(colIdxTotalSemanaAct);
+    const letraTotalSemanaAnt = getColLetter(colIdxTotalSemanaAnt);
 
     [false, true].forEach(esOB => {
       const suffix = esOB ? "OB" : "OM";
@@ -234,13 +253,15 @@ export const generarExcelReporte = async (
           const antVal = count(datasetAnt, plantasTarget, esOB, per);
 
           // Lógica de suma: Solo si el periodo es del año actual
-          if (per.includes(anioFull) || per.endsWith(`-${anioShort}`)) {
+          if (per.includes(anioActual) || per.endsWith(`-${anioShort}`)) {
             valTotalActActual += curVal;
             valTotalAntActual += antVal;
           }
 
           const extraStyle = (colIdx === idxUltimoAnioAnterior) ? BORDER_BOUNDARY_RIGHT : BORDER_ALL;
-          const style = getTrafficLightStyle(curVal, antVal, grupo.isAgrupado, extraStyle);
+          const style = getTrafficLightStyle(curVal, antVal, grupo.isAgrupado, extraStyle, disableColorComparison);
+
+          if (colIdx === 0) rowMap.set(`${grupo.id}_${suffix}`, currentRowIndex);
 
           if (grupo.isAgrupado) {
             const plantasHijas = DEFINICION_GRUPOS[grupo.id as keyof typeof DEFINICION_GRUPOS];
@@ -252,25 +273,24 @@ export const generarExcelReporte = async (
               rowCells.push({ v: curVal, t: 'n', s: style });
             }
           } else {
-            if (colIdx === 0) rowMap.set(`${grupo.id}_${suffix}`, currentRowIndex);
             rowCells.push({ v: curVal, t: 'n', s: style });
           }
         });
 
         // Celdas de Totales con valores calculados (v:) y fórmulas (f:)
-        const styleTotalAct = getTrafficLightStyle(valTotalActActual, valTotalAntActual, true);
+        const styleTotalAct = getTrafficLightStyle(valTotalActActual, valTotalAntActual, true, undefined, disableColorComparison);
 
         if (grupo.isAgrupado) {
           const plantasHijas = DEFINICION_GRUPOS[grupo.id as keyof typeof DEFINICION_GRUPOS];
           const filasRefs = plantasHijas.map(p => rowMap.get(`${p}_${suffix}`)).filter(r => r !== undefined);
-          const refs = filasRefs.map(r => `${letraTotalAct}${r}`).join(",");
+          const refs = filasRefs.map(r => `${letraTotalSemanaAct}${r}`).join(",");
           rowCells.push({ t: 'n', f: `SUM(${refs})`, v: valTotalActActual, s: styleTotalAct });
         } else {
           rowCells.push({ t: 'n', f: `SUM(${letraInicioActual}${currentRowIndex}:${letraFinActual}${currentRowIndex})`, v: valTotalActActual, s: styleTotalAct });
         }
 
         rowCells.push({ v: valTotalAntActual, t: 'n', s: { border: BORDER_ALL, alignment: { horizontal: "center" }, font: { bold: true } } });
-        rowCells.push({ t: 'n', f: `${letraTotalAct}${currentRowIndex}-${letraTotalAnt}${currentRowIndex}`, v: valTotalActActual - valTotalAntActual, s: getTrafficLightStyle(valTotalActActual, valTotalAntActual, true) });
+        rowCells.push({ t: 'n', f: `${letraTotalSemanaAct}${currentRowIndex}-${letraTotalSemanaAnt}${currentRowIndex}`, v: valTotalActActual - valTotalAntActual, s: getTrafficLightStyle(valTotalActActual, valTotalAntActual, true, undefined, disableColorComparison) });
 
         matrix.push(rowCells);
         currentRowIndex++;
@@ -286,13 +306,13 @@ export const generarExcelReporte = async (
             const cVal = count(datasetAct, plantasTarget, esOB, per, cat);
             const aVal = count(datasetAnt, plantasTarget, esOB, per, cat);
 
-            if (per.includes(anioFull) || per.endsWith(`-${anioShort}`)) {
+            if (per.includes(anioActual) || per.endsWith(`-${anioShort}`)) {
               catTotalAct += cVal;
               catTotalAnt += aVal;
             }
 
             const extraStyle = (cIdx === idxUltimoAnioAnterior) ? BORDER_BOUNDARY_RIGHT : BORDER_ALL;
-            filaCat.push({ v: cVal, t: 'n', s: getTrafficLightStyle(cVal, aVal, false, extraStyle) });
+            filaCat.push({ v: cVal, t: 'n', s: getTrafficLightStyle(cVal, aVal, false, extraStyle, disableColorComparison) });
           });
 
           // Total Actual: Añadimos la fórmula SUM usando el rango dinámico del año actual
@@ -300,7 +320,7 @@ export const generarExcelReporte = async (
             t: 'n',
             f: `SUM(${letraInicioActual}${currentRowIndex}:${letraFinActual}${currentRowIndex})`,
             v: catTotalAct,
-            s: getTrafficLightStyle(catTotalAct, catTotalAnt, true)
+            s: getTrafficLightStyle(catTotalAct, catTotalAnt, true, undefined, disableColorComparison)
           });
 
           // Total Anterior S/A (Valor fijo)
@@ -313,9 +333,9 @@ export const generarExcelReporte = async (
           // Delta (Fórmula de resta)
           filaCat.push({
             t: 'n',
-            f: `${letraTotalAct}${currentRowIndex}-${letraTotalAnt}${currentRowIndex}`,
+            f: `${letraTotalSemanaAct}${currentRowIndex}-${letraTotalSemanaAnt}${currentRowIndex}`,
             v: catTotalAct - catTotalAnt,
-            s: getTrafficLightStyle(catTotalAct, catTotalAnt, true)
+            s: getTrafficLightStyle(catTotalAct, catTotalAnt, true, undefined, disableColorComparison)
           });
           matrix.push(filaCat);
           currentRowIndex++;
@@ -326,8 +346,71 @@ export const generarExcelReporte = async (
       });
     });
 
+    // -------- NUEVA TABLA RESUMEN PLANTAS --------
+    const colIdxResumen = headersLabels.length + 1; // 2 col a la derecha
+
+    const idxAnioAnteriorEnColumnas = columnasPeriodos.indexOf(anioAnterior);
+    const letraTotalAnioAnt = idxAnioAnteriorEnColumnas !== -1 ? getColLetter(idxAnioAnteriorEnColumnas + 1) : null;
+    const letraTotalAnioAct = letraTotalSemanaAct; // El total del dataset actual (Año actual) sumado por fórmula
+
+    const fSumOtrosAnt = letraTotalAnioAnt
+      ? `SUM(${letraTotalAnioAnt}${rowMap.get('DC_OM')},${letraTotalAnioAnt}${rowMap.get('VENTAS_OM')},${letraTotalAnioAnt}${rowMap.get('OTROS_OM')})`
+      : "0";
+    const fSumOtrosAct = `SUM(${letraTotalAnioAct}${rowMap.get('DC_OM')},${letraTotalAnioAct}${rowMap.get('VENTAS_OM')},${letraTotalAnioAct}${rowMap.get('OTROS_OM')})`;
+
+    const resumenDefs: any[] = [
+      [{ v: "RESUMEN PLANTAS", t: 's', s: STYLE_HEADER_MAIN }], // Fila 0
+      [
+        { v: "Planta", t: 's', s: STYLE_HEADER_MAIN },
+        { v: parseInt(anioAnterior) || anioAnterior, t: 'n', s: STYLE_HEADER_MAIN },
+        { v: parseInt(anioActual) || anioActual, t: 'n', s: STYLE_HEADER_MAIN }
+      ], // Fila 1
+      { label: "PF1", id: "PF1_OM" },
+      { label: "PF2", id: "PF2_OM" },
+      { label: "PF3", id: "PF3_OM" },
+      { label: "PF4", id: "PF4_OM" },
+      { label: "PF5", id: "PF5_OM" },
+      { label: "PF6", id: "PF6_OM" },
+      { label: "CDT", id: "CDT_OM" },
+      {
+        label: "OTROS",
+        fAnioAnt: fSumOtrosAnt,
+        fAnioAct: fSumOtrosAct
+      },
+      { label: "PF OB", id: "PF ALIMENTOS_OB" }
+    ];
+
+    resumenDefs.forEach((rowDef, idx) => {
+      // Relleno de celdas vacías hasta la columna objetivo
+      while (matrix[idx].length < colIdxResumen) {
+        matrix[idx].push({ v: "", t: "s" });
+      }
+
+      if (Array.isArray(rowDef)) {
+        matrix[idx].push(...rowDef);
+      } else {
+        const fAnioAnt = rowDef.fAnioAnt || (letraTotalAnioAnt ? `${letraTotalAnioAnt}${rowMap.get(rowDef.id)}` : "0");
+        const fAnioAct = rowDef.fAnioAct || `${letraTotalAnioAct}${rowMap.get(rowDef.id)}`;
+        matrix[idx].push(
+          { v: rowDef.label, t: 's', s: BORDER_ALL },
+          { t: 'n', f: fAnioAnt, s: BORDER_ALL },
+          { t: 'n', f: fAnioAct, s: BORDER_ALL }
+        );
+      }
+    });
+    // ----------------------------------------------
+
     const wsResumen = XLSX.utils.aoa_to_sheet(matrix);
-    wsResumen['!cols'] = [{ wch: 25 }, ...columnasPeriodos.map(() => ({ wch: 10 })), { wch: 12 }, { wch: 15 }, { wch: 10 }];
+
+    wsResumen['!merges'] = [
+      { s: { r: 0, c: colIdxResumen }, e: { r: 0, c: colIdxResumen + 2 } }
+    ];
+
+    const baseCols = [{ wch: 25 }, ...columnasPeriodos.map(() => ({ wch: 10 })), { wch: 12 }, { wch: 15 }, { wch: 10 }];
+    while (baseCols.length < colIdxResumen) baseCols.push({ wch: 10 });
+    baseCols.push({ wch: 15 }, { wch: 10 }, { wch: 10 });
+    wsResumen['!cols'] = baseCols;
+
     XLSX.utils.book_append_sheet(wb, wsResumen, "RESUMEN_EJECUTIVO");
 
     const dataRaw = datasetAct.map(item => ({
@@ -341,12 +424,8 @@ export const generarExcelReporte = async (
       Semana: item.semana,
       Tecnicos: item.detallesTecnicos?.map((t) => t.tecnico.nombre).join(", ") || ""
     }));
-    console.log(`Datos detallados a exportar: ${dataRaw.length} filas`);
-    console.log("Ejemplo fila detallada:", dataRaw[0]);
 
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(dataRaw), "DATA_DETALLADA");
-
-    // --- CAMBIOS PARA EL BACKEND ---
 
     // 1. Generamos un Buffer en lugar de un Array/Blob
     const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'buffer' }) as Buffer;
@@ -354,8 +433,6 @@ export const generarExcelReporte = async (
     const semanaLabel = reporteActual.includes('-') ? reporteActual.split('-')[1] : reporteActual;
     const nombreArchivo = `Dashboard_Atrasos_${semanaLabel}.xlsx`;
 
-    console.log(`Excel generado: ${nombreArchivo}, tamaño: ${excelBuffer.length} bytes`);
-    // RETORNO LIMPIO: TypeScript ya sabe que este objeto cumple con ReporteExcel
     return {
       buffer: excelBuffer,
       fileName: nombreArchivo

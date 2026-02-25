@@ -127,6 +127,7 @@ export const PlanificacionRepository = {
           AND EXTRACT(MONTH FROM p.fecha_inicial_programada) = :mes
           AND p.pedido_trabajo NOT LIKE 'OM%'
           AND p.pedido_trabajo NOT LIKE 'OB%'
+          AND UPPER(p.descripcion) NOT LIKE '%(INFRA)%'
           AND NOT EXISTS (
               SELECT 1 FROM PF_EAM_CUMPLIMIENTO c 
               WHERE c.nro_ot = p.pedido_trabajo

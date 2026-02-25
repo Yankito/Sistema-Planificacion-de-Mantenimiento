@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import XLSX from 'xlsx-js-style';
 import { generarExcelReporte } from '../exportUtils.js';
 import type { AtrasoRow } from '../../types.js';
+import type { OrdenTrabajo } from '../../../../types.js';
 
 // 2. Definimos el mock COMPLETAMENTE contenido dentro del factory.
 // Sin variables externas para evitar el error de "ReferenceError".
@@ -66,11 +67,12 @@ describe('ExportUtils Backend Tests', () => {
       // 3. AQUÍ ESTÁ EL TRUCO: Accedemos al mock a través del objeto importado.
       // Como XLSX está mockeado, sus métodos son vi.fn() y tienen la propiedad .mock
       const aoaMock = XLSX.utils.aoa_to_sheet as any;
+      const matrix = aoaMock.mock.calls[0][0];
 
       expect(aoaMock).toHaveBeenCalled();
 
-      // Obtenemos la matriz de la primera llamada
-      const matrix = aoaMock.mock.calls[0][0];
+      const headerRow = matrix[0];
+      const deltaIdx = headerRow.findIndex((cell: any) => cell?.v === 'DELTA');
 
       // Buscamos la fila de PF1
       const filaPF1 = matrix.find((row: any[]) => row[0]?.v === 'PF1 (OM)');
@@ -78,29 +80,33 @@ describe('ExportUtils Backend Tests', () => {
       expect(filaPF1).toBeDefined();
       expect(filaPF1[1].v).toBe(2); // Valor actual
 
-      const deltaCelda = filaPF1[filaPF1.length - 1];
+      const deltaCelda = filaPF1[deltaIdx];
+      expect(deltaCelda).toBeDefined(); // avoid crash if deltaIdx is wrong
       expect(deltaCelda.v).toBe(1); // Delta
-      expect(deltaCelda.s.fill.fgColor.rgb).toBe('FF8888'); // Rojo
+      expect(deltaCelda.s?.fill?.fgColor?.rgb).toBe('FF8888'); // Rojo
     });
 
     it('debería asignar color VERDE si los atrasos bajaron', async () => {
-      const actual = [{ planta: 'PF1', periodo: 'ENE-26', clasificacion: 'TECNICO / SERVICIO', esOB: false, ot: '100' }] as AtrasoRow[];
+      const actual = [{ planta: 'PF1', periodo: 'ENE-26', clasificacion: 'TECNICO / SERVICIO', esOB: false, ot: '100' }] as OrdenTrabajo[];
       const anterior = [
         { planta: 'PF1', periodo: 'ENE-26', clasificacion: 'TECNICO / SERVICIO', esOB: false, ot: '101' },
         { planta: 'PF1', periodo: 'ENE-26', clasificacion: 'TECNICO / SERVICIO', esOB: false, ot: '102' }
-      ] as AtrasoRow[];
+      ] as OrdenTrabajo[];
 
       await generarExcelReporte(actual, anterior, 'ATRASOS', '2026-S05');
 
-      // Accedemos de nuevo a través del import
       const aoaMock = XLSX.utils.aoa_to_sheet as any;
       const matrix = aoaMock.mock.calls[0][0];
 
+      const headerRow = matrix[0];
+      const deltaIdx = headerRow.findIndex((cell: any) => cell.v === 'DELTA');
+
       const filaPF1 = matrix.find((row: any[]) => row[0]?.v === 'PF1 (OM)');
 
-      const celdaDelta = filaPF1[filaPF1.length - 1];
+      const celdaDelta = filaPF1[deltaIdx];
+      expect(celdaDelta).toBeDefined();
       expect(celdaDelta.v).toBe(-1);
-      expect(celdaDelta.s.fill.fgColor.rgb).toBe('90EE90'); // Verde
+      expect(celdaDelta.s?.fill?.fgColor?.rgb).toBe('90EE90'); // Verde
     });
 
     it('debería retornar un buffer vacío si no hay datos en el dataset actual', async () => {

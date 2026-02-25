@@ -1,11 +1,6 @@
 import type { Request, Response } from 'express';
 import XLSX from "xlsx-js-style";
-import { processExcelData } from '../planificacion/logic/excelProcessor.js';
-import { processSeguimientoOTs } from '../seguimiento/logic/seguimientoOTsProcessor.js';
-import { PlanificacionRepository } from '../planificacion/repository.js';
-import { SeguimientoRepository } from '../seguimiento/repository.js';
 import { query } from '../../db/config.js';
-import { getMonthFromWeekId } from '../planificacion/utils/dateHelpers.js';
 
 /**
  * Controlador para carga masiva de datos
@@ -20,68 +15,43 @@ import { generarBufferPlantilla } from '../seguimiento/logic/templateGenerator.j
 import { EamRepository } from '../eam/repository.js';
 
 // Helper para convertir fecha Excel o String DD/MM/YYYY a String ISO o compatible DB
-const parseFecha = (val: unknown): string | null => {
+// Helper para convertir fecha Excel o String a objeto Date de JavaScript
+const parseFecha = (val: unknown): Date | null => {
     if (!val) return null;
-    let strVal = '';
+    if (val instanceof Date) return val;
 
     if (typeof val === 'number') {
         const date = XLSX.SSF.parse_date_code(val);
-        // Formato DD/MM/YYYY HH:mm:ss
-        strVal = `${String(date.d).padStart(2, '0')}/${String(date.m).padStart(2, '0')}/${date.y} ${String(date.H).padStart(2, '0')}:${String(date.M).padStart(2, '0')}:${String(date.S).padStart(2, '0')}`;
-    } else {
-        strVal = String(val).trim();
+        return new Date(date.y, date.m - 1, date.d, date.H, date.M, date.S);
     }
 
-    // Detectar si es YYYY-MM-DD simple y convertir
-    const isoDateRegex = /^(\d{4})-(\d{1,2})-(\d{1,2})$/;
-    const isoMatch = strVal.match(isoDateRegex);
+    const strVal = String(val).trim();
+    if (!strVal) return null;
+
+    // Detectar si es YYYY-MM-DD
+    const isoMatch = strVal.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
     if (isoMatch) {
-        return `${isoMatch[3].padStart(2, '0')}/${isoMatch[2].padStart(2, '0')}/${isoMatch[1]} 00:00:00`;
+        return new Date(Number(isoMatch[1]), Number(isoMatch[2]) - 1, Number(isoMatch[3]));
     }
 
-    // Detectar si es DD/MM/YYYY simple y agregar hora
-    // Regex flexible para d/m/yyyy o dd/mm/yyyy
-    const simpleDateRegex = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
-    const match = strVal.match(simpleDateRegex);
-
+    // Detectar si es DD/MM/YYYY o DD/MM/YYYY HH:mm:ss
+    const match = strVal.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{1,2}):(\d{1,2}))?$/);
     if (match) {
-        return `${match[1].padStart(2, '0')}/${match[2].padStart(2, '0')}/${match[3]} 00:00:00`;
+        const [_, d, m, y, h, min, s] = match;
+        return new Date(Number(y), Number(m) - 1, Number(d), Number(h || 0), Number(min || 0), Number(s || 0));
     }
 
-    return strVal;
+    const parsed = new Date(strVal);
+    return isNaN(parsed.getTime()) ? null : parsed;
 };
 
 // Helper SOLO FECHA (DD/MM/YYYY) para Cumplimiento y Masivo
-const parseFechaDateOnly = (val: unknown): string | null => {
-    if (!val) return null;
-    let strVal = '';
-
-    if (typeof val === 'number') {
-        const date = XLSX.SSF.parse_date_code(val);
-        // Formato DD/MM/YYYY
-        return `${String(date.d).padStart(2, '0')}/${String(date.m).padStart(2, '0')}/${date.y}`;
-    } else {
-        strVal = String(val).trim();
-    }
-
-    // Si viene hora, cortarla. Buscamos patron DD/MM/YYYY o YYYY-MM-DD
-
-    // Check YYYY-MM-DD
-    const isoDateRegex = /^(\d{4})-(\d{1,2})-(\d{1,2})/;
-    const isoMatch = strVal.match(isoDateRegex);
-    if (isoMatch) {
-        return `${isoMatch[3].padStart(2, '0')}/${isoMatch[2].padStart(2, '0')}/${isoMatch[1]}`;
-    }
-
-    // Check DD/MM/YYYY
-    // Puede venir "DD/MM/YYYY HH:mm:ss" o solo "DD/MM/YYYY"
-    const simpleDateRegex = /^(\d{1,2})\/(\d{1,2})\/(\d{4})/;
-    const match = strVal.match(simpleDateRegex);
-    if (match) {
-        return `${match[1].padStart(2, '0')}/${match[2].padStart(2, '0')}/${match[3]}`;
-    }
-
-    return strVal;
+// Helper SOLO FECHA para Cumplimiento y Masivo (pone hora a 00:00:00)
+const parseFechaDateOnly = (val: unknown): Date | null => {
+    const d = parseFecha(val);
+    if (!d) return null;
+    d.setHours(0, 0, 0, 0);
+    return d;
 };
 
 export const MassiveController = {
@@ -94,7 +64,7 @@ export const MassiveController = {
             const { targetWeek } = req.body;
             console.log(`[MASIVO] 📁 Iniciando carga masiva para semana: ${targetWeek}`);
 
-            const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
+            const workbook = XLSX.read(req.file.buffer, { type: 'buffer', cellDates: true });
             const sheetNames = workbook.SheetNames;
             console.log(`[MASIVO] 📊 Hojas detectadas: ${sheetNames.join(', ')}`);
 

@@ -7,18 +7,19 @@ import { ExportButton } from "../../../shared/components/ExportButton";
 import {
   toISODate,
   getStartOfPreviousYear,
-  getCurrentDate
+  getSundayOfPreviousWeek
 } from "../../../shared/utils/dateUtils";
 
 import { SeguimientoHeader } from "../components/SeguimientoHeader";
 import { ComplianceCard } from "../components/ComplianceCard";
 import { SeguimientoModal } from "../components/SeguimientoModal";
 import { AnalysisDashboard } from "../components/AnalysisDashboard";
-import { EvolutionDashboard } from "../components/EvolutionDashboard";
+// import { EvolutionDashboard } from "../components/EvolutionDashboard";
 import { LoadingOverlay } from "../../../shared/components/ui/LoadingOverlay";
 import { useSeguimientoData } from "../hooks/useSeguimientoData";
 import { usePlantasAcceso } from "../../../shared/hooks/usePlantasAcceso";
 import * as SeguimientoService from "../services/SeguimientoService";
+import { sortPeriods } from "../utils";
 
 export const SeguimientoOTsView = () => {
   // Plantas filtradas según acceso del usuario
@@ -44,7 +45,7 @@ export const SeguimientoOTsView = () => {
   const [selectedSemana, setSelectedSemana] = useState("TODAS");
 
   const [fechaInicio, setFechaInicio] = useState<string>(toISODate(getStartOfPreviousYear()));
-  const [fechaFin, setFechaFin] = useState<string>(toISODate(getCurrentDate()));
+  const [fechaFin, setFechaFin] = useState<string>(toISODate(getSundayOfPreviousWeek()));
 
   // Carga inicial al entrar a la vista
   useEffect(() => {
@@ -120,7 +121,7 @@ export const SeguimientoOTsView = () => {
 
   const handleResetFiltros = () => {
     const start = toISODate(getStartOfPreviousYear());
-    const end = toISODate(getCurrentDate());
+    const end = toISODate(getSundayOfPreviousWeek());
     setFechaInicio(start);
     setFechaFin(end);
     cargarDatos(start, end);
@@ -133,7 +134,7 @@ export const SeguimientoOTsView = () => {
       console.log("Reporte actual:", reporteActual);
       console.log("Modo vista:", modoVista);
       console.log("Semana comparar:", semanaComparar);
-      await SeguimientoService.descargarExcel(reporteActual, modoVista, semanaComparar || "");
+      await SeguimientoService.descargarExcel(reporteActual, modoVista, semanaComparar || "", fechaInicio, fechaFin);
     } catch (error) {
       console.error("Error exportando", error);
       toast.error("Error al descargar archivo.");
@@ -151,6 +152,16 @@ export const SeguimientoOTsView = () => {
     const filas = selectedYear === "TODOS" ? dataActual : dataActual.filter(d => d.semana.startsWith(selectedYear));
     return ["TODAS", ...Array.from(new Set(filas.map(d => d.semana))).sort((a, b) => b.localeCompare(a))];
   }, [dataActual, selectedYear]);
+
+  // Períodos globales para que todas las tablas tengan las mismas columnas
+  const periodosUnicos = useMemo(() => {
+    const set = new Set<string>();
+    dataActualNorm.forEach(d => { if (d.periodo && d.periodo !== "S/A") set.add(d.periodo); });
+    if (semanaComparar) {
+      dataAnteriorNorm.forEach(d => { if (d.periodo && d.periodo !== "S/A") set.add(d.periodo); });
+    }
+    return Array.from(set).sort(sortPeriods);
+  }, [dataActualNorm, dataAnteriorNorm, semanaComparar]);
 
   // --- ANALÍTICA FILTRADA PARA EL CENTRO DE ANÁLISIS ---
   const filteredAnalysisStats = useMemo(() => {
@@ -330,6 +341,7 @@ export const SeguimientoOTsView = () => {
                     datasetAnt={dataAnteriorFiltrada.filter(d => (!!d.esOB === tipo.es) && PLANTAS_PF_ALIMENTOS.includes(d.planta))}
                     esOB={tipo.es} modoVista={modoVista} isGlobal showComparison={!!semanaComparar}
                     onDetail={(cat, periodo) => setViewDetail({ id: "PF ALIMENTOS", esOB: tipo.es, cat, periodo, isGlobal: true })}
+                    columnasExternas={periodosUnicos}
                   />
                   {plantasComplejo.length > 0 && (
                     <ResumenTable
@@ -338,6 +350,7 @@ export const SeguimientoOTsView = () => {
                       datasetAnt={dataAnteriorFiltrada.filter(d => (!!d.esOB === tipo.es) && PLANTAS_COMPLEJO.includes(d.planta))}
                       esOB={tipo.es} modoVista={modoVista} isGlobal showComparison={!!semanaComparar}
                       onDetail={(cat, periodo) => setViewDetail({ id: "COMPLEJO", esOB: tipo.es, cat, periodo, isGlobal: true })}
+                      columnasExternas={periodosUnicos}
                     />
                   )}
                 </div>
@@ -345,7 +358,7 @@ export const SeguimientoOTsView = () => {
             </div>
 
             {/* SEPARADOR EVOLUCIÓN */}
-            {!isLoading && serverStats.flowStats && (
+            {/* {!isLoading && serverStats.flowStats && (
               <div className="mb-12 border-t border-pf-neutral-200 pt-8">
                 <EvolutionDashboard
                   nuevas={serverStats.flowStats.nuevas}
@@ -355,7 +368,7 @@ export const SeguimientoOTsView = () => {
                   semanaAnterior={semanaComparar}
                 />
               </div>
-            )}
+            )} */}
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-in fade-in duration-700 delay-100">
               {[{ t: "OM", es: false }, { t: "OB", es: true }].map(tipo => (
@@ -368,6 +381,7 @@ export const SeguimientoOTsView = () => {
                       datasetAnt={dataAnteriorFiltrada.filter(d => d.planta === p && (!!d.esOB === tipo.es))}
                       esOB={tipo.es} modoVista={modoVista} showComparison={!!semanaComparar}
                       onDetail={(cat, periodo) => setViewDetail({ id: p, esOB: tipo.es, cat, periodo })}
+                      columnasExternas={periodosUnicos}
                     />
                   ))}
                 </div>

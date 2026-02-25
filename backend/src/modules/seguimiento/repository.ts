@@ -1,13 +1,7 @@
-import { query, executeMany } from '../../db/config.js';
+import { query } from '../../db/config.js';
 import type { OrdenTrabajo, TecnicoEstado } from '../../types.js';
-import type { ActivoRow } from './types.js';
 
 export const SeguimientoRepository = {
-  // Ya no usamos historial de semanas
-  getSemanas: async (tipo: string): Promise<string[]> => {
-    return ['ACTUAL'];
-  },
-
   // Obtiene las OTs desde Oracle filtradas por fechas Y por las plantas del usuario
   getPedidos: async (
     fechaInicio: string,
@@ -40,8 +34,8 @@ export const SeguimientoRepository = {
             AND UPPER(p.descripcion) NOT LIKE 'MOB%'
           )
         )
-        AND p.fecha_inicial_programada >= TO_DATE(:fechaInicio, 'YYYY-MM-DD')
-        AND p.fecha_inicial_programada <= TO_DATE(:fechaFin, 'YYYY-MM-DD')
+        AND TRUNC(p.fecha_inicial_programada) >= TO_DATE(:fechaInicio, 'YYYY-MM-DD')
+        AND TRUNC(p.fecha_inicial_programada) <= TO_DATE(:fechaFin, 'YYYY-MM-DD')
     `;
 
     const sql = `
@@ -81,7 +75,7 @@ export const SeguimientoRepository = {
                 WHEN m.rmd = 'NO' OR m.rse = 'NO' THEN 'OC / OTRO'
                 ELSE 'PROGRAMADOR'
             END as "CLASIFICACION",
-            CASE WHEN p.pedido_trabajo LIKE 'OB%' THEN 1 ELSE 0 END as "ES_OB",
+            CASE WHEN p.pedido_trabajo LIKE 'OB%' OR UPPER(p.descripcion) LIKE '%(INFRA)%' THEN 1 ELSE 0 END as "ES_OB",
             TO_CHAR(p.fecha_inicial_programada, 'MM/YYYY') as "PERIODO",
             TO_CHAR(p.fecha_inicial_programada, 'YYYY-"S"IW') as "SEMANA",
             TO_CHAR(p.fecha_inicial_programada, 'DD/MM/YYYY') as "FECHA",
@@ -205,9 +199,9 @@ export const SeguimientoRepository = {
         id: r.OT,
         planta: r.PLANTA || 'OTROS',
         ot: r.OT,
-        nroOrden: r.OT, // Added for consistency with OrdenTrabajo
+        nroOrden: r.OT,
         nroActivo: r.NRO_ACTIVO,
-        equipo: r.NRO_ACTIVO, // Added for consistency with OrdenTrabajo
+        equipo: r.NRO_ACTIVO,
         descripcion: r.DESCRIPCION,
         estado: r.ESTADO,
         clasificacion: r.CLASIFICACION,

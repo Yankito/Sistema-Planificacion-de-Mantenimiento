@@ -9,13 +9,6 @@ import { fetchAuth } from "../../../shared/api/fetchAuth";
 
 const API_BASE = API_ENDPOINTS.SEGUIMIENTO;
 
-// Obtener lista de semanas (snapshots) disponibles
-export const getSemanas = async (tipo: string = 'SEGUIMIENTO'): Promise<string[]> => {
-  const res = await fetchAuth(`${API_BASE}/semanas?tipo=${tipo}`);
-  if (!res.ok) throw new Error("Error al obtener semanas");
-  return res.json();
-};
-
 // Obtener todos los datos en una sola request: pedidos + flowStats + techStats
 export const getDatos = async (fechaInicio?: string, fechaFin?: string): Promise<{
   pedidos: AtrasoRow[];
@@ -107,8 +100,8 @@ export const uploadExcel = async (file: File, targetWeek: string): Promise<Uploa
 };
 
 // Descargar Reporte Excel (Manejo de Blob compatible con Navegador)
-export const descargarExcel = async (semana: string, modo: string, semanaAnt: string): Promise<void> => {
-  const url = `${API_BASE}/descargar-reporte?semana=${semana}&modo=${modo}&semanaAnt=${semanaAnt}`;
+export const descargarExcel = async (semana: string, modo: string, semanaAnt: string, fechaInicio: string, fechaFin: string): Promise<void> => {
+  const url = `${API_BASE}/descargar-reporte?semana=${semana}&modo=${modo}&semanaAnt=${semanaAnt}&fechaInicio=${fechaInicio}&fechaFin=${fechaFin}`;
   const res = await fetchAuth(url);
   if (!res.ok) throw new Error("Error al generar Excel");
 

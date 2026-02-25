@@ -9,6 +9,7 @@ interface UseSeguimientoModalProps {
   viewDetail: { id: string; esOB: boolean; cat?: string; isGlobal?: boolean; periodo?: string };
   PLANTAS_COMPLEJO: string[];
   PLANTAS_PF_ALIMENTOS: string[];
+  modoVista?: "ATRASOS" | "CUMPLIDAS";
 }
 
 export const useSeguimientoModal = ({
@@ -16,7 +17,8 @@ export const useSeguimientoModal = ({
   dataAnterior,
   viewDetail,
   PLANTAS_COMPLEJO,
-  PLANTAS_PF_ALIMENTOS
+  PLANTAS_PF_ALIMENTOS,
+  modoVista
 }: UseSeguimientoModalProps) => {
 
   // --- ESTADOS DE FILTROS ---
@@ -48,8 +50,8 @@ export const useSeguimientoModal = ({
   const { filteredGeneral, estadosDisponibles } = useMemo(() => {
     // Filtrar por el contexto del clic en la tabla de resumen
     const base = dataModo.filter(d => {
-      // EXCLUSIÓN DE MOB (Mobiliario/Muebles)
-      if (d.descripcion.toUpperCase().startsWith("MOB")) return false;
+      // EXCLUSIÓN DE MOB (Mobiliario/Muebles) - Solo para CUMPLIMIENTO
+      if (modoVista === "CUMPLIDAS" && d.descripcion.toUpperCase().startsWith("MOB")) return false;
 
       const matchPlanta = viewDetail.isGlobal
         ? (viewDetail.id === "COMPLEJO" ? PLANTAS_COMPLEJO.includes(d.planta) : PLANTAS_PF_ALIMENTOS.includes(d.planta))
@@ -93,7 +95,7 @@ export const useSeguimientoModal = ({
         ...Array.from(estados).sort((a, b) => a.localeCompare(b))
       ]
     };
-  }, [dataModo, viewDetail, PLANTAS_COMPLEJO, PLANTAS_PF_ALIMENTOS, filterEstado, searchTerm, previousOtSet, dataAnterior.length]);
+  }, [dataModo, viewDetail, PLANTAS_COMPLEJO, PLANTAS_PF_ALIMENTOS, filterEstado, searchTerm, previousOtSet, dataAnterior.length, modoVista]);
 
   // --- PAGINACIÓN SEGURA ---
   const totalPaginas = Math.ceil(filteredGeneral.length / itemsPorPagina);

@@ -28,11 +28,11 @@ describe('Date Utilities', () => {
     expect(lunes.getDate()).toBe(9);
   });
 
-  it('debería generar un ID de semana consistente (YYYY-WXX)', () => {
+  it('debería generar un ID de semana consistente (YYYY-SXX)', () => {
     const fecha = new Date(2026, 1, 11);
     const id = getWeekId(fecha);
 
-    // Debería ser algo como 2026-W06 o W07 dependiendo del lunes inicial
-    expect(id).toMatch(/^2026-W\d{2}$/);
+    // Debería ser algo como 2026-S06 o S07 dependiendo del lunes inicial
+    expect(id).toMatch(/^2026-S\d{2}$/);
   });
 });

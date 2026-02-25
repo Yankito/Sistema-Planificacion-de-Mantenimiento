@@ -42,7 +42,7 @@ describe('FallasController', () => {
         it('debe procesar el archivo y guardar datos', async () => {
             const req = {
                 file: { buffer: Buffer.from('fake-excel') },
-                body: { semana: '2025-W10' }
+                body: { semana: '2025-S10' }
             };
             const res = {
                 status: vi.fn().mockReturnThis(),
@@ -59,7 +59,7 @@ describe('FallasController', () => {
 
             expect(readMock).toHaveBeenCalled();
             expect(processor.processFallasData).toHaveBeenCalled();
-            expect(saveSpy).toHaveBeenCalledWith('2025-W10', expect.anything());
+            expect(saveSpy).toHaveBeenCalledWith('2025-S10', expect.anything());
             expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
                 message: "Datos de fallas cargados exitosamente"
             }));
@@ -101,7 +101,7 @@ describe('FallasController', () => {
         });
 
         it('debe filtrar por semana si se provee', async () => {
-            const req = { query: { semana: '2025-W10' } };
+            const req = { query: { semana: '2025-S10' } };
             const res = { json: vi.fn() };
 
             const mockResult = [{ id: 1, planta: 'PF1' }];
@@ -109,7 +109,7 @@ describe('FallasController', () => {
 
             await FallasController.listarFallas(req as any, res as any);
 
-            expect(FallasRepository.getFallasBySemana).toHaveBeenCalledWith('2025-W10');
+            expect(FallasRepository.getFallasBySemana).toHaveBeenCalledWith('2025-S10');
             expect(res.json).toHaveBeenCalledWith(mockResult);
         });
     });

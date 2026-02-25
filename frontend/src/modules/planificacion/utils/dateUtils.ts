@@ -1,6 +1,6 @@
 export const excelDateToJS = (serial: number | string | Date): Date => {
   if (serial instanceof Date) return serial;
-  
+
   const serialNum = typeof serial === 'string' ? parseFloat(serial) : serial;
   if (isNaN(serialNum) || serialNum === 0) return new Date();
 
@@ -8,7 +8,7 @@ export const excelDateToJS = (serial: number | string | Date): Date => {
   // La diferencia real de días entre la base de JS (1970) y Excel es 25569.
   // Pero restamos 2 porque Excel cuenta 1900 como bisiesto (un día extra) 
   // y empieza en el día 1 en lugar del 0.
-  
+
   const daysSinceUnix = serialNum - 25569;
   const date = new Date(Math.round(daysSinceUnix * 86400 * 1000));
 
@@ -39,7 +39,7 @@ export const evitarDomingo = (fecha: Date): Date => {
 
 export const getMonday = (d: Date): Date => {
   const dObj = new Date(d);
-  const day = dObj.getDay(); 
+  const day = dObj.getDay();
   const diff = dObj.getDate() - day + (day === 0 ? -6 : 1);
   const lunes = new Date(dObj.setDate(diff));
   lunes.setHours(0, 0, 0, 0);
@@ -52,5 +52,5 @@ export const getWeekId = (d: Date): string => {
   const numberOfDays = Math.floor((lunes.getTime() - oneJan.getTime()) / 86400000);
   // Cálculo de semana estándar
   const week = Math.ceil((numberOfDays + oneJan.getDay() + 1) / 7);
-  return `${lunes.getFullYear()}-W${String(week).padStart(2, '0')}`;
+  return `${lunes.getFullYear()}-S${String(week).padStart(2, '0')}`;
 };

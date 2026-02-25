@@ -191,3 +191,11 @@ export const toISODate = (d: Date) => {
 export const getStartOfPreviousYear = () => new Date(new Date().getFullYear() - 1, 0, 1);
 export const getStartOfCurrentYear = () => new Date(new Date().getFullYear(), 0, 1);
 export const getCurrentDate = () => new Date();
+export const getSundayOfPreviousWeek = () => {
+  const d = new Date();
+  const diaSemana = (d.getDay() + 6) % 7; // Lunes = 0, Domingo = 6
+  const lunesEstaSemana = new Date(d.getFullYear(), d.getMonth(), d.getDate() - diaSemana);
+  const domingoSemanaPasada = new Date(lunesEstaSemana);
+  domingoSemanaPasada.setDate(lunesEstaSemana.getDate() - 1);
+  return domingoSemanaPasada;
+};

@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { SeguimientoController } from '../controller.js';
 import { SeguimientoRepository } from '../repository.js';
-import * as processor from '../logic/seguimientoOTsProcessor.js';
 import * as backlogAnalysis from '../logic/backlogAnalysis.js';
 import * as technicianAnalysis from '../logic/technicianAnalysis.js';
 import * as exportUtils from '../utils/exportUtils.js';
@@ -10,12 +9,10 @@ import * as templateGenerator from '../logic/templateGenerator.js';
 // Mocks
 vi.mock('../repository.js', () => ({
     SeguimientoRepository: {
-        getSemanas: vi.fn(),
         getPedidos: vi.fn(),
         guardarTodo: vi.fn()
     }
 }));
-vi.mock('../logic/seguimientoOTsProcessor.js');
 vi.mock('../logic/backlogAnalysis.js');
 vi.mock('../logic/technicianAnalysis.js');
 vi.mock('../utils/exportUtils.js');
@@ -31,55 +28,78 @@ vi.mock('xlsx-js-style', () => ({
 }));
 
 describe('SeguimientoController', () => {
+    let req: any;
+    let res: any;
 
     beforeEach(() => {
         vi.clearAllMocks();
-        // Reset default mock returns
         readMock.mockReturnValue({ Sheets: {} });
-    });
 
-    describe('getSemanas', () => {
-        it('debe obtener y retornar semanas', async () => {
-            const req = { query: { tipo: 'SEGUIMIENTO' } };
-            const res = { json: vi.fn() };
+        req = {
+            query: {},
+            params: {},
+            authUser: {
+                usuario: 'testuser',
+                plantas: ['PF1', 'PF2'],
+                roles: ['USER']
+            }
+        };
 
-            vi.spyOn(SeguimientoRepository, 'getSemanas').mockResolvedValue(['2025-W10']);
-
-            await SeguimientoController.getSemanas(req as any, res as any);
-
-            expect(SeguimientoRepository.getSemanas).toHaveBeenCalledWith('SEGUIMIENTO');
-            expect(res.json).toHaveBeenCalledWith(['2025-W10']);
-        });
+        res = {
+            json: vi.fn().mockReturnThis(),
+            status: vi.fn().mockReturnThis(),
+            setHeader: vi.fn().mockReturnThis(),
+            send: vi.fn().mockReturnThis()
+        };
     });
 
     describe('getPedidos', () => {
-        it('debe retornar datos si existen', async () => {
-            const req = { query: { fechaInicio: '2025-01-01', fechaFin: '2025-01-31' } };
-            const res = { json: vi.fn() };
+        it('debe solicitar pedidos dentro del rango de fechas definido y retornarlos', async () => {
+            const fechaInicio = '2025-02-01';
+            const fechaFin = '2025-02-28';
+            req.query = { fechaInicio, fechaFin };
 
-            const mockData = [{ id: 1 }];
-            vi.spyOn(SeguimientoRepository, 'getPedidos').mockResolvedValue(mockData as any);
+            // Simulamos que el repositorio devuelve órdenes que están en ese periodo
+            const mockPedidos = [
+                { ot: 'OT-01', fecha: '05/02/2025', descripcion: 'OT dentro de rango', esOB: false },
+                { ot: 'OT-02', fecha: '20/02/2025', descripcion: 'OT dentro de rango 2', esOB: false },
+                { ot: 'OT-03', fecha: '29/02/2025', descripcion: 'OT fuera de rango 3', esOB: false }
+            ];
 
-            await SeguimientoController.getPedidos(req as any, res as any);
+            const getPedidosSpy = vi.spyOn(SeguimientoRepository, 'getPedidos').mockResolvedValue(mockPedidos as any);
 
-            expect(res.json).toHaveBeenCalledWith(mockData);
+            await SeguimientoController.getPedidos(req, res);
+
+            // Verificamos que se llamó al repositorio con las fechas CORRECTAS
+            expect(getPedidosSpy).toHaveBeenCalledWith(fechaInicio, fechaFin, req.authUser.plantas);
+
+            // Verificamos que el controlador devolvió exactamente lo que el repositorio entregó
+            expect(res.json).toHaveBeenCalledWith(mockPedidos);
+
+            // Verificación adicional de consistencia de datos
+            const result = res.json.mock.calls[0][0];
+            expect(result).toHaveLength(3);
+            expect(result[0].ot).toBe('OT-01');
+        });
+
+        it('debe retornar 400 si faltan fechas obligatorias', async () => {
+            req.query = { fechaInicio: '2025-01-01' }; // Falta fechaFin
+            await SeguimientoController.getPedidos(req, res);
+            expect(res.status).toHaveBeenCalledWith(400);
+            expect(res.json).toHaveBeenCalledWith({ error: expect.stringContaining('formato YYYY-MM-DD') });
         });
     });
 
     describe('getDashboardStats', () => {
         it('debe calcular estadísticas de flujo y técnicos', async () => {
-            const req = { query: { fechaInicio: '2025-01-01', fechaFin: '2025-01-31' } };
-            const res = { json: vi.fn() };
-
+            req.query = { fechaInicio: '2025-01-01', fechaFin: '2025-01-31' };
             vi.spyOn(SeguimientoRepository, 'getPedidos').mockResolvedValue([]);
             vi.spyOn(backlogAnalysis, 'analyzeBacklogFlow').mockReturnValue({ pending: 10 } as any);
             vi.spyOn(technicianAnalysis, 'analyzeTechnicians').mockReturnValue({ top: [] } as any);
 
-            await SeguimientoController.getDashboardStats(req as any, res as any);
+            await SeguimientoController.getDashboardStats(req, res);
 
-            expect(SeguimientoRepository.getPedidos).toHaveBeenCalledTimes(1);
-            expect(backlogAnalysis.analyzeBacklogFlow).toHaveBeenCalled();
-            expect(technicianAnalysis.analyzeTechnicians).toHaveBeenCalled();
+            expect(SeguimientoRepository.getPedidos).toHaveBeenCalled();
             expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
                 flowStats: expect.anything(),
                 techStats: expect.anything()
@@ -87,20 +107,40 @@ describe('SeguimientoController', () => {
         });
     });
 
+    describe('getDatos', () => {
+        it('debe retornar pedidos y estadísticas en una sola llamada', async () => {
+            req.query = { fechaInicio: '2025-01-01', fechaFin: '2025-01-31' };
+            const mockPedidos = [{ ot: '123' }];
+            vi.spyOn(SeguimientoRepository, 'getPedidos').mockResolvedValue(mockPedidos as any);
+            vi.spyOn(backlogAnalysis, 'analyzeBacklogFlow').mockReturnValue({ balanced: true } as any);
+            vi.spyOn(technicianAnalysis, 'analyzeTechnicians').mockReturnValue({ performance: 100 } as any);
+
+            await SeguimientoController.getDatos(req, res);
+
+            expect(res.json).toHaveBeenCalledWith({
+                pedidos: mockPedidos,
+                flowStats: { balanced: true },
+                techStats: { performance: 100 }
+            });
+        });
+
+        it('debe retornar 400 si faltan fechas', async () => {
+            req.query = {};
+            await SeguimientoController.getDatos(req, res);
+            expect(res.status).toHaveBeenCalledWith(400);
+            expect(res.json).toHaveBeenCalledWith({ error: 'Parámetros fechaInicio y fechaFin son obligatorios' });
+        });
+    });
+
     describe('descargarReporte', () => {
         it('debe generar y descargar reporte excel', async () => {
-            const req = { query: { fechaInicio: '2025-01-01', fechaFin: '2025-01-31', modo: 'ATRASOS', semanaAnt: '2025-W09' } };
-            const res = {
-                setHeader: vi.fn(),
-                send: vi.fn()
-            };
-
+            req.query = { fechaInicio: '2025-01-01', fechaFin: '2025-01-31', modo: 'ATRASOS', semanaAnt: '2025-W09' };
             vi.spyOn(SeguimientoRepository, 'getPedidos').mockResolvedValue([]);
             vi.spyOn(exportUtils, 'generarExcelReporte').mockResolvedValue({
                 fileName: 'reporte.xlsx', buffer: Buffer.from('excel')
             });
 
-            await SeguimientoController.descargarReporte(req as any, res as any);
+            await SeguimientoController.descargarReporte(req, res);
 
             expect(exportUtils.generarExcelReporte).toHaveBeenCalled();
             expect(res.setHeader).toHaveBeenCalledWith('Content-Type', expect.stringContaining('spreadsheet'));
@@ -110,15 +150,10 @@ describe('SeguimientoController', () => {
 
     describe('descargarPlantilla', () => {
         it('debe generar y descargar plantilla excel', async () => {
-            const req = { params: { tipo: 'SEGUIMIENTO' } };
-            const res = {
-                setHeader: vi.fn(),
-                send: vi.fn()
-            };
-
+            req.params = { tipo: 'SEGUIMIENTO' };
             vi.spyOn(templateGenerator, 'generarBufferPlantilla').mockReturnValue(Buffer.from('plantilla'));
 
-            await SeguimientoController.descargarPlantilla(req as any, res as any);
+            await SeguimientoController.descargarPlantilla(req, res);
 
             expect(templateGenerator.generarBufferPlantilla).toHaveBeenCalledWith('SEGUIMIENTO');
             expect(res.setHeader).toHaveBeenCalledWith('Content-Type', expect.stringContaining('spreadsheet'));

@@ -28,7 +28,7 @@ describe('OTCard Component (UI)', () => {
         render(<OTCard item={mockItem} isNew={true} />);
         const badge = screen.getByText("NUEVA");
         expect(badge).toBeInTheDocument();
-        expect(badge).toHaveClass("bg-red-600");
+        expect(badge).toHaveClass("bg-pf-red-600");
     });
 
     it('debe renderizar indicadores RMD (Verde) y RSE (Rojo) correctamente', () => {
@@ -37,11 +37,11 @@ describe('OTCard Component (UI)', () => {
         // Buscamos el contenedor de RMD (SI -> Verde)
         const rmdValue = screen.getByText("SI");
         // El padre del texto "SI" debería tener clase verde
-        expect(rmdValue.parentElement).toHaveClass("bg-green-50");
+        expect(rmdValue.parentElement).toHaveClass("bg-pf-success-50");
 
         // Buscamos el contenedor de RSE (NO -> Rojo)
         const rseValue = screen.getByText("NO");
-        expect(rseValue.parentElement).toHaveClass("bg-red-50");
+        expect(rseValue.parentElement).toHaveClass("bg-pf-red-50");
     });
 
     it('debe permitir seleccionar un técnico al hacer click', () => {
@@ -59,6 +59,6 @@ describe('OTCard Component (UI)', () => {
     it('debe mostrar la clasificación con el color correcto (Programador = Morado)', () => {
         render(<OTCard item={mockItem} />);
         const badge = screen.getByText("PROGRAMADOR");
-        expect(badge).toHaveClass("bg-purple-100");
+        expect(badge).toHaveClass("bg-pf-blue-100");
     });
 });

@@ -20,7 +20,7 @@ export const FallasController = {
             // Para consistencia, usaremos la semana del primer registro si no se envía
             let semanaStr = req.body.semana;
             if (!semanaStr && data.length > 0) {
-                // Construir string de semana, ej: "2024-W10"
+                // Construir string de semana, ej: "2024-S10"
                 // Pero el sistema usa snapshots con semana.
                 // En planificacion/repository usa semana como string.
                 // En fallasProcessor: semana es number.

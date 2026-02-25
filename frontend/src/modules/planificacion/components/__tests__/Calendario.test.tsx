@@ -19,8 +19,8 @@ describe('Componente Calendario', () => {
     dragOverDate: null,
     ordenesPorDia: {
       '01/02/2026': [
-        { nroOrden: '1', tecnicos: [{ nombre: 'JUAN', rol: 'Mecanico' }], fechaSugerida: '01/02/2026', planta: 'Planta 1', equipo: 'Equipo 1', descripcion: 'Descripción 1', fechaAnterior: '01/01/2026' },
-        { nroOrden: '2', tecnicos: [{ nombre: 'VACANTE' }], fechaSugerida: '01/02/2026', planta: 'Planta 1', equipo: 'Equipo 2', descripcion: 'Descripción 2', fechaAnterior: '01/01/2026' }
+        { nroOrden: '1', tecnicos: [{ nombre: 'JUAN', rol: 'Mecanico', planta: 'Planta 1' }], fechaSugerida: '01/02/2026', planta: 'Planta 1', equipo: 'Equipo 1', descripcion: 'Descripción 1', fechaAnterior: '01/01/2026', esOB: false } as PlanResult,
+        { nroOrden: '2', tecnicos: [{ nombre: 'VACANTE', rol: 'VACANTE', planta: 'Planta 1' }], fechaSugerida: '01/02/2026', planta: 'Planta 1', equipo: 'Equipo 2', descripcion: 'Descripción 2', fechaAnterior: '01/01/2026', esOB: false } as PlanResult
       ]
     } as Record<string, PlanResult[]>,
     mostrarSoloVacantes: false,
@@ -54,7 +54,7 @@ describe('Componente Calendario', () => {
 
   it('debe cambiar el texto del botón cuando mostrarSoloVacantes es true', () => {
     render(<Calendario {...mockProps} mostrarSoloVacantes={true} />);
-    expect(screen.getByText('Mostrando OTs Incompletas')).toBeInTheDocument();
+    expect(screen.getByText('Mostrando Incompletas')).toBeInTheDocument();
   });
 
   it('debe mostrar la notificación de éxito cuando showSuccess es true', () => {

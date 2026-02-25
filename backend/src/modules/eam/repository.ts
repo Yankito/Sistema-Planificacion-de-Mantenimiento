@@ -36,7 +36,7 @@ export const EamRepository = {
         fecha_inicial_programada, duracion_horas, departamento_propiedad, estado
       ) VALUES (
         :pedido_trabajo, :numero_activo, :grupo_activos, :descripcion, 
-        TO_DATE(:fecha_inicial_programada, 'DD/MM/YYYY HH24:MI:SS'), :duracion_horas, :departamento_propiedad, :estado
+        :fecha_inicial_programada, :duracion_horas, :departamento_propiedad, :estado
       )
     `;
     // Nota: Asumimos fecha formateada como string DD/MM/YYYY... o Date object si oracledb lo soporta directo.
@@ -54,7 +54,7 @@ export const EamRepository = {
         fecha_programada_inicio, nro_operacion, nro_seq_recurso, op_finalizada
       ) VALUES (
         :planta, :empleado, :nro_ot, :tipo, :estado_om, 
-        TO_DATE(:fecha_programada_inicio, 'DD/MM/YYYY'), :nro_operacion, :nro_seq_recurso, :op_finalizada
+        :fecha_programada_inicio, :nro_operacion, :nro_seq_recurso, :op_finalizada
       )
     `;
     return await executeMany(sql, items);
@@ -67,7 +67,7 @@ export const EamRepository = {
         numero, activo, descripcion, tpt, fecha_progr, 
         anx, art_inv, art_dir, n_sol, serv_ex, horas, rmd, rse
       ) VALUES (
-        :numero, :activo, :descripcion, :tpt, TO_DATE(:fecha_progr, 'DD/MM/YYYY'), 
+        :numero, :activo, :descripcion, :tpt, :fecha_progr, 
         :anx, :art_inv, :art_dir, :n_sol, :serv_ex, :horas, :rmd, :rse
       )
     `;

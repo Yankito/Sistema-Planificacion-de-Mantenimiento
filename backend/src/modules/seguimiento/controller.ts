@@ -1,7 +1,5 @@
 import type { Request, Response } from 'express';
-import XLSX from "xlsx-js-style";
 import { SeguimientoRepository } from './repository.js';
-import { processSeguimientoOTs } from './logic/seguimientoOTsProcessor.js';
 import { analyzeBacklogFlow } from './logic/backlogAnalysis.js';
 import { analyzeTechnicians } from './logic/technicianAnalysis.js';
 import { generarExcelReporte } from './utils/exportUtils.js';
@@ -9,18 +7,6 @@ import * as TemplateGenerator from './logic/templateGenerator.js';
 import type { OrdenTrabajo } from '../../types.js';
 
 export const SeguimientoController = {
-
-  getSemanas: async (req: Request, res: Response) => {
-    try {
-      const { tipo } = req.query;
-      const semanas = await SeguimientoRepository.getSemanas(tipo as string);
-      console.log(semanas);
-      res.json(semanas);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Error desconocido';
-      res.status(500).json({ error: message });
-    }
-  },
 
   getPedidos: async (req: Request, res: Response) => {
     try {
@@ -122,6 +108,7 @@ export const SeguimientoController = {
 
       let dataAnterior: OrdenTrabajo[] = [];
       if (semanaAnt) {
+        console.log("semanaAnt", semanaAnt);
         dataAnterior = await SeguimientoRepository.getPedidos(start, end, plantasUsuario);
       }
 
