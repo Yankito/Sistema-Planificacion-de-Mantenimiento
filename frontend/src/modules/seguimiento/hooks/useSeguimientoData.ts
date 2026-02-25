@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import * as SeguimientoService from "../services/SeguimientoService";
 import type { AtrasoRow, BacklogStats, TechStats } from "../types";
 import {
@@ -6,6 +6,7 @@ import {
   getStartOfPreviousYear,
   getCurrentDate
 } from "../../../shared/utils/dateUtils";
+import { toast } from "sonner";
 
 export const useSeguimientoData = () => {
   // Datos crudos para las tablas
@@ -35,29 +36,22 @@ export const useSeguimientoData = () => {
         fechaFin: fechaFin !== undefined ? fechaFin : prev.fechaFin
       }));
     }
-    console.log(fechaInicio, fechaFin);
 
     try {
-      const data = await SeguimientoService.getPedidos(fechaInicio, fechaFin);
-      setDataActual(data);
-
-      try {
-        const stats = await SeguimientoService.getAnalytics("ACTUAL", "ANTERIOR", fechaInicio, fechaFin);
-        setServerStats(stats);
-      } catch (e) {
-        console.warn("No se pudieron cargar estadisticas", e);
-        setServerStats({ flowStats: null, techStats: [] });
-      }
-
+      const { pedidos, flowStats, techStats } = await SeguimientoService.getDatos(fechaInicio, fechaFin);
+      setDataActual(pedidos);
+      setServerStats({ flowStats, techStats });
     } catch (error) {
       console.error("Error cargando datos de seguimiento", error);
+      toast.error("Error al cargar los datos de seguimiento de OTs.");
+      setDataActual([]);
+      setServerStats({ flowStats: null, techStats: [] });
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-
-  return {
+  return useMemo(() => ({
     dataActual,
     dataAnterior: [],
     serverStats,
@@ -65,9 +59,9 @@ export const useSeguimientoData = () => {
     semanaComparar: "",
     isLoading,
     filtros, // Exportar filtros para valor inicial en la vista
-    cargarReporte: async (_semana: string) => cargarDatos(filtros.fechaInicio, filtros.fechaFin),
+    cargarReporte: async () => cargarDatos(filtros.fechaInicio, filtros.fechaFin),
     cambiarComparacion: async () => { }, // No-op
     limpiarComparacion: () => { }, // No-op
     cargarDatos
-  };
+  }), [dataActual, serverStats, isLoading, filtros, cargarDatos]);
 };

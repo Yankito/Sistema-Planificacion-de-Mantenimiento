@@ -5,6 +5,7 @@ import { mapDepartamentoAPlanta } from "../utils/excelUtils";
 import * as PlanificacionService from "../services/PlanificacionService";
 import { getMonthOptions } from "../../../shared/utils/dateUtils";
 import { usePlantasAcceso } from "../../../shared/hooks/usePlantasAcceso";
+import { toast } from "sonner";
 
 export const usePlanificacionManager = () => {
   const { plantaDefault } = usePlantasAcceso();
@@ -114,6 +115,7 @@ export const usePlanificacionManager = () => {
       }
     } catch (error) {
       console.error("Error al cargar horarios desde base de datos:", error);
+      toast.error("Error al cargar los horarios desde la base de datos.");
     } finally {
       if (horariosInFlightRef.current === key) {
         horariosInFlightRef.current = null;
@@ -156,6 +158,7 @@ export const usePlanificacionManager = () => {
       }
     } catch (error) {
       console.error("Error al cargar planificación:", error);
+      toast.error("Error al cargar la planificación desde Oracle.");
     } finally {
       if (planInFlightRef.current === key) {
         planInFlightRef.current = null;
@@ -200,6 +203,7 @@ export const usePlanificacionManager = () => {
       return false;
     } catch (error) {
       console.error("Error en ejecución remota:", error);
+      toast.error("Error al ejecutar la planificación en el servidor.");
       return false;
     } finally {
       setLoadingAction(false);

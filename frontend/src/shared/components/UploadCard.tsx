@@ -1,6 +1,6 @@
 import { UploadCloud, CheckCircle2, Download, type LucideIcon } from "lucide-react";
 import { useState, useRef } from "react";
-
+import { toast } from "sonner";
 import { descargarPlantilla } from "../../modules/seguimiento/services/SeguimientoService";
 import type { FileType } from "./FileUploader";
 
@@ -62,6 +62,7 @@ export const UploadCard = ({
       await descargarPlantilla(type);
     } catch (err) {
       console.error("Error al bajar plantilla", err);
+      toast.error("No se pudo descargar la plantilla. Intente nuevamente.");
     }
   };
 

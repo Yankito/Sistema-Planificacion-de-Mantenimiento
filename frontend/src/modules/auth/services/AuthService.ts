@@ -14,6 +14,12 @@ export const login = async (credentials: LoginCredentials): Promise<LoginRespons
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(credentials),
+    signal: AbortSignal.timeout(15000), // Timeout
+  }).catch((err) => {
+    if (err.name === 'TimeoutError') {
+      throw new Error('El servidor tardó demasiado en responder. Verifica tu conexión.');
+    }
+    throw new Error('No se pudo conectar con el servidor (backend caído o sin red).');
   });
 
   if (!res.ok) {

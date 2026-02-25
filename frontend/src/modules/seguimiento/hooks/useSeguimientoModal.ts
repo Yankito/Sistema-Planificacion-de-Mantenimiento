@@ -9,7 +9,6 @@ interface UseSeguimientoModalProps {
   viewDetail: { id: string; esOB: boolean; cat?: string; isGlobal?: boolean; periodo?: string };
   PLANTAS_COMPLEJO: string[];
   PLANTAS_PF_ALIMENTOS: string[];
-  modoVista?: "ATRASOS" | "CUMPLIDAS";
 }
 
 export const useSeguimientoModal = ({
@@ -17,8 +16,7 @@ export const useSeguimientoModal = ({
   dataAnterior,
   viewDetail,
   PLANTAS_COMPLEJO,
-  PLANTAS_PF_ALIMENTOS,
-  modoVista = "ATRASOS"
+  PLANTAS_PF_ALIMENTOS
 }: UseSeguimientoModalProps) => {
 
   // --- ESTADOS DE FILTROS ---

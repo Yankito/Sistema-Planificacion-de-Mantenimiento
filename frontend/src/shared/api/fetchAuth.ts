@@ -59,6 +59,15 @@ export const fetchAuth = async (url: string, options: RequestInit = {}): Promise
   const res = await fetch(url, {
     ...options,
     headers,
+    signal: options.signal ?? AbortSignal.timeout(15000), // 15 seconds timeout
+  }).catch((err) => {
+    if (err.name === 'TimeoutError') {
+      throw new Error('El servidor tardó demasiado en responder. Verifica tu conexión o intenta más tarde.');
+    }
+    if (err.name === 'TypeError' && err.message.includes('fetch')) {
+      throw new Error('No se pudo conectar con el servidor (backend caído o sin red).');
+    }
+    throw err;
   });
 
   // Si el backend retorna 401 (token expirado o inválido), desloguear

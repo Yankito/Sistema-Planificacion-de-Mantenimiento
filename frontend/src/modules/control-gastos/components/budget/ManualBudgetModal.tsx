@@ -1,7 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { X, Search, Plus, Save, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
 import { type ManualEntryLine, FRECUENCIAS_PREDEFINIDAS, type PresupuestoRow } from '../../types';
 import type { ActivoEAM } from '../../../../shared/types';
+import { toast } from 'sonner';
+import { confirmDialog } from '../../../../shared/utils/confirmDialog';
 
 interface ManualBudgetModalProps {
   isOpen: boolean;
@@ -34,25 +36,27 @@ export const ManualBudgetModal: React.FC<ManualBudgetModalProps> = React.memo(({
   const [manualEntries, setManualEntries] = useState<ManualEntryLine[]>([]);
   const [saveLoading, setSaveLoading] = useState(false);
   const [dataLoading, setDataLoading] = useState(false);
-  const searchTimeoutRef = useRef<any>(null);
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const lastLoadedAssetRef = useRef<string | null>(null);
 
-  // Cargar presupuesto existente solo una vez por activo seleccionado
-  useEffect(() => {
-    if (isOpen && selectedAsset?.activo) {
-      if (lastLoadedAssetRef.current !== selectedAsset.activo) {
-        lastLoadedAssetRef.current = selectedAsset.activo;
-        loadAssetBudget();
-      }
-    } else if (!isOpen) {
-      setManualEntries([]);
-      setAssetSearch('');
-      lastLoadedAssetRef.current = null;
+  const createEmptyEntry = useCallback((freq = 'mensual', startMonth = 1): ManualEntryLine => {
+    const isPre = FRECUENCIAS_PREDEFINIDAS.includes(freq.toLowerCase());
+    const entry: ManualEntryLine = {
+      id: Math.random().toString(36).substr(2, 9),
+      frecuencia: freq,
+      isPredefined: isPre,
+      collapsed: false,
+      startMonth: startMonth,
+      monthlyData: {}
+    };
+    for (let i = 1; i <= 12; i++) {
+      entry.monthlyData[i] = { bodega: 0, servExt: 0, correctivo: 0, locked: isPre };
     }
-  }, [isOpen, selectedAsset?.activo]);
+    return entry;
+  }, []);
 
-  const loadAssetBudget = async () => {
+  const loadAssetBudget = useCallback(async () => {
     if (!selectedAsset?.activo) return;
     setDataLoading(true);
     try {
@@ -77,26 +81,28 @@ export const ManualBudgetModal: React.FC<ManualBudgetModalProps> = React.memo(({
       setManualEntries(entries.length > 0 ? entries : [createEmptyEntry('mensual')]);
     } catch (e) {
       console.error('Error loading budget details:', e);
+      const msg = e instanceof Error ? e.message : 'Error desconocido';
+      toast.error('Error al cargar el presupuesto del activo: ' + msg);
     } finally {
       setDataLoading(false);
     }
-  };
+  }, [selectedAsset?.activo, getPresupuesto, selectedYear, createEmptyEntry]);
 
-  const createEmptyEntry = (freq = 'mensual', startMonth = 1): ManualEntryLine => {
-    const isPre = FRECUENCIAS_PREDEFINIDAS.includes(freq.toLowerCase());
-    const entry: ManualEntryLine = {
-      id: Math.random().toString(36).substr(2, 9),
-      frecuencia: freq,
-      isPredefined: isPre,
-      collapsed: false,
-      startMonth: startMonth,
-      monthlyData: {}
-    };
-    for (let i = 1; i <= 12; i++) {
-      entry.monthlyData[i] = { bodega: 0, servExt: 0, correctivo: 0, locked: isPre };
+  // Cargar presupuesto existente solo una vez por activo seleccionado
+  useEffect(() => {
+    if (isOpen && selectedAsset?.activo) {
+      if (lastLoadedAssetRef.current !== selectedAsset.activo) {
+        lastLoadedAssetRef.current = selectedAsset.activo;
+        loadAssetBudget();
+      }
+    } else if (!isOpen) {
+      setManualEntries([]);
+      setAssetSearch('');
+      lastLoadedAssetRef.current = null;
     }
-    return entry;
-  };
+  }, [isOpen, selectedAsset?.activo, loadAssetBudget]);
+
+
 
   const applyFrequencyLogic = (lineIdx: number, freq: string, amounts: { b: number, s: number, c: number }, startMonth?: number) => {
     const copy = [...manualEntries];
@@ -177,18 +183,20 @@ export const ManualBudgetModal: React.FC<ManualBudgetModalProps> = React.memo(({
       });
 
       if (allRows.length === 0) {
-        if (!confirm('No hay montos ingresados. ¿Desea borrar el presupuesto para este activo?')) {
+        const confirmed = await confirmDialog('¿Borrar presupuesto?', 'No hay montos ingresados. ¿Desea borrar el presupuesto para este activo?');
+        if (!confirmed) {
           setSaveLoading(false);
           return;
         }
       }
 
       await saveManualPresupuesto(allRows);
-      alert('Presupuesto guardado correctamente');
+      toast.success('Presupuesto guardado correctamente');
       onSaveSuccess();
       onClose();
-    } catch (err: any) {
-      alert('Error al guardar: ' + err.message);
+    } catch (err) {
+      const error = err as Error;
+      toast.error('Error al guardar: ' + error.message);
     } finally {
       setSaveLoading(false);
     }

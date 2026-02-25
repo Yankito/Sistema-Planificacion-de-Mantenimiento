@@ -4,7 +4,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useControlGastos } from '../useControlGastos';
 import { ControlGastosService } from '../../services/ControlGastosService';
-import type { PresupuestoRow } from '../../types';
+import type { PresupuestoRow, GastoConsolidadoRow } from '../../types';
 
 // Mock del servicio
 vi.mock('../../services/ControlGastosService', () => {
@@ -28,15 +28,15 @@ describe('useControlGastos Hook', () => {
     });
 
     it('debe manejar el estado de loading correctamente', async () => {
-        let resolvePromise: any;
-        const promise = new Promise(resolve => { resolvePromise = resolve; });
+        let resolvePromise!: (value: PresupuestoRow[]) => void;
+        const promise = new Promise<PresupuestoRow[]>(resolve => { resolvePromise = resolve; });
 
         // Usamos vi.mocked para tipado pero el mock ya está definido en vi.mock above
-        vi.mocked(ControlGastosService.getPresupuesto).mockReturnValue(promise as any);
+        vi.mocked(ControlGastosService.getPresupuesto).mockReturnValue(promise);
 
         const { result } = renderHook(() => useControlGastos());
 
-        let callPromise: any;
+        let callPromise: Promise<PresupuestoRow[]>;
         // No usamos await aquí para poder verificar el loading
         act(() => {
             callPromise = result.current.getPresupuesto(2026);
@@ -62,7 +62,7 @@ describe('useControlGastos Hook', () => {
         await act(async () => {
             try {
                 await result.current.uploadPresupuesto(new File([], 'test.xlsx'));
-            } catch (e) {
+            } catch {
                 // Ignorar el error lanzado por el hook
             }
         });
@@ -72,16 +72,17 @@ describe('useControlGastos Hook', () => {
     });
 
     it('debe llamar a getGastosConsolidados con los parámetros correctos', async () => {
-        const mockData: PresupuestoRow[] = [
+        const mockData: GastoConsolidadoRow[] = [
             {
-                activo: 'ACTIVO DE PRUEBA (2002)',
-                frecuencia: 'MENSUAL',
-                mes: 1,
-                anio: 2026,
-                montoBodega: 100,
-                montoServExt: 200,
-                montoCorrectivo: 300
-            }
+                tipoGasto: 'BODEGA',
+                numeroOt: '1000',
+                tipoOt: 'PM01',
+                nroActivo: 'ACTIVO DE PRUEBA (2002)',
+                descripcionArticulo: 'Repuesto x',
+                costoTrx: 100,
+                fechaTrx: '2026-01-10',
+                planta: 'PF1'
+            } as unknown as GastoConsolidadoRow
         ];
         vi.mocked(ControlGastosService.getGastosConsolidados).mockResolvedValue(mockData);
 
@@ -106,7 +107,7 @@ describe('useControlGastos Hook', () => {
             montoServExt: 200,
             montoCorrectivo: 300
         }];
-        vi.mocked(ControlGastosService.saveManualPresupuesto).mockResolvedValue(undefined as any);
+        vi.mocked(ControlGastosService.saveManualPresupuesto).mockResolvedValue(undefined);
 
         const { result } = renderHook(() => useControlGastos());
 

@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import type { FallaRow } from '../types';
 import * as FallasService from '../services/FallasService';
+import { toast } from 'sonner';
 
 export const useFallasManager = () => {
     const [data, setData] = useState<FallaRow[]>([]);
@@ -15,7 +16,9 @@ export const useFallasManager = () => {
             setData(result);
         } catch (err) {
             console.error("Error cargando fallas:", err);
-            setError((err as Error).message || "Error desconocido al cargar fallas");
+            const msg = (err as Error).message || "Error desconocido al cargar fallas";
+            setError(msg);
+            toast.error("Error al cargar datos de fallas: " + msg);
         } finally {
             setIsLoading(false);
         }
@@ -37,7 +40,9 @@ export const useFallasManager = () => {
             return result;
         } catch (err) {
             console.error("Error subiendo fallas:", err);
-            setError((err as Error).message);
+            const msg = (err as Error).message;
+            setError(msg);
+            toast.error("Error al subir el archivo de fallas: " + msg);
             throw err;
         } finally {
             setIsLoading(false);

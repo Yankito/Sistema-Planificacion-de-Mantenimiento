@@ -2,6 +2,7 @@
 // No carga datos de planificación ni seguimiento automáticamente
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../context/useAuth';
+import { toast } from 'sonner';
 import * as AuthService from '../../auth/services/AuthService';
 import type { DashboardIndicadores } from '../../auth/types';
 import {
@@ -10,7 +11,6 @@ import {
   type LucideIcon
 } from 'lucide-react';
 import { FileUploader, type FileType, type UploadEvent } from '../../../shared/components/FileUploader';
-import * as SeguimientoService from '../../seguimiento/services/SeguimientoService';
 import { getWeekOptions } from '../../../shared/utils/dateUtils';
 import { usePlanificacionManager } from '../../planificacion/hooks/usePlanificacionManager';
 import { useSeguimientoData } from '../../seguimiento/hooks/useSeguimientoData';
@@ -65,22 +65,31 @@ export const DashboardView = ({ setActiveTab }: DashboardViewProps) => {
     if (!file) return;
     setIsProcessing(true);
     try {
-      if (tipo === 'SEGUIMIENTO') {
-        await SeguimientoService.uploadExcel(file, targetUploadWeek);
-        seguimiento.cargarReporte(targetUploadWeek);
-      } else if (tipo === 'FALLAS') {
+      if (tipo === 'FALLAS') {
         const { uploadFallas } = await import('../../fallas/services/FallasService');
         await uploadFallas(file);
         fallas.loadData();
       } else if (tipo === 'MASIVO') {
         const { MasivoService } = await import('../../../shared/services/MasivoService');
         const res = await MasivoService.uploadExcel(file, targetUploadWeek, extraData?.mes, extraData?.anio);
-        alert(`Carga Masiva Exitosa:\n- Empleados: ${res.counts.empleados}\n- Activos: ${res.counts.activos}\n- Horarios: ${res.counts.horarios}\n- Pedidos: ${res.counts.pedidos}\n- Fallas: ${res.counts.fallas}`);
-        window.location.reload();
+        toast.success(
+          <div className="flex flex-col gap-1">
+            <span className="font-bold">Carga Masiva Exitosa:</span>
+            <ul className="text-xs text-slate-500 list-disc list-inside">
+              <li>Empleados: {res.counts.empleados}</li>
+              <li>Activos: {res.counts.activos}</li>
+              <li>Horarios: {res.counts.horarios}</li>
+              <li>Pedidos: {res.counts.pedidos}</li>
+              <li>Fallas: {res.counts.fallas}</li>
+            </ul>
+          </div>
+        );
+        setTimeout(() => window.location.reload(), 2000);
       }
-    } catch (error: any) {
+    } catch (err) {
+      const error = err as Error;
       console.error('Error procesando archivo', error);
-      alert('Error al procesar el archivo: ' + error.message);
+      toast.error('Error al procesar el archivo: ' + error.message);
     } finally {
       setIsProcessing(false);
     }

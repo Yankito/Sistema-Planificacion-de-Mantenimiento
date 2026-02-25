@@ -8,14 +8,30 @@ export const SeguimientoRepository = {
     return ['ACTUAL'];
   },
 
-  // Obtiene los datos ACTUALES directos de la base
-  // Ignora el parámetro 'semana' ya que siempre lee en tiempo real
-  getPedidos: async (fechaInicio: string, fechaFin: string): Promise<OrdenTrabajo[]> => {
+  // Obtiene las OTs desde Oracle filtradas por fechas Y por las plantas del usuario
+  getPedidos: async (
+    fechaInicio: string,
+    fechaFin: string,
+    plantasUsuario: string[] = []
+  ): Promise<OrdenTrabajo[]> => {
     if (!fechaInicio || !fechaFin) {
       throw new Error("El rango de fechas (fechaInicio y fechaFin) es obligatorio.");
     }
 
-    const params: Record<string, string> = { fechaInicio, fechaFin };
+    // Si no hay plantas autorizadas, devolvemos vacío por seguridad
+    if (plantasUsuario.length === 0) {
+      console.warn("[SeguimientoRepository] Sin plantas autorizadas para el usuario.");
+      return [];
+    }
+
+    // Construimos el IN clause con bind variables individuales de Oracle (:p0, :p1, ...)
+    // No usamos interpolación directa para evitar SQL injection
+    const plantaBindKeys = plantasUsuario.map((_, i) => `:planta${i}`).join(', ');
+    const plantaBindParams: Record<string, string> = {};
+    plantasUsuario.forEach((p, i) => { plantaBindParams[`planta${i}`] = p; });
+
+    const params: Record<string, string> = { fechaInicio, fechaFin, ...plantaBindParams };
+
     const whereClause = `
       WHERE (
           UPPER(p.estado) = 'LIBERADO'
@@ -52,7 +68,8 @@ export const SeguimientoRepository = {
           WHERE c.empleado IS NOT NULL
           GROUP BY TRIM(nro_ot)
        )
-       SELECT 
+       SELECT * FROM (
+          SELECT 
             p.pedido_trabajo as "OT",
             p.numero_activo as "NRO_ACTIVO",
             p.descripcion as "DESCRIPCION",
@@ -155,6 +172,7 @@ export const SeguimientoRepository = {
 
        LEFT JOIN PF_EAM_MASIVO m ON p.pedido_trabajo = m.numero
        ${whereClause}
+    ) WHERE "PLANTA" IN (${plantaBindKeys})
     `;
 
     const res = await query(sql, params);

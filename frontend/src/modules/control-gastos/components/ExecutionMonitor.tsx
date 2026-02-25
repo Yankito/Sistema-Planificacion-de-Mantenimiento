@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ControlGastosService } from '../services/ControlGastosService';
 import { Loader2 } from 'lucide-react';
 import { useControlGastos } from '../hooks/useControlGastos';
 import { type GastoConsolidadoRow } from '../types';
+import { toast } from 'sonner';
 import type { AssetExecutionDetail, CostCenterGroup, SortField, SortOrder, AssetCategory, CategorySummary } from './monitor/types';
 import { KPICards } from './monitor/KPICards';
 import { MonitorFilters } from './monitor/MonitorFilters';
@@ -52,16 +53,12 @@ export const ExecutionMonitor = ({ selectedYear, selectedPlanta, selectedMonth }
         { id: 10, name: 'Octubre' }, { id: 11, name: 'Noviembre' }, { id: 12, name: 'Diciembre' }
     ];
 
-    useEffect(() => {
-        loadData();
-    }, [selectedYear, currentMonth, selectedPlanta]);
-
     const calculateDeviation = (real: number, budget: number) => {
         if (budget === 0) return real > 0 ? 100 : 0;
         return ((real - budget) / budget) * 100;
     };
 
-    const loadData = async () => {
+    const loadData = useCallback(async () => {
         try {
             // Optimizamos: Pedimos solo los datos del mes seleccionado si aplica
             const [budgetData, realExpenses] = await Promise.all([
@@ -221,7 +218,11 @@ export const ExecutionMonitor = ({ selectedYear, selectedPlanta, selectedMonth }
         } catch (e) {
             console.error(e);
         }
-    };
+    }, [selectedYear, selectedPlanta, currentMonth, getPresupuesto, getGastosConsolidados]);
+
+    useEffect(() => {
+        loadData();
+    }, [loadData]);
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -230,11 +231,12 @@ export const ExecutionMonitor = ({ selectedYear, selectedPlanta, selectedMonth }
         setIsUploading(true);
         try {
             await ControlGastosService.uploadGastosConsolidados(file);
-            alert('Gastos cargados correctamente');
+            toast.success('Gastos cargados correctamente');
             loadData();
-        } catch (error: any) {
+        } catch (err) {
+            const error = err as Error;
             console.error(error);
-            alert('Error al cargar gastos: ' + error.message);
+            toast.error('Error al cargar gastos: ' + error.message);
         } finally {
             setIsUploading(false);
             if (e.target) e.target.value = '';

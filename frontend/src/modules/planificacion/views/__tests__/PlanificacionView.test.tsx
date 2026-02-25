@@ -85,13 +85,12 @@ describe('PlanificacionView', () => {
   };
 
   beforeEach(() => {
-    vi.clearAllMocks();
-    mockedUseManager.mockReturnValue(mockManager as any);
-    mockedUseLogic.mockReturnValue(mockLogic as any);
+    mockedUseManager.mockReturnValue(mockManager as unknown as ReturnType<typeof usePlanificacionManager>);
+    mockedUseLogic.mockReturnValue(mockLogic as unknown as ReturnType<typeof usePlanificacionLogic>);
   });
 
   it('debería mostrar el spinner de carga cuando sincroniza con Oracle', () => {
-    mockedUseManager.mockReturnValue({ ...mockManager, cargandoPlan: true } as any);
+    mockedUseManager.mockReturnValue({ ...mockManager, cargandoPlan: true } as unknown as ReturnType<typeof usePlanificacionManager>);
 
     render(<PlanificacionView />);
     expect(screen.getByText(/Sincronizando Oracle/i)).toBeInTheDocument();

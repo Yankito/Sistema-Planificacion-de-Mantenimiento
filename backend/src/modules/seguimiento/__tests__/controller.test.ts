@@ -45,7 +45,7 @@ describe('SeguimientoController', () => {
 
             vi.spyOn(SeguimientoRepository, 'getSemanas').mockResolvedValue(['2025-W10']);
 
-            await SeguimientoController.getSemanas(req, res);
+            await SeguimientoController.getSemanas(req as any, res as any);
 
             expect(SeguimientoRepository.getSemanas).toHaveBeenCalledWith('SEGUIMIENTO');
             expect(res.json).toHaveBeenCalledWith(['2025-W10']);
@@ -60,7 +60,7 @@ describe('SeguimientoController', () => {
             const mockData = [{ id: 1 }];
             vi.spyOn(SeguimientoRepository, 'getPedidos').mockResolvedValue(mockData as any);
 
-            await SeguimientoController.getPedidos(req, res);
+            await SeguimientoController.getPedidos(req as any, res as any);
 
             expect(res.json).toHaveBeenCalledWith(mockData);
         });
@@ -68,16 +68,16 @@ describe('SeguimientoController', () => {
 
     describe('getDashboardStats', () => {
         it('debe calcular estadísticas de flujo y técnicos', async () => {
-            const req = { query: { actual: { mes: 10, anio: 2025 }, anterior: { mes: 9, anio: 2025 } } };
+            const req = { query: { fechaInicio: '2025-01-01', fechaFin: '2025-01-31' } };
             const res = { json: vi.fn() };
 
             vi.spyOn(SeguimientoRepository, 'getPedidos').mockResolvedValue([]);
             vi.spyOn(backlogAnalysis, 'analyzeBacklogFlow').mockReturnValue({ pending: 10 } as any);
             vi.spyOn(technicianAnalysis, 'analyzeTechnicians').mockReturnValue({ top: [] } as any);
 
-            await SeguimientoController.getDashboardStats(req, res);
+            await SeguimientoController.getDashboardStats(req as any, res as any);
 
-            expect(SeguimientoRepository.getPedidos).toHaveBeenCalledTimes(2); // Actual y Anterior
+            expect(SeguimientoRepository.getPedidos).toHaveBeenCalledTimes(1);
             expect(backlogAnalysis.analyzeBacklogFlow).toHaveBeenCalled();
             expect(technicianAnalysis.analyzeTechnicians).toHaveBeenCalled();
             expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
@@ -100,7 +100,7 @@ describe('SeguimientoController', () => {
                 fileName: 'reporte.xlsx', buffer: Buffer.from('excel')
             });
 
-            await SeguimientoController.descargarReporte(req, res);
+            await SeguimientoController.descargarReporte(req as any, res as any);
 
             expect(exportUtils.generarExcelReporte).toHaveBeenCalled();
             expect(res.setHeader).toHaveBeenCalledWith('Content-Type', expect.stringContaining('spreadsheet'));
@@ -118,7 +118,7 @@ describe('SeguimientoController', () => {
 
             vi.spyOn(templateGenerator, 'generarBufferPlantilla').mockReturnValue(Buffer.from('plantilla'));
 
-            await SeguimientoController.descargarPlantilla(req, res);
+            await SeguimientoController.descargarPlantilla(req as any, res as any);
 
             expect(templateGenerator.generarBufferPlantilla).toHaveBeenCalledWith('SEGUIMIENTO');
             expect(res.setHeader).toHaveBeenCalledWith('Content-Type', expect.stringContaining('spreadsheet'));

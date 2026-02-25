@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocat
 import "./App.css";
 import { AuthProvider } from "./context/AuthContext.tsx";
 import { useAuth } from "./context/useAuth";
+import { Toaster } from "sonner";
 
 // Auth
 import { LoginView } from "./modules/auth/views/LoginView";
@@ -132,6 +133,7 @@ const App = () => {
     <Router>
       <AuthProvider>
         <AuthGate />
+        <Toaster richColors position="top-right" />
       </AuthProvider>
     </Router>
   );

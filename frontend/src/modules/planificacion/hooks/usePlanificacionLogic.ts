@@ -1,5 +1,5 @@
-// src/hooks/usePlanificacionLogic.ts
 import { useState, useMemo, useEffect } from "react";
+import { toast } from "sonner";
 import {
   esPlantaCompatible,
   rolesCoinciden,
@@ -130,7 +130,7 @@ export const usePlanificacionLogic = ({
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
     } else {
-      alert("No se encontraron técnicos disponibles para cubrir las vacantes.");
+      toast.error("No se encontraron técnicos disponibles para cubrir las vacantes.");
     }
   };
 

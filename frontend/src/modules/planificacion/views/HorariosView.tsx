@@ -4,6 +4,8 @@ import { Wrench, Zap, Users, Info, Loader2, CalendarDays, FileSpreadsheet, Downl
 import { usePlanificacionManager } from "../hooks/usePlanificacionManager";
 import { getMonthOptions } from "../../../shared/utils/dateUtils";
 import { usePlantasAcceso } from "../../../shared/hooks/usePlantasAcceso";
+import { confirmDialog } from "../../../shared/utils/confirmDialog";
+import { toast } from "sonner";
 
 export const HorariosView = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -28,7 +30,8 @@ export const HorariosView = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!confirm(`¿Cargar horarios para ${periodoSeleccionado}?\n(Requiere plantilla Horarios)`)) {
+    const confirmed = await confirmDialog(`¿Cargar horarios para ${periodoSeleccionado}?`, '(Requiere plantilla Horarios)');
+    if (!confirmed) {
       e.target.value = '';
       return;
     }
@@ -40,10 +43,11 @@ export const HorariosView = () => {
       const mes = Number(parts[1]);
 
       await uploadHorarios(file, mes, anio);
-      alert("Carga completada.");
-      window.location.reload();
-    } catch (error: any) {
-      alert("Error: " + error.message);
+      toast.success("Carga completada.");
+      setTimeout(() => window.location.reload(), 1500);
+    } catch (err) {
+      const error = err as Error;
+      toast.error("Error: " + error.message);
     } finally {
       if (e.target) e.target.value = '';
     }

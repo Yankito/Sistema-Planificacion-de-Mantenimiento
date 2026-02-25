@@ -8,6 +8,7 @@ import { Loader2, CalendarDays } from "lucide-react";
 import { usePlanificacionManager } from "../hooks/usePlanificacionManager";
 import { usePlantasAcceso } from "../../../shared/hooks/usePlantasAcceso";
 import { getMonthOptions } from "../../../shared/utils/dateUtils";
+import { toast } from "sonner";
 import type { Tecnico } from "../types";
 
 const BLOQUEOS_SABADO = ['L', 'V', 'LIC', 'LM', 'LP'];
@@ -139,7 +140,8 @@ export const PlanificacionView = () => {
           <button
             onClick={async () => {
               const ok = await planning.guardarPlanificacion(planResult, plantaPlan, periodoSeleccionado);
-              if (ok) alert("Planificación guardada en Oracle");
+              if (ok) toast.success("Planificación guardada en Oracle");
+              else toast.error("Error al guardar la planificación en Oracle.");
             }}
             className="flex items-center gap-2 px-4 py-2 bg-pf-red hover:bg-pf-red-dark text-white rounded-xl text-[10px] font-black uppercase transition-all active:scale-95 shadow-lg shadow-pf-red/20"
           >

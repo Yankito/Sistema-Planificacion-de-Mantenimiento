@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Download, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { toPng } from "html-to-image";
 
 interface ExportButtonProps {
@@ -11,20 +12,20 @@ interface ExportButtonProps {
   reportTitle: string;
 }
 
-export const ExportButton = ({ 
-  elementId, 
-  fileName, 
-  plantaSeleccionada, 
-  rangoTexto, 
-  semana, 
-  reportTitle 
+export const ExportButton = ({
+  elementId,
+  fileName,
+  plantaSeleccionada,
+  rangoTexto,
+  semana,
+  reportTitle
 }: ExportButtonProps) => {
   const [isExporting, setIsExporting] = useState(false);
 
   const handleExport = async () => {
     const node = document.getElementById(elementId);
     if (!node) {
-      alert("No se encontró el contenido para exportar.");
+      toast.error("No se encontró el contenido para exportar.");
       return;
     }
 
@@ -34,7 +35,7 @@ export const ExportButton = ({
     try {
       // 1. Clonar el nodo para no afectar la vista actual del usuario
       const clone = node.cloneNode(true) as HTMLElement;
-      
+
       // Aplicar estilos al clon para la captura
       Object.assign(clone.style, {
         position: "fixed",
@@ -127,7 +128,7 @@ export const ExportButton = ({
 
     } catch (err) {
       console.error("Error exportando:", err);
-      alert("Error al generar la imagen del reporte.");
+      toast.error("Error al generar la imagen del reporte.");
     } finally {
       setIsExporting(false);
     }
@@ -138,8 +139,8 @@ export const ExportButton = ({
       onClick={handleExport}
       disabled={isExporting}
       className={`flex items-center gap-2 px-5 py-2.5 rounded-xl transition-all shadow-lg active:scale-95 border border-slate-800 
-        ${isExporting 
-          ? 'bg-slate-100 text-slate-400 cursor-not-allowed' 
+        ${isExporting
+          ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
           : 'bg-slate-900 text-white hover:bg-black hover:shadow-pf-red/20'}`}
     >
       {isExporting ? (

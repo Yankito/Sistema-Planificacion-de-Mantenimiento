@@ -3,6 +3,7 @@ import type { DetalleGastoItem } from '../types';
 import { Search, Filter, Loader2, Box, Share2, Layers } from 'lucide-react';
 import { useControlGastos } from '../hooks/useControlGastos';
 import { categorizeAsset } from '../utils/categorization';
+import { toast } from 'sonner';
 
 interface ExpenseBreakdownProps {
     selectedYear: number;
@@ -60,6 +61,8 @@ export const ExpenseBreakdown = ({ selectedYear, selectedPlanta, selectedMonth }
                 setDetails(items);
             } catch (e) {
                 console.error(e);
+                const msg = e instanceof Error ? e.message : 'Error desconocido';
+                toast.error('Error al cargar el desglose de gastos: ' + msg);
             }
         };
 

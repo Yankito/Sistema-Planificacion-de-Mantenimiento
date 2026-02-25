@@ -14,11 +14,11 @@ describe('ExecutionMonitor Component', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
-        (useControlGastosHook.useControlGastos as any).mockReturnValue({
+        vi.mocked(useControlGastosHook.useControlGastos).mockReturnValue({
             getPresupuesto: mockGetPresupuesto,
             getGastosConsolidados: mockGetGastosConsolidados,
             loading: false
-        });
+        } as unknown as ReturnType<typeof useControlGastosHook.useControlGastos>);
     });
 
     it('debe renderizar datos correctamente y agrupar por Centro de Costo', async () => {

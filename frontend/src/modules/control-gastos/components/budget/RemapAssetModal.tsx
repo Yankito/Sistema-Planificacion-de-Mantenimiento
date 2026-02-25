@@ -1,11 +1,12 @@
 import React from 'react';
 import { X, Search, AlertCircle } from 'lucide-react';
+import type { ActivoEAM } from '../../../../shared/types';
 
 interface RemapAssetModalProps {
   isOpen: boolean;
   onClose: () => void;
   mappingModal: { open: boolean, oldAsset: string | null, cc: string | null };
-  suggestedAssets: any[];
+  suggestedAssets: ActivoEAM[];
   handleUpdateName: (newName: string) => void;
 }
 

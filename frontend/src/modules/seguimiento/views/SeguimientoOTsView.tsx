@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
+import { toast } from "sonner";
 import type { AtrasoRow, BacklogStats, TechStats } from "../types";
 import { BarChart3, PieChart, Factory, FileText, Search, Calendar as CalendarIcon, RotateCcw } from "lucide-react";
 import { ResumenTable } from "../components/ResumenTable";
@@ -20,7 +21,12 @@ import { usePlantasAcceso } from "../../../shared/hooks/usePlantasAcceso";
 import * as SeguimientoService from "../services/SeguimientoService";
 
 export const SeguimientoOTsView = () => {
-  const seguimientoData = useSeguimientoData();
+  // Plantas filtradas según acceso del usuario
+  const { plantasIndividuales, plantasComplejo, plantasPFAlimentos } = usePlantasAcceso();
+  const PLANTAS_COMPLEJO = useMemo(() => plantasComplejo, [plantasComplejo]);
+  const PLANTAS_PF_ALIMENTOS = useMemo(() => plantasPFAlimentos, [plantasPFAlimentos]);
+  const LISTA_PLANTAS_INDIVIDUALES = useMemo(() => plantasIndividuales, [plantasIndividuales]);
+  const LISTA_CUMPLIMIENTO = useMemo(() => LISTA_PLANTAS_INDIVIDUALES, [LISTA_PLANTAS_INDIVIDUALES]);
 
   const {
     dataActual,
@@ -28,15 +34,9 @@ export const SeguimientoOTsView = () => {
     serverStats,
     reporteActual,
     semanaComparar,
-    isLoading
-  } = seguimientoData;
-
-  // Plantas filtradas según acceso del usuario
-  const { plantasIndividuales, plantasComplejo, plantasPFAlimentos } = usePlantasAcceso();
-  const PLANTAS_COMPLEJO = useMemo(() => plantasComplejo, [plantasComplejo]);
-  const PLANTAS_PF_ALIMENTOS = useMemo(() => plantasPFAlimentos, [plantasPFAlimentos]);
-  const LISTA_PLANTAS_INDIVIDUALES = useMemo(() => plantasIndividuales, [plantasIndividuales]);
-  const LISTA_CUMPLIMIENTO = useMemo(() => LISTA_PLANTAS_INDIVIDUALES, [LISTA_PLANTAS_INDIVIDUALES]);
+    isLoading,
+    cargarDatos
+  } = useSeguimientoData();
 
   const [modoVista, setModoVista] = useState<"ATRASOS" | "CUMPLIDAS">("ATRASOS");
   const [showAnalysis, setShowAnalysis] = useState(false);
@@ -48,10 +48,9 @@ export const SeguimientoOTsView = () => {
 
   // Carga inicial al entrar a la vista
   useEffect(() => {
-    if (dataActual.length === 0) {
-      seguimientoData.cargarDatos(fechaInicio, fechaFin);
-    }
-  }, [seguimientoData, dataActual.length, fechaInicio, fechaFin]);
+    cargarDatos(fechaInicio, fechaFin);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cargarDatos]);
 
   // NORMALIZACIÓN DE PERIODOS: Comprime años anteriores en una sola columna
   const normalizeData = useCallback((data: AtrasoRow[]) => {
@@ -116,7 +115,7 @@ export const SeguimientoOTsView = () => {
 
   // HANDLERS
   const handleBuscarPorFecha = () => {
-    seguimientoData.cargarDatos(fechaInicio || undefined, fechaFin || undefined);
+    cargarDatos(fechaInicio || undefined, fechaFin || undefined);
   };
 
   const handleResetFiltros = () => {
@@ -124,7 +123,7 @@ export const SeguimientoOTsView = () => {
     const end = toISODate(getCurrentDate());
     setFechaInicio(start);
     setFechaFin(end);
-    seguimientoData.cargarDatos(start, end);
+    cargarDatos(start, end);
   };
 
   const handleExportarExcelCompleto = async () => {
@@ -137,7 +136,7 @@ export const SeguimientoOTsView = () => {
       await SeguimientoService.descargarExcel(reporteActual, modoVista, semanaComparar || "");
     } catch (error) {
       console.error("Error exportando", error);
-      alert("Error al descargar archivo.");
+      toast.error("Error al descargar archivo.");
     }
   };
 

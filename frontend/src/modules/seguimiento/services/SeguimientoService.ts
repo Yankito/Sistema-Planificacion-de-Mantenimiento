@@ -16,7 +16,24 @@ export const getSemanas = async (tipo: string = 'SEGUIMIENTO'): Promise<string[]
   return res.json();
 };
 
-// Obtener los datos brutos de una semana
+// Obtener todos los datos en una sola request: pedidos + flowStats + techStats
+export const getDatos = async (fechaInicio?: string, fechaFin?: string): Promise<{
+  pedidos: AtrasoRow[];
+  flowStats: BacklogStats;
+  techStats: TechStats[];
+}> => {
+  let url = `${API_BASE}/datos`;
+  const params = new URLSearchParams();
+  if (fechaInicio) params.append('fechaInicio', fechaInicio);
+  if (fechaFin) params.append('fechaFin', fechaFin);
+  if (params.toString()) url += `?${params.toString()}`;
+
+  const res = await fetchAuth(url);
+  if (!res.ok) throw new Error("Error al cargar datos de seguimiento");
+  return res.json();
+};
+
+// Obtener los datos brutos de una semana (mantenido para compatibilidad)
 export const getPedidos = async (fechaInicio?: string, fechaFin?: string): Promise<AtrasoRow[]> => {
   let url = `${API_BASE}/pedidos`;
   const params = new URLSearchParams();

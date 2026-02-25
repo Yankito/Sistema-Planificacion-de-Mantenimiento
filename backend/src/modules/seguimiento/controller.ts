@@ -29,9 +29,16 @@ export const SeguimientoController = {
       if (!fechaInicio || !fechaFin) {
         return res.status(400).json({ error: "Parámetros fechaInicio y fechaFin son obligatorios (formato YYYY-MM-DD)" });
       }
-      console.log(fechaInicio, fechaFin);
 
-      const data = await SeguimientoRepository.getPedidos(fechaInicio as string, fechaFin as string);
+      // Plantas autorizadas del usuario (desde el JWT, ya validado por authMiddleware)
+      const plantasUsuario = req.authUser?.plantas || [];
+      console.log(`[Seguimiento] getPedidos: ${fechaInicio} -> ${fechaFin} | plantas: [${plantasUsuario.join(', ')}]`);
+
+      const data = await SeguimientoRepository.getPedidos(
+        fechaInicio as string,
+        fechaFin as string,
+        plantasUsuario
+      );
       res.json(data);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Error desconocido";
@@ -43,26 +50,23 @@ export const SeguimientoController = {
   getDashboardStats: async (req: Request, res: Response) => {
     try {
       const { fechaInicio, fechaFin } = req.query;
-      // Si no vienen en el dashboard, usamos un rango amplio por defecto para no romper el análisis
       const start = (fechaInicio as string) || "2024-01-01";
       const end = (fechaFin as string) || new Date().toISOString().split('T')[0];
 
-      const [dataActual, dataAnterior] = await Promise.all([
-        SeguimientoRepository.getPedidos(start, end),
-        SeguimientoRepository.getPedidos(start, end)
-      ]);
+      const plantasUsuario = req.authUser?.plantas || [];
 
-      // 2. Ejecutamos la lógica de análisis en el servidor
-      const flowStats = analyzeBacklogFlow(dataActual, dataAnterior);
-      const techStats = analyzeTechnicians(dataActual, []);
+      // Una sola consulta: reutilizamos los mismos datos para actial y anterior
+      const data = await SeguimientoRepository.getPedidos(start, end, plantasUsuario);
 
-      // 3. Enviamos el "paquete" de analítica listo
+      const flowStats = analyzeBacklogFlow(data, data);
+      const techStats = analyzeTechnicians(data, []);
+
       res.json({
         flowStats,
         techStats,
         metadata: {
-          totalActual: dataActual.length,
-          totalAnterior: dataAnterior.length
+          totalActual: data.length,
+          totalAnterior: data.length
         }
       });
     } catch (error) {
@@ -71,23 +75,56 @@ export const SeguimientoController = {
     }
   },
 
+  // Endpoint unificado: retorna pedidos + stats en UNA sola consulta a Oracle
+  getDatos: async (req: Request, res: Response) => {
+    try {
+      const { fechaInicio, fechaFin } = req.query;
+
+      if (!fechaInicio || !fechaFin) {
+        return res.status(400).json({ error: "Parámetros fechaInicio y fechaFin son obligatorios" });
+      }
+
+      const plantasUsuario = req.authUser?.plantas || [];
+      console.log(`[Seguimiento] getDatos: ${fechaInicio} -> ${fechaFin} | plantas: [${plantasUsuario.join(', ')}]`);
+
+      // UNA sola consulta a Oracle para todo
+      const pedidos = await SeguimientoRepository.getPedidos(
+        fechaInicio as string,
+        fechaFin as string,
+        plantasUsuario
+      );
+
+      // Computamos las estadísticas sobre los datos ya cargados (sin nueva query)
+      const flowStats = analyzeBacklogFlow(pedidos, pedidos);
+      const techStats = analyzeTechnicians(pedidos, []);
+
+      res.json({
+        pedidos,
+        flowStats,
+        techStats
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Error desconocido';
+      console.error("Error en /datos:", message);
+      res.status(500).json({ error: message });
+    }
+  },
+
   descargarReporte: async (req: Request, res: Response) => {
     try {
       const { semana, modo, semanaAnt, fechaInicio, fechaFin } = req.query;
-
-      // Usamos el rango proporcionado o uno por defecto
       const start = (fechaInicio as string);
       const end = (fechaFin as string);
 
-      // 1. Obtener datos desde Postgres
-      const dataActual = await SeguimientoRepository.getPedidos(start, end);
+      const plantasUsuario = req.authUser?.plantas || [];
+
+      const dataActual = await SeguimientoRepository.getPedidos(start, end, plantasUsuario);
 
       let dataAnterior: OrdenTrabajo[] = [];
       if (semanaAnt) {
-        dataAnterior = await SeguimientoRepository.getPedidos(start, end);
+        dataAnterior = await SeguimientoRepository.getPedidos(start, end, plantasUsuario);
       }
 
-      // 2. Generar el Buffer del Excel
       const reporte = await generarExcelReporte(
         dataActual,
         dataAnterior,
@@ -95,7 +132,6 @@ export const SeguimientoController = {
         String(semana)
       );
 
-      // 3. Enviar al cliente
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       res.setHeader('Content-Disposition', `attachment; filename=${reporte.fileName}`);
       res.send(reporte.buffer);

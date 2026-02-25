@@ -6,6 +6,7 @@ import type { UsuarioAuth, AuthSession } from '../modules/auth/types';
 import { AuthContext } from './AuthContext';
 import * as AuthService from '../modules/auth/services/AuthService';
 import { setSessionExpiredHandler } from '../shared/api/fetchAuth';
+import { toast } from 'sonner';
 
 const STORAGE_KEY = 'pf_auth_session';
 
@@ -63,6 +64,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Timer de expiración: auto-logout cuando expire
     expirationTimerRef.current = setTimeout(() => {
       console.warn('Sesión expirada automáticamente');
+      toast.error('Sesión expirada. Por favor, inicie sesión nuevamente.');
       logout();
     }, timeUntilExpiry);
 
@@ -71,7 +73,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (timeUntilWarning > 0) {
       warningTimerRef.current = setTimeout(() => {
         console.warn('⚠️ La sesión expirará en 5 minutos');
-        // Podrías mostrar una notificación aquí si lo deseas
+        toast.warning('Tu sesión expirará en 5 minutos. Guarda tu trabajo.');
       }, timeUntilWarning);
     }
   }, [logout]);
@@ -124,9 +126,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       // Configurar timers de expiración
       setupExpirationTimers(expiresAt);
-    } catch (err: any) {
-      setError(err.message || 'Error de autenticación');
-      throw err;
+    } catch (err) {
+      const error = err as Error;
+      setError(error.message || 'Error de autenticación');
+      throw error;
     } finally {
       setIsLoading(false);
     }

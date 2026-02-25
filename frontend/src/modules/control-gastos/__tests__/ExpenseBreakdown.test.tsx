@@ -13,10 +13,10 @@ describe('ExpenseBreakdown Component', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
-        (useControlGastosHook.useControlGastos as any).mockReturnValue({
+        vi.mocked(useControlGastosHook.useControlGastos).mockReturnValue({
             getPresupuesto: mockGetPresupuesto,
             getGastosConsolidados: mockGetGastosConsolidados
-        });
+        } as unknown as ReturnType<typeof useControlGastosHook.useControlGastos>);
     });
 
     it('debe categorizar como Hito si esHito es true', async () => {

@@ -66,7 +66,7 @@ const baseSeguimientoData = {
   semanaComparar: '2026-S04',
   isLoading: false,
   serverStats: { flowStats: { nuevas: [], finalizadas: [], conAvance: [] }, techStats: [] },
-  cargarReporte: vi.fn(),
+  cargarDatos: vi.fn(),
   cambiarComparacion: vi.fn(),
   limpiarComparacion: vi.fn(),
 };
@@ -107,7 +107,7 @@ describe('SeguimientoOTsView Component', () => {
     vi.clearAllMocks();
     window.confirm = vi.fn();
     window.alert = vi.fn();
-    mockedUseSeguimiento.mockReturnValue(baseSeguimientoData as any);
+    mockedUseSeguimiento.mockReturnValue(baseSeguimientoData as unknown as ReturnType<typeof useSeguimientoData>);
   });
 
   it('debería renderizar correctamente en modo ATRASOS por defecto', () => {
@@ -129,7 +129,7 @@ describe('SeguimientoOTsView Component', () => {
   });
 
   it('debería mostrar el Overlay de Carga si isLoading es true', () => {
-    mockedUseSeguimiento.mockReturnValue({ ...baseSeguimientoData, isLoading: true } as any);
+    mockedUseSeguimiento.mockReturnValue({ ...baseSeguimientoData, isLoading: true } as unknown as ReturnType<typeof useSeguimientoData>);
 
     render(<SeguimientoOTsView />);
 
@@ -137,7 +137,7 @@ describe('SeguimientoOTsView Component', () => {
   });
 
   it('debería intentar cargar el reporte inicial si no hay reporte actual', () => {
-    mockedUseSeguimiento.mockReturnValue({ ...baseSeguimientoData, reporteActual: '' } as any);
+    mockedUseSeguimiento.mockReturnValue({ ...baseSeguimientoData, reporteActual: '' } as unknown as ReturnType<typeof useSeguimientoData>);
 
     render(<SeguimientoOTsView />);
 

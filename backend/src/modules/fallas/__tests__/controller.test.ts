@@ -33,7 +33,7 @@ describe('FallasController', () => {
                 json: vi.fn()
             };
 
-            await FallasController.uploadFallas(req, res);
+            await FallasController.uploadFallas(req as any, res as any);
 
             expect(res.status).toHaveBeenCalledWith(400);
             expect(res.json).toHaveBeenCalledWith({ error: "Archivo Excel requerido" });
@@ -55,7 +55,7 @@ describe('FallasController', () => {
             ]);
             const saveSpy = vi.spyOn(FallasRepository, 'guardarFallas').mockResolvedValue();
 
-            await FallasController.uploadFallas(req, res);
+            await FallasController.uploadFallas(req as any, res as any);
 
             expect(readMock).toHaveBeenCalled();
             expect(processor.processFallasData).toHaveBeenCalled();
@@ -80,7 +80,7 @@ describe('FallasController', () => {
             ]);
             const saveSpy = vi.spyOn(FallasRepository, 'guardarFallas').mockResolvedValue();
 
-            await FallasController.uploadFallas(req, res);
+            await FallasController.uploadFallas(req as any, res as any);
 
             expect(saveSpy).toHaveBeenCalledWith('2025-S10', expect.anything());
         });
@@ -94,7 +94,7 @@ describe('FallasController', () => {
             const mockResult = [{ id: 1, planta: 'PF1' }];
             vi.spyOn(FallasRepository, 'getFallas').mockResolvedValue(mockResult as any);
 
-            await FallasController.listarFallas(req, res);
+            await FallasController.listarFallas(req as any, res as any);
 
             expect(FallasRepository.getFallas).toHaveBeenCalled();
             expect(res.json).toHaveBeenCalledWith(mockResult);
@@ -107,7 +107,7 @@ describe('FallasController', () => {
             const mockResult = [{ id: 1, planta: 'PF1' }];
             vi.spyOn(FallasRepository, 'getFallasBySemana').mockResolvedValue(mockResult as any);
 
-            await FallasController.listarFallas(req, res);
+            await FallasController.listarFallas(req as any, res as any);
 
             expect(FallasRepository.getFallasBySemana).toHaveBeenCalledWith('2025-W10');
             expect(res.json).toHaveBeenCalledWith(mockResult);

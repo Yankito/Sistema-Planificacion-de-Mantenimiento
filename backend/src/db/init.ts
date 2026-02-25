@@ -358,6 +358,7 @@ const seedUsuarios = async () => {
       { usuario: 'cfuentes', planta: 'PF5' },
       { usuario: 'cfuentes', planta: 'PF6' },
       { usuario: 'cfuentes', planta: 'CDT' },
+      { usuario: 'cfuentes', planta: 'VENTAS' },
       { usuario: 'cfuentes', planta: 'OTROS' },
       { usuario: 'cfuentes', planta: 'MPS' },
       // lmorales: PF1 y MPS

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { X, Info, AlertCircle, ExternalLink } from 'lucide-react';
 import type { GastoConsolidadoRow } from '../../types';
 
@@ -21,10 +21,15 @@ export const TransactionSidePanel: React.FC<TransactionSidePanelProps> = ({
 }) => {
     const [selectedIndices, setSelectedIndices] = useState<Set<number>>(new Set());
 
+    const [prevTransactions, setPrevTransactions] = useState(transactions);
+    const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+
     // Reiniciar selección cuando cambian las transacciones (se abre el panel para otro activo/tipo)
-    useEffect(() => {
+    if (transactions !== prevTransactions || isOpen !== prevIsOpen) {
+        setPrevTransactions(transactions);
+        setPrevIsOpen(isOpen);
         setSelectedIndices(new Set());
-    }, [transactions, isOpen]);
+    }
 
     if (!isOpen) return null;
 
@@ -46,7 +51,7 @@ export const TransactionSidePanel: React.FC<TransactionSidePanelProps> = ({
 
     const totalTransactionsSum = transactions.reduce((acc, t) => acc + t.costoTrx, 0);
 
-    const getGastoStyles = (tipo: string) => {
+    const getGastoStyles = (tipo?: string) => {
         const t = (tipo || '').toUpperCase();
         if (t === 'BODEGA') return {
             bg: 'bg-blue-50',

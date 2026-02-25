@@ -17,7 +17,7 @@ const mockHorarios = new Map<string, string[]>();
 const emptyMonth = Array(31).fill('L');
 
 // JUAN: Noche el día 2 (Index 1)
-const turnosJuan = [...emptyMonth]; turnosJuan[1] = 'N'; 
+const turnosJuan = [...emptyMonth]; turnosJuan[1] = 'N';
 mockHorarios.set('JUAN', turnosJuan);
 
 // PEDRO: Mañana el día 2 (Index 1)
@@ -29,7 +29,7 @@ const turnosJefe = [...emptyMonth]; turnosJefe[1] = 'M';
 mockHorarios.set('JEFE', turnosJefe);
 
 describe('useModalAsignacion Hook', () => {
-    
+
     const mockOnAsignar = vi.fn();
     const ordenBase: PlanResult = {
         nroOrden: 'OT-100',
@@ -39,7 +39,7 @@ describe('useModalAsignacion Hook', () => {
         fechaSugerida: '02/02/2026',
         fechaAnterior: 'N/A',
         tecnicos: [
-            { nombre: 'VACANTE', rol: 'M' } 
+            { nombre: 'VACANTE', rol: 'M', planta: 'PF1' }
         ]
     };
 
@@ -58,7 +58,7 @@ describe('useModalAsignacion Hook', () => {
     it('debería filtrar candidatos disponibles según compatibilidad de Planta y Rol', () => {
         const { result } = renderHook(() => useModalAsignacion({
             orden: ordenBase,
-            fecha: '02/02/2026', 
+            fecha: '02/02/2026',
             tecnicos: mockTecnicos,
             mapaHorarios: mockHorarios,
             onAsignar: mockOnAsignar
@@ -75,14 +75,14 @@ describe('useModalAsignacion Hook', () => {
     it('debería marcar disponibilidad falsa si el técnico no tiene turno de Noche ("N")', () => {
         const { result } = renderHook(() => useModalAsignacion({
             orden: ordenBase,
-            fecha: '02/02/2026', 
+            fecha: '02/02/2026',
             tecnicos: mockTecnicos,
             mapaHorarios: mockHorarios,
             onAsignar: mockOnAsignar
         }));
 
         const candidatos = result.current.getCandidatosParaSlot('M', 'VACANTE');
-        
+
         const juan = candidatos.find(c => c.nombre === 'JUAN');
         const pedro = candidatos.find(c => c.nombre === 'PEDRO');
 
@@ -91,9 +91,9 @@ describe('useModalAsignacion Hook', () => {
     });
 
     it('debería permitir la asignación de Supervisores ignorando la validación de turno', () => {
-        const ordenSup: PlanResult = { 
-            ...ordenBase, 
-            tecnicos: [{ nombre: 'VACANTE', rol: 'SUPERVISOR' }] 
+        const ordenSup: PlanResult = {
+            ...ordenBase,
+            tecnicos: [{ nombre: 'VACANTE', rol: 'SUPERVISOR', planta: 'PF1' }]
         };
 
         const { result } = renderHook(() => useModalAsignacion({
@@ -114,8 +114,8 @@ describe('useModalAsignacion Hook', () => {
         const ordenOcupada: PlanResult = {
             ...ordenBase,
             tecnicos: [
-                { nombre: 'JUAN', rol: 'M' },   
-                { nombre: 'VACANTE', rol: 'M' } 
+                { nombre: 'JUAN', rol: 'M', planta: 'PF1' },
+                { nombre: 'VACANTE', rol: 'M', planta: 'PF1' }
             ]
         };
 
@@ -148,10 +148,10 @@ describe('useModalAsignacion Hook', () => {
 
         // Debe elegir a JUAN (Cumple: Planta, Rol y Turno)
         expect(mockOnAsignar).toHaveBeenCalledWith(
-            'OT-100', 
-            0,        
-            'JUAN',   
-            true      
+            'OT-100',
+            0,
+            'JUAN',
+            true
         );
     });
 });

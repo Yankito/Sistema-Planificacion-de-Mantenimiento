@@ -2,6 +2,8 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useControlGastos } from '../hooks/useControlGastos';
 import type { ActivoEAM } from '../../../shared/types';
+import { toast } from 'sonner';
+import { confirmDialog } from '../../../shared/utils/confirmDialog';
 
 import { ManualBudgetModal } from './budget/ManualBudgetModal';
 import { RemapAssetModal } from './budget/RemapAssetModal';
@@ -96,11 +98,16 @@ export const BudgetConfig = ({ selectedYear, selectedPlanta, selectedMonth }: Bu
             setMatrixData(Object.values(grouped));
         } catch (e) {
             console.error(e);
+            const msg = e instanceof Error ? e.message : 'Error desconocido';
+            toast.error('Error al cargar la matriz de presupuesto: ' + msg);
         }
     }, [selectedYear, selectedPlanta, selectedMonth, getPresupuesto]);
 
     useEffect(() => {
-        loadData();
+        const fetchInitial = async () => {
+            await loadData();
+        };
+        fetchInitial().catch(console.error);
     }, [loadData]);
 
     const handleRemapSearchByCC = useCallback(async (cc: string) => {
@@ -128,22 +135,23 @@ export const BudgetConfig = ({ selectedYear, selectedPlanta, selectedMonth }: Bu
             setMappingModal({ open: false, oldAsset: null, cc: null });
             setSuggestedAssets([]);
             loadData();
-            alert('Nombre actualizado correctamente');
+            toast.success('Nombre actualizado correctamente');
         } catch (err) {
             const error = err as Error;
-            alert('Error al actualizar: ' + error.message);
+            toast.error('Error al actualizar: ' + error.message);
         }
     }, [mappingModal.oldAsset, updateAssetName, selectedYear, loadData]);
 
     const handleAutoFix = useCallback(async () => {
-        if (!confirm('Esto vinculará automáticamente todos los activos que tengan una coincidencia única en la base de datos. ¿Desea continuar?')) return;
+        const confirmed = await confirmDialog('¿Auto-vincular activos?', 'Esto vinculará automáticamente todos los activos que tengan una coincidencia única en la base de datos.');
+        if (!confirmed) return;
         try {
             const result = await autoFixAssets(selectedYear);
-            alert(`Se vincularon ${result.fixed} activos automáticamente de un total de ${result.total} activos no encontrados.`);
+            toast.success(`Se vincularon ${result.fixed} activos automáticamente de un total de ${result.total} activos no encontrados.`);
             loadData();
         } catch (err) {
             const error = err as Error;
-            alert('Error al ejecutar auto-vinculación: ' + error.message);
+            toast.error('Error al ejecutar auto-vinculación: ' + error.message);
         }
     }, [autoFixAssets, selectedYear, loadData]);
 
@@ -152,11 +160,11 @@ export const BudgetConfig = ({ selectedYear, selectedPlanta, selectedMonth }: Bu
         if (e.target.files && e.target.files[0]) {
             try {
                 await uploadPresupuesto(e.target.files[0]);
-                alert('Presupuesto cargado exitosamente');
+                toast.success('Presupuesto cargado exitosamente');
                 loadData();
             } catch (err) {
                 const error = err as Error;
-                alert('Error al cargar: ' + error.message);
+                toast.error('Error al cargar: ' + error.message);
             }
         }
     }, [uploadPresupuesto, loadData]);

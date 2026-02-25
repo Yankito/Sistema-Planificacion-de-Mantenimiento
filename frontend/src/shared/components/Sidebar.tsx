@@ -3,8 +3,18 @@ import { useState, useEffect, useMemo } from "react";
 import {
   LayoutDashboard, Calendar, CalendarCheck, Clock,
   ClipboardList, BarChart2, ChevronLeft, ChevronRight, Briefcase, ChevronDown, CircleDollarSign,
-  LogOut, User
+  LogOut, User, type LucideIcon
 } from "lucide-react";
+
+interface MenuItem {
+  type?: 'link' | 'group';
+  id: string;
+  label: string;
+  icon: LucideIcon;
+  path?: string;
+  locked?: boolean;
+  children?: MenuItem[];
+}
 import { SidebarItem } from "./SidebarItem";
 import { useAuth } from "../../context/useAuth";
 
@@ -33,7 +43,7 @@ export const Sidebar = ({
   const puedeVerGastos = esProgramador || esAnalista || esSupervisor;
 
   const menuStructure = useMemo(() => {
-    const items: any[] = [
+    const items: MenuItem[] = [
       { type: 'link', id: 'dash', label: 'Dashboard', icon: LayoutDashboard, path: '/', locked: false },
     ];
 
@@ -80,7 +90,7 @@ export const Sidebar = ({
   // Efecto para auto-abrir grupos
   useEffect(() => {
     menuStructure.forEach((item) => {
-      if (item.type === 'group' && item.children?.some((c: any) => c.id === activeTab)) {
+      if (item.type === 'group' && item.children?.some((c: MenuItem) => c.id === activeTab)) {
         setOpenGroups(prev => prev.includes(item.id) ? prev : [...prev, item.id]);
       }
     });
@@ -122,7 +132,7 @@ export const Sidebar = ({
           // RENDER: GRUPO
           if (item.type === 'group') {
             const isOpen = openGroups.includes(item.id);
-            const hasActiveChild = item.children?.some((c: any) => c.id === activeTab);
+            const hasActiveChild = item.children?.some((c: MenuItem) => c.id === activeTab);
 
             return (
               <div key={item.id} className="mb-2">
@@ -151,7 +161,7 @@ export const Sidebar = ({
                 {/* Hijos del Grupo */}
                 <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isOpen && !isCollapsed ? 'max-h-96 opacity-100 mt-1' : 'max-h-0 opacity-0'}`}>
                   <div className="ml-4 pl-2 border-l-2 border-slate-100 space-y-1 mt-1">
-                    {item.children?.map((child: any) => (
+                    {item.children?.map((child: MenuItem) => (
                       <SidebarItem
                         key={child.id}
                         to={child.path}
