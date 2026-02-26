@@ -24,37 +24,10 @@ export const useFallasManager = () => {
         }
     }, []);
 
-    const uploadFile = useCallback(async (file: File) => {
-        setIsLoading(true);
-        setError(null);
-        try {
-            const result = await FallasService.uploadFallas(file);
-            // El upload retorna una lista actualizada o procesada?
-            // El backend retorna: { message, count, semana }
-            // Pero en FallasService.uploadFallas estábamos esperando FallaRow[]
-            // Vamos a corregir esto. El backend controller retorna { message, count, semana }
-            // Pero podríamos hacer que retorne los datos o recargarlos.
-
-            // Asumamos que tras upload queremos recargar todo
-            await loadData();
-            return result;
-        } catch (err) {
-            console.error("Error subiendo fallas:", err);
-            const msg = (err as Error).message;
-            setError(msg);
-            toast.error("Error al subir el archivo de fallas: " + msg);
-            throw err;
-        } finally {
-            setIsLoading(false);
-        }
-    }, [loadData]);
-
-
     return {
         data,
         isLoading,
         error,
-        loadData,
-        uploadFile
+        loadData
     };
 };

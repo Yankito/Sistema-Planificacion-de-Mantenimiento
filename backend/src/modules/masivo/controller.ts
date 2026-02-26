@@ -13,7 +13,6 @@ import { query } from '../../db/config.js';
  */
 import { generarBufferPlantilla } from '../seguimiento/logic/templateGenerator.js';
 import { EamRepository } from '../eam/repository.js';
-
 // Helper para convertir fecha Excel o String DD/MM/YYYY a String ISO o compatible DB
 // Helper para convertir fecha Excel o String a objeto Date de JavaScript
 const parseFecha = (val: unknown): Date | null => {
@@ -52,6 +51,21 @@ const parseFechaDateOnly = (val: unknown): Date | null => {
     if (!d) return null;
     d.setHours(0, 0, 0, 0);
     return d;
+};
+
+const parseDineroLocal = (valor: unknown): number => {
+    if (typeof valor === 'number') return valor;
+    if (!valor) return 0;
+
+    const str = String(valor);
+    const limpio = str
+        .replace(/\$/g, '')
+        .replace(/\s/g, '')
+        .replace(/\./g, '')
+        .replace(',', '.');
+
+    const numero = parseFloat(limpio);
+    return isNaN(numero) ? 0 : numero;
 };
 
 export const MassiveController = {
@@ -216,24 +230,43 @@ export const MassiveController = {
             // 4. Procesar FALLAS (Común)
             if (sheetNames.includes('Detalle MTBF MTTR')) {
                 console.log(`[MASIVO] ⚠️ Procesando fallas...`);
-                try { await query("TRUNCATE TABLE PF_IM_FALLAS"); } catch (e) { console.warn("Tabla fallas no existe o error truncate", e); }
+                try { await query("TRUNCATE TABLE PF_EAM_FALLAS"); } catch (e) { console.warn("Tabla fallas no existe o error truncate", e); }
 
-                // Import dinámico para evitar dependencias circulares si las hubiera
-                const { processFallasData } = await import('../fallas/logic/fallasProcessor.js');
-                const { FallasRepository } = await import('../fallas/repository.js');
+                // Usamos targetWeek o calculamos una por defecto si no viene
 
-                const fallasData = processFallasData(workbook.Sheets);
-
-                if (fallasData.length > 0) {
-                    // Usamos targetWeek o calculamos una por defecto si no viene
-                    const weekToUse = targetWeek || `${fallasData[0].anio}-S${String(fallasData[0].semana).padStart(2, '0')}`;
-
-                    console.log(`[MASIVO] 💾 Guardando ${fallasData.length} registros de fallas para semana ${weekToUse}...`);
-                    await FallasRepository.guardarFallas(weekToUse, fallasData);
-
-                    counts.fallas = fallasData.length;
-                    console.log(`[MASIVO] ✅ ${counts.fallas} registros de fallas guardados`);
+                console.log(`[MASIVO] 💾 Guardando fallas...`);
+                const sheetName = "Detalle MTBF MTTR";
+                const sheet = workbook.Sheets[sheetName];
+                if (!sheet) {
+                    console.error(`La hoja "${sheetName}" no se encuentra en el archivo.`);
+                    return [];
                 }
+
+                const fallasData = XLSX.utils.sheet_to_json(sheet) as Record<string, unknown>[];
+
+                const fallasMapped = fallasData.map((r) => ({
+                    fecha: parseFechaDateOnly(r["Fecha"]),
+                    planta: String(r["Planta"]),
+                    area: String(r["Descripcion Area"]),
+                    linea: String(r["Nombre Línea Prod"]),
+                    equipo: String(r["Equipo Nombre"]),
+                    causa: String(r["Descripcion Causa"]),
+                    pedidoTrabajo: String(r["Pedido Trabajo"]),
+                    estadoPedido: String(r["Estado Pedido"]),
+                    tipoPedido: String(r["Tipo Pedido Trabajo"]),
+                    tecnico: String(r["Técnico"]),
+                    duracionMinutos: parseDineroLocal(r["Duración Paro Oracle [min]"]),
+                    gasto: parseDineroLocal(r["Gasto OM [$]"]),
+                    perdidaKg: parseDineroLocal(r["Pérdida por Paro [kg]"]),
+                    descripcionOperador: String(r["Descripción Operador"]),
+                }));
+
+                if (fallasMapped.length > 0) {
+                    console.log(`[MASIVO-EAM] Insertando ${fallasMapped.length} fallas...`);
+                    await EamRepository.insertarFallas(fallasMapped);
+                    counts.fallas = fallasMapped.length;
+                }
+                console.log(`[MASIVO] ✅ ${counts.fallas} registros de fallas guardados`);
             }
 
             console.log(`[MASIVO] ✅ Carga masiva completada exitosamente`);

@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express';
 import XLSX from "xlsx-js-style";
 import { ControlGastosRepository } from './repository.js';
-import type { PresupuestoRow, GastoConsolidadoRow } from '../../types.js';
+import type { PresupuestoRow, GastoConsolidadoRow } from '../../shared/types/index.js';
 
 /**
  * Controlador para la gestión de control de gastos.

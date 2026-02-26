@@ -1,5 +1,5 @@
 import { withConnection } from '../../db/config.js';
-import type { PresupuestoRow, GastoConsolidadoRow, ActivoEAM } from '../../types.js';
+import type { PresupuestoRow, GastoConsolidadoRow, ActivoEAM } from '../../shared/types/index.js';
 
 const FRECUENCIAS_PREDEFINIDAS = [
   'semanal', 'quincenal', 'mensual', 'bimensual',

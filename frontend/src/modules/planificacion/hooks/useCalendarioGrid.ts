@@ -70,7 +70,7 @@ export const useCalendarioGrid = (
       semanasArr.push({
         numero: numSemana,
         dias: chunk,
-        idSemana: `WEEK-${numSemana}`
+        idSemana: `SEM-${numSemana}`
       });
     }
 

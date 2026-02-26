@@ -1,3 +1,4 @@
+import { getWeekID } from '../../../shared/utils/dateUtils';
 export const excelDateToJS = (serial: number | string | Date): Date => {
   if (serial instanceof Date) return serial;
 
@@ -47,10 +48,5 @@ export const getMonday = (d: Date): Date => {
 };
 
 export const getWeekId = (d: Date): string => {
-  const lunes = getMonday(d);
-  const oneJan = new Date(lunes.getFullYear(), 0, 1);
-  const numberOfDays = Math.floor((lunes.getTime() - oneJan.getTime()) / 86400000);
-  // Cálculo de semana estándar
-  const week = Math.ceil((numberOfDays + oneJan.getDay() + 1) / 7);
-  return `${lunes.getFullYear()}-S${String(week).padStart(2, '0')}`;
+  return getWeekID(d);
 };

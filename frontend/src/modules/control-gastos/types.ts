@@ -28,9 +28,42 @@ export interface DetalleGastoItem {
     assetCategory?: 'Maquinaria' | 'Redes' | 'Infra' | 'Otros';
 }
 
-import type { PresupuestoRow, GastoConsolidadoRow } from '../../shared/types';
+export interface PresupuestoRow {
+    activo: string;
+    mes: number;
+    anio: number;
+    frecuencia: string;
+    montoBodega?: number;
+    montoServExt?: number;
+    montoCorrectivo?: number;
+    centroCosto?: string;
+    claseContable?: string;
+    mantenible?: string;
+    organizacion?: string;
+}
 
-export { type PresupuestoRow, type GastoConsolidadoRow };
+export interface GastoConsolidadoRow {
+    tipo: string;
+    numeroOt: string;
+    tipoOt: string;
+    nroActivo: string;
+    fechaTrx: Date | string;
+    descripcionArticulo: string;
+    costoTrx: number;
+    alertaFecha?: number;
+    centroCosto?: string;
+    anio?: number;
+    mes?: number;
+    tipoGasto?: string;
+    fechaOtPro?: Date | string;
+    descripcionOt?: string;
+    estadoTrabajo?: string;
+    esHito?: boolean;
+    planta?: string;
+    claseContable?: string;
+    mantenible?: string;
+}
+
 export interface ManualEntryLine {
     id: string;
     frecuencia: string;

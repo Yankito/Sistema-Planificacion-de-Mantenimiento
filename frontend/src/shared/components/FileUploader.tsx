@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FileSpreadsheet, AlertTriangle, Loader2, CalendarDays, Check } from "lucide-react";
+import { FileSpreadsheet, Loader2, CalendarDays, Check } from "lucide-react";
 import { UploadCard } from "./UploadCard";
 
 
@@ -34,8 +34,7 @@ export const FileUploader = ({ onFileUpload, isLoading, status, highlightedModul
   const [targetYear, setTargetYear] = useState(currentYear);
 
   const cardsConfig = [
-    { type: 'MASIVO' as FileType, label: 'Carga Masiva (EAM)', sublabel: 'OTs, Horarios, Técnicos', icon: FileSpreadsheet, color: 'text-purple-600', bg: 'bg-purple-600', active: status.plan || status.seguimiento },
-    { type: 'FALLAS' as FileType, label: 'Fallas / MTBF', sublabel: 'Arrastra detalle de avisos', icon: AlertTriangle, color: 'text-amber-500', bg: 'bg-amber-500', active: status.fallas }
+    { type: 'MASIVO' as FileType, label: 'Carga Masiva (EAM)', sublabel: 'OTs, Horarios, Técnicos', icon: FileSpreadsheet, color: 'text-purple-600', bg: 'bg-purple-600', active: status.plan || status.seguimiento }
   ];
 
   // Interceptor de subida

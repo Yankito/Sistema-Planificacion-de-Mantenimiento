@@ -1,7 +1,5 @@
 // src/types.ts
-
-import type { Tecnico } from "../../shared/types";
-
+import type { TecnicoEstado } from "../../shared/types/index";
 
 export interface SeguimientoRow {
   nroOT: string;
@@ -15,11 +13,6 @@ export interface SeguimientoRow {
 export interface SeguimientoResult {
   mantencion: SeguimientoRow[];
   infraestructura: SeguimientoRow[];
-}
-
-export interface TecnicoEstado {
-  tecnico: Tecnico;
-  opFinalizada: boolean;
 }
 
 export interface AtrasoRow {

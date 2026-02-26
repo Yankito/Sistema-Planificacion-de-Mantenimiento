@@ -81,29 +81,25 @@ export const initDB = async () => {
       END;
     `);
 
-    // 7. PF_IM_FALLAS (Antes fallas)
+    // 7. PF_EAM_FALLAS
     await query(`
       BEGIN
-        EXECUTE IMMEDIATE 'CREATE TABLE PF_IM_FALLAS (
+        EXECUTE IMMEDIATE 'CREATE TABLE PF_EAM_FALLAS (
           id NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-          fecha TIMESTAMP,
-          semana VARCHAR2(50),
-          anio NUMBER,
-          mes NUMBER,
+          fecha DATE,
           planta VARCHAR2(100),
           area VARCHAR2(200),
           linea VARCHAR2(200),
           equipo VARCHAR2(200),
           causa VARCHAR2(500),
+          pedido_trabajo VARCHAR2(100),
           estado_pedido VARCHAR2(100),
           tipo_pedido VARCHAR2(100),
           tecnico VARCHAR2(200),
-          ot VARCHAR2(100),
           duracion_minutos NUMBER,
           gasto NUMBER,
           perdida_kg NUMBER,
-          descripcion_operador VARCHAR2(4000),
-          CONSTRAINT UNQ_FALLA_OT_FECHA UNIQUE(ot, fecha)
+          descripcion_operador VARCHAR2(4000)
         )';
       EXCEPTION WHEN OTHERS THEN IF SQLCODE != -955 THEN RAISE; END IF;
       END;
@@ -289,7 +285,7 @@ export const initDB = async () => {
     // ===== DATOS SEMILLA DE USUARIOS =====
     await seedUsuarios();
 
-    console.log("Base de datos Oracle (Refactorizada con Prefijos PF_IM) inicializada correctamente.");
+    console.log("Base de datos Oracle inicializada correctamente.");
   } catch (error) {
     console.error("Error inicializando DB Oracle:", error);
   }

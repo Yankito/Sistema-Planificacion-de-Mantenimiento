@@ -1,4 +1,5 @@
 export interface FallaRow {
+  id: number;
   fecha: Date;
   semana: number;
   planta: string;

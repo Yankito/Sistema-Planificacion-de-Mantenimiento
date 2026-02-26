@@ -1,66 +1,25 @@
 import type { Request, Response } from 'express';
-import XLSX from "xlsx-js-style";
-import { processFallasData } from './logic/fallasProcessor.js';
 import { FallasRepository } from './repository.js';
+import { processFallasDataFromDB } from './logic/fallasProcessor.js';
 
 export const FallasController = {
-
-    uploadFallas: async (req: Request, res: Response) => {
-        try {
-            if (!req.file) return res.status(400).json({ error: "Archivo Excel requerido" });
-
-            const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
-            const data = processFallasData(workbook.Sheets);
-
-            if (data.length === 0) {
-                return res.status(400).json({ error: "No se encontraron datos válidos o la hoja 'Detalle MTBF MTTR' no existe." });
-            }
-
-            // Asumimos que la semana se puede derivar del primer registro o se pasa por body
-            // Para consistencia, usaremos la semana del primer registro si no se envía
-            let semanaStr = req.body.semana;
-            if (!semanaStr && data.length > 0) {
-                // Construir string de semana, ej: "2024-S10"
-                // Pero el sistema usa snapshots con semana.
-                // En planificacion/repository usa semana como string.
-                // En fallasProcessor: semana es number.
-                // Asumiremos que el usuario debe enviar la semana o la calculamos.
-                // Por simplicidad, usemos el año y semana del primer registro.
-                const first = data[0];
-                const weekPad = String(first.semana).padStart(2, '0');
-                semanaStr = `${first.anio}-S${weekPad}`;
-            }
-
-
-            if (!semanaStr) {
-                return res.status(400).json({ error: "No se pudo determinar la semana. Envíela en el body." });
-            }
-
-            await FallasRepository.guardarFallas(semanaStr, data);
-
-            res.json({
-                message: "Datos de fallas cargados exitosamente",
-                count: data.length,
-                semana: semanaStr
-            });
-
-        } catch (error) {
-            const message = error instanceof Error ? error.message : "Error desconocido";
-            console.error("Error cargando fallas:", message);
-            res.status(500).json({ error: message });
-        }
-    },
 
     listarFallas: async (req: Request, res: Response) => {
         try {
             const { semana } = req.query;
             let data;
+            // The DB no longer stores 'semana', so getFallasBySemana returns everything 
+            // and we rely on the logic layer to filter if 'semana' is provided.
+            data = await FallasRepository.getFallas();
+
+            // Calculate anio, mes, semana which are not in the database
+            let processedData = processFallasDataFromDB(data);
+
             if (semana) {
-                data = await FallasRepository.getFallasBySemana(String(semana));
-            } else {
-                data = await FallasRepository.getFallas();
+                processedData = processedData.filter(f => String(f.semana) === String(semana));
             }
-            res.json(data);
+
+            res.json(processedData);
         } catch (error) {
             const message = error instanceof Error ? error.message : "Error desconocido";
             res.status(500).json({ error: message });

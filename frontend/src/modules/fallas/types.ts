@@ -6,12 +6,13 @@ export interface FallaRow {
   linea: string;
   equipo: string;
   causa: string;
+  pedidoTrabajo?: string;
   estadoPedido: string;
   tipoPedido: string;
   tecnico: string;
-  duracionMinutos: number; 
-  gasto: number; 
-  perdidaKg: number; 
+  duracionMinutos: number;
+  gasto: number;
+  perdidaKg: number;
   anio: number;
   mes: number;
   descripcionOperador: string;

@@ -1,7 +1,3 @@
-import type { UsuarioAuth, AuthSession } from '../../shared/types';
-
-export type { UsuarioAuth, AuthSession };
-
 export interface LoginResponse extends UsuarioAuth {
   token: string;
   expiresAt: number; // timestamp ms de expiración
@@ -35,6 +31,33 @@ export interface DashboardIndicadores {
     PLANTA: string;
     CANTIDAD: number;
   }>;
+}
+
+export interface AuthUser {
+  id?: string;
+  username: string;
+  nombre: string;
+  rol: string;
+  planta?: string;
+  plantasAcceso?: string[];
+}
+
+export interface UsuarioAuth {
+  usuario: string;
+  primerNombre: string;
+  segundoNombre: string | null;
+  primerApellido: string;
+  segundoApellido: string | null;
+  nombreCompleto: string;
+  roles: string[];
+  plantas: string[];
+  tieneCI: boolean;
+}
+
+export interface AuthSession {
+  user: UsuarioAuth;
+  token: string;
+  expiresAt: number;
 }
 
 // Agrupación CI = PF3, PF4, PF5, PF6, CDT, OTROS

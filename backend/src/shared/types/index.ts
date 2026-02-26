@@ -1,3 +1,8 @@
+export interface ActivoEAM {
+  activo: string;
+  claseContable: string;
+  organizacion: string;
+}
 export interface Tecnico {
   nombre: string;
   rol: string;
@@ -38,18 +43,6 @@ export interface OrdenTrabajo {
   rse?: string;
 }
 
-export interface Horario {
-  nombre: string;
-  rol: string;
-  planta: string;
-  turnos: string[];
-}
-
-export interface PlanificacionRespuesta {
-  resultados: OrdenTrabajo[];
-  sinAsignar: OrdenTrabajo[];
-}
-
 export interface PresupuestoRow {
   activo: string;
   mes: number;
@@ -61,6 +54,7 @@ export interface PresupuestoRow {
   centroCosto?: string;
   claseContable?: string;
   mantenible?: string;
+  organizacion?: string;
 }
 
 export interface GastoConsolidadoRow {
@@ -83,27 +77,6 @@ export interface GastoConsolidadoRow {
   planta?: string;
   claseContable?: string;
   mantenible?: string;
-}
-
-export interface FallaRow {
-  id?: number;
-  fecha: Date | string;
-  semana: string | number;
-  planta: string;
-  area: string;
-  linea: string;
-  equipo: string;
-  causa: string;
-  estadoPedido: string;
-  tipoPedido: string;
-  tecnico: string;
-  ot?: string;
-  duracionMinutos: number;
-  gasto: number;
-  perdidaKg: number;
-  anio: number;
-  mes: number;
-  descripcionOperador: string;
 }
 
 export interface AuthUser {

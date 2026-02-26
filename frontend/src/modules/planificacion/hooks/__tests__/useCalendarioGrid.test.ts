@@ -22,14 +22,14 @@ describe('useCalendarioGrid Hook', () => {
     // Tu lógica: startIdx = 0 - 1 = -1 -> se vuelve 6 (Empieza en la última posición de la primera semana)
     const mockPlan: PlanResult[] = [crearMockOT('OT-1', '10/02/2026')];
     const mockOrdenes: Record<string, PlanResult[]> = {
-        '10/02/2026': [mockPlan[0]]
+      '10/02/2026': [mockPlan[0]]
     };
 
     const { result } = renderHook(() => useCalendarioGrid(mockPlan, mockOrdenes));
 
     expect(result.current.nombreMes).toBe('Febrero');
     expect(result.current.anioActual).toBe(2026);
-    
+
     // Verificamos que la primera semana tenga los nulos correctos (6 nulos antes del Domingo 01)
     expect(result.current.semanas[0].dias.filter(d => d === null)).toHaveLength(6);
     expect(result.current.semanas[0].dias[6]).toBe('01/02/2026');
@@ -58,12 +58,12 @@ describe('useCalendarioGrid Hook', () => {
     // El 10 de Febrero de 2026 es semana 7
     const semanaConOT = result.current.semanas.find(s => s.dias.includes('10/02/2026'));
     expect(semanaConOT?.numero).toBe(7);
-    expect(semanaConOT?.idSemana).toBe('WEEK-7');
+    expect(semanaConOT?.idSemana).toBe('SEM-7');
   });
 
   it('debería manejar un estado seguro si el planResult viene vacío', () => {
     const { result } = renderHook(() => useCalendarioGrid([], {}));
-    
+
     // Verificamos el fallback "01/02/2026" que tienes en el código
     expect(result.current.nombreMes).toBe('Febrero');
     expect(result.current.totalOrdenesMes).toBe(0);

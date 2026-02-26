@@ -52,7 +52,7 @@ export const AuthRepository = {
     const [totalOTs, totalTecnicos, totalFallas, totalActivos, plantasActivas] = await Promise.all([
       query(`SELECT COUNT(*) AS TOTAL FROM PF_EAM_PEDIDOS`),
       query(`SELECT COUNT(*) AS TOTAL FROM PF_IM_TECNICOS WHERE ACTIVO = 1`),
-      query(`SELECT COUNT(*) AS TOTAL FROM PF_IM_FALLAS`),
+      query(`SELECT COUNT(*) AS TOTAL FROM PF_EAM_FALLAS`),
       query(`SELECT COUNT(*) AS TOTAL FROM PF_EAM_ACTIVOS`),
       query(`SELECT COUNT(DISTINCT PLANTA) AS TOTAL FROM PF_EAM_ACTIVOS WHERE PLANTA IS NOT NULL`),
     ]);
@@ -61,7 +61,7 @@ export const AuthRepository = {
     const ultimasFallas = await query(
       `SELECT * FROM (
         SELECT PLANTA, EQUIPO, CAUSA, DURACION_MINUTOS, FECHA 
-        FROM PF_IM_FALLAS 
+        FROM PF_EAM_FALLAS 
         ORDER BY FECHA DESC
       ) WHERE ROWNUM <= 5`
     );

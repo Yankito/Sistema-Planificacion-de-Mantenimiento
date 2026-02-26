@@ -65,11 +65,7 @@ export const DashboardView = ({ setActiveTab }: DashboardViewProps) => {
     if (!file) return;
     setIsProcessing(true);
     try {
-      if (tipo === 'FALLAS') {
-        const { uploadFallas } = await import('../../fallas/services/FallasService');
-        await uploadFallas(file);
-        fallas.loadData();
-      } else if (tipo === 'MASIVO') {
+      if (tipo === 'MASIVO') {
         const { MasivoService } = await import('../../../shared/services/MasivoService');
         const res = await MasivoService.uploadExcel(file, targetUploadWeek, extraData?.mes, extraData?.anio);
         toast.success(

@@ -72,5 +72,17 @@ export const EamRepository = {
       )
     `;
     return await executeMany(sql, items);
-  }
+  },
+
+  insertarFallas: async (items: Record<string, unknown>[]) => {
+    const sql = `
+        INSERT INTO PF_EAM_FALLAS (fecha, planta, area, linea, equipo, 
+                causa, pedido_trabajo, estado_pedido, tipo_pedido, tecnico, duracion_minutos, gasto, 
+                perdida_kg, descripcion_operador)
+        VALUES (:fecha, :planta, :area, :linea, :equipo, 
+                :causa, :pedidoTrabajo, :estadoPedido, :tipoPedido, :tecnico, :duracionMinutos, :gasto, 
+                :perdidaKg, :descripcionOperador)
+    `;
+    await executeMany(sql, items);
+  },
 };

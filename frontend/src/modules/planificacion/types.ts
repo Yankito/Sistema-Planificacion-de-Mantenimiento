@@ -1,5 +1,4 @@
-import type { Tecnico } from "../../shared/types";
-export type { Tecnico };
+import type { Tecnico } from "../../shared/types/index";
 
 export interface PlanResult {
   nroOrden: string;
