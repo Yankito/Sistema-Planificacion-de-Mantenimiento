@@ -1,0 +1,806 @@
+\documentclass[11pt, letterpaper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage[table]{xcolor}
+\usepackage{hyperref}
+\usepackage{helvet}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{float}
+
+% Configuración de márgenes y fuente
+\geometry{top=2.5cm, bottom=2.5cm, left=2.5cm, right=2.5cm}
+\renewcommand{\familydefault}{\sfdefault} 
+
+% Colores corporativos
+\definecolor{headergray}{RGB}{240, 240, 240}
+\definecolor{pfred}{RGB}{204, 0, 0} 
+\definecolor{textgray}{RGB}{80, 80, 80}
+
+% Configuración de Encabezado y Pie de página
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\textcolor{textgray}{Especificación Funcional - Sistema SPM v1.0}}
+\lhead{\textbf{PF Alimentos S.A.}}
+\rfoot{Página \thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+
+% Estilos de columnas para tablas
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+
+
+
+\begin{document}
+
+% -----------------------------------------------------------------------------
+% PORTADA
+% -----------------------------------------------------------------------------
+\begin{titlepage}
+    \centering
+    \vspace*{2cm}
+    
+    {\Huge \textbf{PF Alimentos S.A.}}\\[0.5cm]
+    {\Large Gerencia de Ingeniería y Gestión de Activos}\\[3cm]
+    
+    {\Huge \textbf{Documento de Especificación de Requerimientos}}\\[1cm]
+    {\huge \textbf{Sistema de Planificación de Mantenimiento (SPM)}}\\[0.5cm]
+    {\large \textit{Integración Oracle ERP}}\\[2cm]
+    
+    {\Large Fecha: 18/02/2026}\\[4cm]
+    
+    \vfill
+    
+\end{titlepage}
+
+% -----------------------------------------------------------------------------
+% CONTROL DE CAMBIOS
+% -----------------------------------------------------------------------------
+\newpage
+\section*{Control de Versiones}
+\addcontentsline{toc}{section}{Control de Versiones}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.5}
+\begin{tabular}{|C{1.5cm}|C{2.5cm}|L{4cm}|L{6.5cm}|}
+\hline
+\rowcolor{headergray} \textbf{Versión} & \textbf{Fecha} & \textbf{Autor} & \textbf{Descripción} \\ \hline
+0.1 & 11/02/2026 & Yanko Acuña V. & Versión inicial: Lógica de seguimiento y planificación. \\ \hline
+0.2 & 12/02/2026 & Yanko Acuña V. & Integración de módulos de Fallas y Gastos. \\ \hline
+0.3 & 18/02/2026 & Yanko Acuña V. & Avance consolidado para validación técnica de TI y ajustes de diseño. \\ \hline
+\end{tabular}
+\end{center}
+
+\vspace{2cm}
+
+\section*{Aprobación del Documento}
+\begin{center}
+\renewcommand{\arraystretch}{1.5}
+\begin{tabular}{|L{5cm}|L{5cm}|C{4cm}|}
+\hline
+\rowcolor{headergray} \textbf{Nombre} & \textbf{Cargo} & \textbf{Firma} \\ \hline
+& Sponsor del Proyecto & \\ \hline
+& Jefe de Proyectos TI & \\ \hline
+Yanko Acuña Villaseca & Desarrollador del Sistema & \\ \hline
+\end{tabular}
+\end{center}
+
+\newpage
+\tableofcontents
+\newpage
+
+% -----------------------------------------------------------------------------
+% 1. DESCRIPCIÓN GENERAL
+% -----------------------------------------------------------------------------
+\section{Descripción General}
+
+\subsection{Contexto del Proyecto}
+La Gerencia de Ingeniería y Gestión de Activos de PF Alimentos utiliza actualmente Oracle E-Business Suite (EBS) como sistema para la gestión de activos, órdenes de trabajo y cadena de suministro. Sin embargo, la operación diaria requiere un nivel de agilidad, visualización y cruce de datos que el ERP estándar no provee de manera nativa o amigable.
+
+Actualmente, existe una brecha tecnológica entre la información almacenada en Oracle y la toma de decisiones tácticas en planta, la cual es cubierta mediante procesos manuales, planillas de cálculo dispersas y correos electrónicos, generando silos de información y latencia en los datos.
+
+\subsection{Definición del Problema}
+A pesar de contar con un ERP robusto, el flujo de trabajo actual presenta las siguientes deficiencias críticas que justifican el desarrollo de una solución dedicada:
+
+\begin{enumerate}
+    \item \textbf{Carga Administrativa Excesiva (Ineficiencia):} 
+    El ingeniero de confiabilidad invierte aproximadamente \textbf{8 horas semanales} en descargar reportes planos desde Oracle, como OTs, Cumplimiento, reportes masivos de materiales y servicios externos, activos, posteriormente limpiarlos, normalizarlos y cruzarlos en Excel para obtener un estatus real de las operaciones. Esto reduce drásticamente el tiempo disponible para el análisis y la mejora continua.
+
+    \item \textbf{Integridad de Datos y Errores de Clasificación:} 
+    La clasificación de los atrasos de las OTs se realiza manualmente. Es frecuente que se asigne erróneamente la responsabilidad, por ejemplo, asignarla a la categoría ''Otros'' cuando en realidad no ha sido cumplido por los técnicos, lo que afecta a los KPIs y desvía la atención del atraso real.
+
+    \item \textbf{Complejidad en la Asignación de Recursos:} 
+    La planificación de turnos técnicos es un proceso manual propenso a errores que no se encuentra estandarizada. El programador debe cruzar mentalmente o en planillas Excel múltiples variables, como roles (Mecánico/Eléctrico), disponibilidad de turno noche, vacaciones y la continuidad operativa, lo que resulta en planificaciones que no son eficientes, conflictos de agenda o sobrecarga de los técnicos.
+
+    \item \textbf{Ausencia de Monitoreo del Desempeño Técnico:} 
+    No existe una herramienta sistémica que permita realizar el seguimiento al cumplimiento individual de los técnicos. Actualmente, es imposible visualizar de manera centralizada el porcentaje de órdenes asignadas que fueron efectivamente cerradas por cada técnico, lo que dificulta la evaluación objetiva de la productividad y impide balancear las cargas de trabajo de manera justa.
+
+    \item \textbf{Visibilidad Reactiva de Costos y Fallas:} 
+    El control presupuestario depende de la consolidación manual de plantillas, lo que impide una visión actualizada del presupuesto anual. La ausencia de alertas tempranas de desviación provoca incertidumbre sobre el estado real de la ejecución presupuestaria. Además, el alto volumen de activos y transacciones hace inviable llevar un control de gastos detallado y oportuno.
+\end{enumerate}
+
+\subsection{Solución Propuesta}
+El proyecto \textbf{SPM (Sistema de Planificación de Mantenimiento)} consiste en el desarrollo de una plataforma web integrada directamente a la base de datos de Oracle. La solución actuará como una capa de inteligencia y gestión operativa sobre el ERP, automatizando el flujo de información.
+
+La solución abarca cuatro pilares fundamentales:
+\begin{itemize}
+    \item \textbf{Automatización de Seguimiento:} Dashboard en tiempo real que clasifica automáticamente los atrasos basándose en reglas de negocio predefinidas (cruce de tablas de cumplimiento, materiales y servicios externos).
+    \item \textbf{Planificación Automática:} Algoritmos de asignación que sugieren técnicos y fechas óptimas considerando la malla de turnos y restricciones operativas.
+    \item \textbf{Control de Gestión (Fallas):} Herramienta para el análisis de confiabilidad de activos críticos (Top activos con más fallas, gastos, MTTR) con comparativas interanuales.
+    \item \textbf{Control Financiero:} Monitoreo en tiempo real de la ejecución presupuestaria con alertas de desviación antes del cierre administrativo de la orden.
+\end{itemize}
+
+\subsection{Objetivos del Proyecto}
+
+\subsubsection{Objetivo General}
+Implementar un sistema integral que automatice la extracción de datos desde Oracle, optimice la planificación de recursos de mantenimiento y provea herramientas de análisis en tiempo real para la toma de decisiones estratégicas en las plantas de PF Alimentos.
+
+\subsubsection{Objetivos Específicos}
+\begin{itemize}
+    \item Eliminar la dependencia de planillas Excel para la consolidación de reportes diarios, reduciendo el tiempo administrativo de 4 horas a consultas instantáneas.
+    \item Estandarizar la clasificación de causas de atraso mediante un motor lógico, asegurando una precisión del 100\% en la asignación de responsabilidades basada en datos del sistema.
+    \item Optimizar la asignación de técnicos mediante algoritmos que aseguren la cobertura de turnos críticos (Noche/Fin de semana) y balanceen la carga laboral.
+    \item Analizar la confiabilidad de los activos mediante herramientas de comparación histórica, permitiendo identificar tendencias de fallas y equipos críticos a través de la superposición de datos entre el periodo actual y años anteriores.
+    \item Controlar el gasto de mantenimiento mediante alertas visuales que notifiquen desviaciones presupuestarias mientras las OTs aún están en ejecución.
+    \item Centralizar la información operativa en una plataforma única, accesible vía Intranet y segura bajo protocolo HTTPS.
+\end{itemize}
+
+% -----------------------------------------------------------------------------
+% 1.4 ALCANCE Y LIMITACIONES DEL PROYECTO
+% -----------------------------------------------------------------------------
+\subsection{Alcance y Limitaciones}
+
+El Sistema de Planificación de Mantenimiento (SPM) se define como una capa de gestión operativa e inteligencia sobre el ERP Oracle. Su alcance está delimitado por las siguientes condiciones:
+
+\begin{itemize}
+    \item \textbf{Dependencia de Datos de Origen:} La integridad y actualización de la información visualizada en el SPM (Órdenes de Trabajo, estados de materiales, costos) depende exclusivamente de la disponibilidad y el estado de los datos en el ERP Oracle. Cualquier latencia en el ingreso de datos al ERP se verá reflejada en el sistema.
+    
+    \item \textbf{Validación de la Planificación:} El motor de planificación genera una \textbf{propuesta sugerida} basada en algoritmos de disponibilidad y turnos. Es responsabilidad final del Programador validar, ajustar y confirmar dichas sugerencias antes de su ejecución.
+    
+    \item \textbf{Persistencia de la Planificación:} En esta fase del proyecto, la planificación detallada (asignación de técnicos específicos y fechas ajustadas) se almacenará exclusivamente en el esquema propio del sistema (\texttt{PF\_IM}). No existirá una sincronización de escritura hacia Oracle, el traspaso de estas fechas al ERP deberá ser realizado de forma manual por el usuario, quedando como una mejora para fases futuras la automatización de este proceso vía API/Web Service.
+    
+    \item \textbf{Disponibilidad de Red:} El sistema está diseñado para operar dentro de la Intranet corporativa de PF Alimentos. El acceso externo está fuera del alcance de este requerimiento, a menos que se establezca una conexión vía VPN autorizada por TI.
+
+    \item \textbf{Sincronización de Técnicos y Roles:} El sistema sincroniza los nombres del personal técnico directamente desde la base de datos de personal de Oracle. No obstante, la asignación de sus roles específicos dentro del mantenimiento (Mecánico, Eléctrico, Operador Sadema, etc.) y su planta base debe ser gestionada y mantenida internamente dentro del mantenedor de técnicos del SPM.
+    
+    \item \textbf{Carga de Horarios:} La veracidad de la planificación automática depende de la actualización oportuna de la malla de turnos en el mantenedor de técnicos del SPM. Si los turnos no son cargados correctamente por el programador, el algoritmo no podrá garantizar la viabilidad de las sugerencias.
+
+    \item \textbf{Histórico de Cortes de Control:} El sistema mantendrá un historial de los cortes de control semanales para análisis comparativo de los últimos 2 años. Los datos anteriores a este periodo podrán ser archivados o depurados para asegurar un rendimiento óptimo de la base de datos Oracle.
+    
+    \item \textbf{Soporte de Dispositivos y Plataformas:} El sistema está optimizado para su uso en computadores de escritorio, tablets y celulares mediante navegadores modernos (Chrome, Edge, Safari). No se incluye el desarrollo ni la publicación de una aplicación móvil nativa (App Store o Play Store) en esta entrega.
+    
+    \item \textbf{Alcance Funcional de Gastos:} El módulo de gastos actúa como un monitor de control. El sistema no realiza transacciones financieras, pagos a proveedores ni movimientos de inventario. Todas estas acciones deben seguir ejecutándose en los módulos correspondientes de Oracle.
+\end{itemize}
+
+% -----------------------------------------------------------------------------
+% 1.5 GLOSARIO Y DEFINICIONES
+% -----------------------------------------------------------------------------
+\subsection{Glosario y Definiciones}
+
+Para garantizar una interpretación unívoca de este documento por parte de los equipos de Mantenimiento y Tecnologías de Información, se definen los siguientes términos:
+
+\subsubsection{Términos de Mantenimiento y Planificación}
+\begin{description}
+    \item[OT (Orden de Trabajo):] Documento operativo que autoriza la ejecución de una tarea. Contiene el activo, la descripción del fallo y los recursos asignados.
+    \item[OM:] Prefijo para la clasificación de órdenes en Oracle, corresponde a Órdenes de Mantención (Equipos).
+    \item[OB:] Prefijo para la clasificación de órdenes en Oracle, corresponde a Órdenes de Obras de Infraestructura (Estructura física).
+    \item[MTTR (\textit{Mean Time To Repair}):] Tiempo Medio de Reparación. Indicador de mantenibilidad que mide el tiempo promedio empleado en reparar un activo tras una falla.
+    \item[Malla de Turnos:] Calendario que define la disponibilidad horaria del personal técnico (Turnos A, B, C y Noche).
+    \item[RMD:] Indicador de disponibilidad de recursos en Oracle para Repuestos/Materiales.
+    \item[RSE:] Indicadores de disponibilidad de recursos en Oracle para Servicios Externos.
+    \item[KPI (\textit{Key Performance Indicator}):] Indicador Clave de Desempeño. Valor medible que demuestra la eficacia con la que la Gerencia de Mantenimiento está alcanzando sus objetivos operativos y financieros.
+\end{description}
+
+\subsubsection{Términos de Tecnologías de Información (TI)}
+\begin{description}
+    \item[ERP (\textit{Enterprise Resource Planning}):] Sistema centralizado de gestión empresarial (Oracle E-Business Suite).
+    \item[SSO (\textit{Single Sign-On}):] Método de autenticación que permite acceder al SPM con la misma cuenta corporativa de Microsoft 365.
+    \item[API REST:] Interfaz de comunicación que permite al Frontend solicitar datos al Backend de manera estandarizada.
+    \item[RBAC (\textit{Role-Based Access Control}):] Modelo de seguridad donde los permisos se asignan a roles y no directamente a individuos.
+    \item[ORM (\textit{Object-Relational Mapping}):] Capa de software (TypeORM) que facilita la comunicación segura y parametrizada con la base de datos Oracle.
+    \item[OWASP:] Estándar internacional de seguridad para aplicaciones web enfocado en mitigar riesgos y vulnerabilidades.
+\end{description}
+
+
+\subsection{Perfiles de Usuario y Accesos}
+El sistema implementará un modelo de control de acceso basado en roles con autenticación unificada.
+
+\begin{description}
+    \item[Acceso General (SSO):] El inicio de sesión se realiza mediante credenciales corporativas (Intranet/Microsoft Office 365).
+    \item[Registro Automático:] Al primer inicio de sesión, el usuario se registra automáticamente con el rol de ''Colaborador''.
+\end{description}
+
+\begin{longtable}{|p{3cm}|p{12cm}|}
+\hline
+\rowcolor{headergray} \textbf{Rol} & \textbf{Responsabilidades y Permisos} \\ \hline
+\textbf{Colaborador} & Rol asignado automáticamente al primer ingreso. El usuario tendrá acceso restringido únicamente a una vista de espera, sin permisos de visualización de datos ni gestión, hasta que el Administrador le asigne un perfil específico y permisos de planta. \\ \hline
+\textbf{Programador} & 
+\begin{itemize}
+    \item Gestión de la dotación técnica (horarios, roles) de sus plantas asignadas.
+    \item Modificación y aprobación de la planificación de Órdenes de Trabajo (OT).
+    \item Carga y gestión del presupuesto mensual.
+    \item Visualización del seguimiento operativo de su planta.
+\end{itemize} \\ \hline
+\textbf{Analista} & 
+\begin{itemize}
+    \item Visión global de seguimiento de todas las plantas.
+    \item Acceso completo al módulo de Fallas y Análisis de Activos.
+    \item Visualización del estado presupuestario consolidado.
+\end{itemize} \\ \hline
+\textbf{Admin} & 
+\begin{itemize}
+    \item Gestión de usuarios: Asignación de roles (Programador/Analista) y permisos de acceso a plantas.
+    \item Configuración de parámetros globales del sistema.
+\end{itemize} \\ \hline
+\end{longtable}
+
+
+% -----------------------------------------------------------------------------
+% 2. REQUERIMIENTOS FUNCIONALES - MÓDULO ADMINISTRACIÓN
+% -----------------------------------------------------------------------------
+\section{Módulo de Gestión de Acceso y Administración}
+
+Este módulo transversal gestiona la seguridad, los permisos de usuario y la configuración maestra de las plantas y dotaciones técnicas necesarias para la operación del sistema.
+
+\subsection{Autenticación y Seguridad}
+
+\begin{longtable}{|p{3.5cm}|p{11.5cm}|}
+\hline
+\rowcolor{headergray} \textbf{ID Requisito} & \textbf{RF-ADM-01: Autenticación Unificada (SSO)} \\ \hline
+\textbf{Descripción} & Mecanismo de inicio de sesión seguro integrado con la infraestructura corporativa. \\ \hline
+\textbf{Funcionalidad} & 
+\begin{itemize}
+    \item \textbf{Single Sign-On:} El sistema no almacenará contraseñas propias. La autenticación se delegará al directorio activo de PF Alimentos (Microsoft 365) mediante protocolo OAuth2.
+    \item \textbf{Registro Automático:} Al detectar un usuario nuevo que ingresa exitosamente por SSO, el sistema creará automáticamente su cuenta en la base de datos \texttt{PF\_IM\_USUARIOS} con el rol por defecto de ''Colaborador'' (Solo lectura limitada/Espera).
+    \item \textbf{Gestión de Sesión:} Control de tiempo de expiración de sesión y token de seguridad para consultas HTTPS.
+\end{itemize} \\ \hline
+\end{longtable}
+
+\subsection{Gestión de Usuarios y Roles}
+
+\begin{longtable}{|p{3.5cm}|p{11.5cm}|}
+\hline
+\rowcolor{headergray} \textbf{ID Requisito} & \textbf{RF-ADM-02: Administración de Perfiles} \\ \hline
+\textbf{Descripción} & Interfaz exclusiva para Administradores que permite elevar privilegios. \\ \hline
+\textbf{Roles del Sistema} & 
+\begin{itemize}
+    \item \textbf{Colaborador:} Vista de espera. Sin acceso a datos operativos.
+    \item \textbf{Programador:} Acceso de escritura en Planificación y Gastos para sus plantas asignadas.
+    \item \textbf{Analista:} Acceso de lectura global y Dashboard de Fallas.
+    \item \textbf{Administrador:} Gestión total de usuarios y parámetros.
+\end{itemize} \\ \hline
+\textbf{Acciones} & El administrador podrá buscar usuarios por nombre o correo y modificar su Rol mediante una lista desplegable. \\ \hline
+\end{longtable}
+
+\subsection{Configuración de Alcance (Plantas)}
+
+\begin{longtable}{|p{3.5cm}|p{11.5cm}|}
+\hline
+\rowcolor{headergray} \textbf{ID Requisito} & \textbf{RF-ADM-03: Asignación de Plantas} \\ \hline
+\textbf{Descripción} & Definición del alcance operativo para cada Programador. \\ \hline
+\textbf{Justificación} & Un programador de la planta ''PF1'' no debe poder modificar la planificación de ''PF6''. \\ \hline
+\textbf{Funcionalidad} & 
+\begin{itemize}
+    \item \textbf{Matriz Usuario-Planta:} Interfaz tipo checklist donde se asignan las plantas visibles para cada usuario.
+    \item \textbf{Sincronización de Plantas:} Las plantas disponibles se obtienen desde los Centros de Costo maestros de Oracle, pero su agrupación lógica se define en este módulo.
+\end{itemize} \\ \hline
+\end{longtable}
+
+
+% -----------------------------------------------------------------------------
+% 3. REQUERIMIENTOS FUNCIONALES - MÓDULO SEGUIMIENTO
+% -----------------------------------------------------------------------------
+\section{Módulo de Seguimiento y Control}
+
+Este módulo es el núcleo del análisis operativo. Funciona mediante un Dashboard General que permite alternar la vista entre trabajos pendientes (atrasos) y trabajos completados, además de herramientas profundas de análisis por técnico y evolución histórica.
+
+\subsection{Procesamiento de Datos}
+
+\begin{longtable}{|p{3.5cm}|p{11.5cm}|}
+\hline
+\rowcolor{headergray} \textbf{ID Requisito} & \textbf{RF-SEG-01: Extracción y Filtrado de OTs} \\ \hline
+\textbf{Descripción} & Lógica de conexión a Oracle para obtener el universo de datos. \\ \hline
+\textbf{Reglas de Negocio} & 
+\begin{enumerate}
+    \item \textbf{Exclusión:} Se deben excluir todas las OTs que se encuentren en estado ''CANCELADO''.
+    \item \textbf{Segmentación por Estado:}
+    \begin{itemize}
+        \item \textbf{Para Atrasos:} Se considerarán las OTs que se encuentren en estado \textbf{''LIBERADO''}.
+        \item \textbf{Para Cumplimiento:} Se considerarán las OTs que se encuentren en estado \textbf{''FINALIZADO''}.
+    \end{itemize}
+    \item \textbf{Categorización OM vs OB:}
+    \begin{itemize}\item \textbf{OM (Mantención):} Todo lo que no cumpla con la condición anterior.
+        \item \textbf{OB (Infraestructura):} Si el número de OT comienza con el prefijo ''OB'' o si la descripción contiene el texto ''(Infra)''.
+        
+    \end{itemize}
+    \item \textbf{Asignación de Planta:}
+    \begin{itemize}
+        \item Regla General: Se determina por el Centro de Costo (CC) asociado al activo en Oracle.
+        \item \textbf{Lógica MP3:} Las OTs asociadas a la planta ''MP3'' deben ser reasignadas según el CC del activo para distribuir los costos a la planta productiva correspondiente (PF1, PF2, etc.).
+    \end{itemize}
+\end{enumerate} \\ \hline
+\end{longtable}
+
+\subsection{Tableros de Control (Dashboards)}
+
+\begin{longtable}{|p{3.5cm}|p{11.5cm}|}
+\hline
+\rowcolor{headergray} \textbf{ID Requisito} & \textbf{RF-SEG-02: Dashboard Unificado} \\ \hline
+\textbf{Descripción} & Interfaz principal para el monitoreo de indicadores KPI. \\ \hline
+\textbf{Funcionalidad} & 
+\begin{itemize}
+    \item \textbf{Selector de Vista:} El usuario debe poder alternar mediante un control entre dos modos:
+    \begin{enumerate}
+        \item \textbf{Modo Atrasos:} Muestra las OTs pendientes clasificadas por responsable (Técnico, Programador, Otros).
+        \item \textbf{Modo Cumplimiento:} Muestra el porcentaje de efectividad de cierre por planta.
+    \end{enumerate}
+    \item \textbf{KPIs por Planta:} Tarjetas visuales que resumen la cantidad de OTs OK vs Pendientes por cada planta (PF1 a PF6, CDT, Ventas, etc.).
+\end{itemize} \\ \hline
+\end{longtable}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{imagenes/capturas/seguimiento/dashboard_atrasos.png}
+    \caption{Vista del Dashboard en Modo Atrasos con tabla de responsables.}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{imagenes/capturas/seguimiento/dashboard_cumplida.png}
+    \caption{Vista del Dashboard en Modo Cumplimiento con indicadores por planta.}
+\end{figure}
+
+\subsection{Lógica de Negocio Específica}
+
+\begin{longtable}{|p{3.5cm}|p{11.5cm}|}
+\hline
+\rowcolor{headergray} \textbf{ID Requisito} & \textbf{RF-SEG-03: Algoritmo de Clasificación de Atrasos} \\ \hline
+\textbf{Contexto} & Aplica únicamente cuando el Dashboard está en Modo Atrasos (Estado ''LIBERADO''). \\ \hline
+\textbf{Algoritmo} & 
+\begin{enumerate}
+    \item \textbf{Evaluación Técnica (Cumplimiento):}
+    \begin{itemize}
+        \item Condición de Éxito: TODOS los técnicos asignados deben tener su operación en estado ''SI''.
+        \item Si ALGÚN técnico tiene estado ''NO'', se clasifica como responsabilidad del \textbf{TÉCNICO}.
+    \end{itemize}
+    \item \textbf{Evaluación de Programación (Recursos):}
+    \begin{itemize}
+        \item Si la evaluación técnica es exitosa, se verifica en la tabla masiva:
+        \item Si \textbf{RMD} (Materiales) y \textbf{RSE} (Servicios Externos) están disponibles (''SI'' o Vacío), se clasifica como responsabilidad del \textbf{PROGRAMADOR}.
+    \end{itemize}
+    \item \textbf{Excepciones (Otros):}
+    \begin{itemize}
+        \item Si falta material (RMD=''NO'') o servicio (RSE=''NO''), o la OT no está en el reporte masivo, se clasifica como \textbf{OTROS}.
+    \end{itemize}
+\end{enumerate} \\ \hline
+\end{longtable}
+
+\subsection{Centro de Análisis y Evolución}
+
+\begin{longtable}{|p{3.5cm}|p{11.5cm}|}
+\hline
+\rowcolor{headergray} \textbf{ID Requisito} & \textbf{RF-SEG-04: Análisis de Evolución de OTs} \\ \hline
+\textbf{Descripción} & Módulo para entender el flujo de trabajo entre semanas (Cortes de Control). \\ \hline
+\textbf{Funcionalidad} & El sistema debe clasificar y visualizar el movimiento de las OTs entre el reporte anterior y el actual:
+\begin{itemize}
+    \item \textbf{Nuevas Entradas:} OTs que aparecieron esta semana.
+    \item \textbf{Salieron / Finalizadas:} OTs que estaban pendientes y ahora están cerradas.
+    \item \textbf{Cambio de Clasificación:} OTs que siguen pendientes pero cambió su responsable (ej. de Programador a Técnico).
+\end{itemize} \\ \hline
+\end{longtable}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{imagenes/capturas/seguimiento/analisis_de_ordenes.png}
+    \caption{Centro de Análisis mostrando el flujo de entradas y salidas de OTs.}
+\end{figure}
+
+\subsection{Detalle Operativo y Técnicos}
+
+\begin{longtable}{|p{3.5cm}|p{11.5cm}|}
+\hline
+\rowcolor{headergray} \textbf{ID Requisito} & \textbf{RF-SEG-05: Desglose Detallado por Planta} \\ \hline
+\textbf{Descripción} & Listado de las órdenes de trabajo. \\ \hline
+\textbf{Funcionalidad} & Al seleccionar una planta en el Dashboard, se debe desplegar:
+\begin{itemize}
+    \item Lista de OTs con su descripción y clasificación (OM/OB).
+    \item Estado de los recursos (Semáforo para RMD y RSE).
+    \item Lista de técnicos asignados a cada OT con su estado individual de cumplimiento (Check verde / Cruz roja).
+\end{itemize} \\ \hline
+\end{longtable}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{imagenes/capturas/seguimiento/seguimiento_ots_planta.png}
+    \caption{Vista de detalle de OTs con estado de recursos y técnicos.}
+\end{figure}
+
+\begin{longtable}{|p{3.5cm}|p{11.5cm}|}
+\hline
+\rowcolor{headergray} \textbf{ID Requisito} & \textbf{RF-SEG-06: Seguimiento Individual de Técnicos} \\ \hline
+\textbf{Descripción} & Herramientas para evaluar el desempeño de la dotación. \\ \hline
+\textbf{Funcionalidad} & 
+\begin{itemize}
+    \item \textbf{Ranking de Técnicos:} Lista ordenada por porcentaje de cumplimiento y volumen de trabajo total.
+    \item \textbf{Perfil del Técnico:} Vista individual que muestra:
+    \begin{itemize}
+        \item Total de OTs asignadas vs. Realizadas (OK).
+        \item Listado específico de las OTs donde participó el técnico.
+        \item Indicadores de Materiales/Servicios Externos para las OTs pendientes de ese técnico.
+    \end{itemize}
+\end{itemize} \\ \hline
+\end{longtable}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{imagenes/capturas/seguimiento/analisis_de_tecnicos.png}
+    \caption{Ranking general de cumplimiento por técnico.}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{imagenes/capturas/seguimiento/seguimiento_tecnico.png}
+    \caption{Perfil individual del técnico con sus estadísticas y OTs asignadas.}
+\end{figure}
+% -----------------------------------------------------------------------------
+% 4. REQUERIMIENTOS FUNCIONALES - MÓDULO PLANIFICACIÓN
+% -----------------------------------------------------------------------------
+\section{Módulo de Planificación}
+
+Proyecta la carga futura y asigna recursos de manera eficiente a través de la gestión dinámica de personal.
+
+\subsection{Gestión de Dotación y Disponibilidad (Responsabilidad Programador)}
+
+\begin{longtable}{|p{3.5cm}|p{11.5cm}|}
+\hline
+\rowcolor{headergray} \textbf{ID Requisito} & \textbf{RF-PLAN-01: Mantenedor de Horarios y Roles Técnicos} \\ \hline
+\textbf{Descripción} & Interfaz operativa para configurar la disponibilidad del personal técnico asignado. \\ \hline
+\textbf{Responsabilidad} & El Programador es el encargado de actualizar esta información para su planta, ya que es el insumo crítico para el motor de asignación. \\ \hline
+\textbf{Funcionalidad} & 
+\begin{itemize}
+    \item \textbf{Carga de Horarios:} Definición de la malla de turnos rotativos (A, B, C, N) para cada técnico en el calendario mensual.
+    \item \textbf{Asignación de Roles:} Clasificación por especialidad (Mecánico, Eléctrico, Operador Sadema).
+    \item \textbf{Agrupación CI:} Los técnicos de las plantas PF3, PF4, PF5, PF6 y CDT pueden ser gestionados bajo la entidad unificada ''CI'' (Complejo Industrial).
+    \item \textbf{Excepciones de Turno:} Configuración de roles de Supervisor y Servicios Externos que operan bajo disponibilidad de día hábil, exentos de la rotación estándar.
+\end{itemize} \\ \hline
+\end{longtable}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{imagenes/capturas/planificacion/horarios_tecnicos.png}
+    \caption{Interfaz de gestión de horarios y especialidades operada por el Programador.}
+\end{figure}
+
+\subsection{Algoritmos de Asignación Automática}
+\begin{longtable}{|p{3.5cm}|p{11.5cm}|}
+\hline
+\rowcolor{headergray} \textbf{ID Requisito} & \textbf{RF-PLAN-02: Motor de Proyección de OTs} \\ \hline
+\textbf{Descripción} & Identificación de las tareas a realizar el mes siguiente. \\ \hline
+\textbf{Algoritmo} & 
+\begin{itemize}
+    \item El sistema generará una llave única concatenando: \texttt{DESCRIPCIÓN\_MANTENCIÓN} + \texttt{NÚMERO\_ACTIVO} del mes anterior.
+    \item Se buscará esa llave en la proyección de Oracle para el mes siguiente.
+    \item La fecha objetivo inicial será la fecha calendario más cercana a la ejecución del mes anterior (ciclo de 30 días).
+\end{itemize} \\ \hline
+\end{longtable}
+
+\begin{longtable}{|p{3.5cm}|p{11.5cm}|}
+\hline
+\rowcolor{headergray} \textbf{ID Requisito} & \textbf{RF-PLAN-03: Motor de Asignación Automática} \\ \hline
+\textbf{Descripción} & Lógica para sugerir el técnico ideal y la fecha exacta. \\ \hline
+\textbf{Criterios Prioritarios} & 
+\begin{enumerate}
+    \item \textbf{Turno Noche:} El sistema debe buscar un día donde el técnico tenga asignado turno ''N''.
+    \item \textbf{Día Hábil:} En primera instancia, buscar asignación de Lunes a Viernes.
+    \item \textbf{Excepción Domingo:} Si la fecha proyectada cae Domingo, el sistema buscará automáticamente el siguiente día hábil con turno noche disponible dentro del mes.
+    \item \textbf{Manejo de Conflictos:} Si la tarea requiere 2 técnicos y sus turnos noche no coinciden, se programará provisionalmente para el Sábado.
+\end{enumerate} \\ \hline
+\textbf{Modos de Ejecución} & El usuario podrá seleccionar entre dos algoritmos:
+\begin{itemize}
+    \item \textbf{Algoritmo 1 (Continuidad):} Intenta asignar al mismo técnico que realizó la tarea el mes anterior (si cumple criterio noche).
+    \item \textbf{Algoritmo 2 (Carga Equitativa):} Asigna técnicos disponibles con el rol necesario buscando balancear la cantidad de OTs semanales por planta, sin depender del historial.
+    \item \textbf{Indicador:} Las asignaciones automáticas deben estar marcadas visualmente para diferenciarlas de las manuales.
+\end{itemize} \\ \hline
+\end{longtable}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{imagenes/capturas/planificacion/planificacion_equilibrada.png}
+    \caption{Planificación equilibrada de OTs.}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{imagenes/capturas/planificacion/ordenes_asignadas_auto.png}
+    \caption{Asignación automática de OTs.}
+\end{figure}
+
+\subsection{Gestión Manual y Visualización de Carga}
+\begin{longtable}{|p{3.5cm}|p{11.5cm}|}
+\hline
+\rowcolor{headergray} \textbf{ID Requisito} & \textbf{RF-PLAN-04: Gestión Manual y Resolución de Conflictos} \\ \hline
+\textbf{Descripción} & Herramientas para el ajuste manual  de la planificación por parte del usuario. \\ \hline
+\textbf{Funcionalidad} & 
+\begin{itemize}
+    \item \textbf{Panel de Pendientes:} Barra lateral que agrupa todas las OTs que el algoritmo no pudo asignar automáticamente (por falta de turno compatible o datos incompletos).
+    \item \textbf{Drag \& Drop:} Capacidad de arrastrar OTs desde el panel de pendientes hacia días específicos del calendario.
+    \item \textbf{Asignación Manual:} Modal que permite seleccionar un técnico específico de la lista, mostrando advertencias si el técnico no tiene turno noche o está saturado.
+\end{itemize} \\ \hline
+\end{longtable}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{imagenes/capturas/planificacion/ordenes_pendientes_de_asignar.png}
+    \caption{Panel lateral con órdenes pendientes de asignar.}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{imagenes/capturas/planificacion/asignacion_manual_tecnicos.png}
+    \caption{Interfaz de asignación manual de técnicos con validación de disponibilidad.}
+\end{figure}
+
+\begin{longtable}{|p{3.5cm}|p{11.5cm}|}
+\hline
+\rowcolor{headergray} \textbf{ID Requisito} & \textbf{RF-PLAN-05: Visualización de Carga} \\ \hline
+\textbf{Descripción} & Dashboard para monitorear la saturación de los técnicos. \\ \hline
+\textbf{Detalle} & 
+\begin{itemize}
+    \item Resumen visual de cantidad de OTs asignadas mensual y semanalmente por técnico (Mapa de calor).
+    \item Vista detallada: Nro Orden, Equipo, Descripción, Fecha Sugerida y Rol.
+\end{itemize} \\ \hline
+\end{longtable}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{imagenes/capturas/planificacion/carga_trabajo.png}
+    \caption{Matriz de carga de trabajo asignada a los técnicos.}
+\end{figure}
+
+% -----------------------------------------------------------------------------
+% 5. REQUERIMIENTOS FUNCIONALES - MÓDULO FALLAS
+% -----------------------------------------------------------------------------
+\section{Módulo de Análisis de Fallas}
+Inteligencia de negocios aplicada a la confiabilidad de activos.
+
+\subsection{Identificación y KPIs Críticos}
+
+\begin{longtable}{|p{3.5cm}|p{11.5cm}|}
+\hline
+\rowcolor{headergray} \textbf{ID Requisito} & \textbf{RF-FALLA-01: Identificación y KPIs de Fallas} \\ \hline
+\textbf{Descripción} & Dashboard estadístico de fallas. \\ \hline
+\textbf{Filtros} & Se obtienen las fallas de la tabla correspondiente, permitiendo filtrar por Planta, Año y Semana. \\ \hline
+\textbf{Visualización} & 
+\begin{itemize}
+    \item \textbf{Top Rankings:} Mostrar activos con más fallas (frecuencia), más costosos (acumulado) y mayor MTTR (Tiempo Medio de Reparación).
+    \item \textbf{Tendencia Anual:} Gráfico de barras mostrando la evolución de fallas mes a mes o semana a semana.
+\end{itemize} \\ \hline
+\end{longtable}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{imagenes/capturas/fallas/dashbaord_fallas.png}
+    \caption{Dashboard General de Fallas con indicadores globales y rankings.}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{imagenes/capturas/fallas/dashboard_falla_semana.png}
+    \caption{Visualización filtrada por una semana específica.}
+\end{figure}
+
+\subsection{Comparación Interanual y Desglose}
+\begin{longtable}{|p{3.5cm}|p{11.5cm}|}
+\hline
+\rowcolor{headergray} \textbf{ID Requisito} & \textbf{RF-FALLA-02: Comparación Interanual Global} \\ \hline
+\textbf{Descripción} & Herramienta para medir el desempeño respecto al ciclo anterior. \\ \hline
+\textbf{Visualización} & Al activar la opción de comparación:
+\begin{itemize}
+    \item Superponer el gráfico de líneas del año anterior sobre el actual.
+    \item \textbf{Indicadores Semáforo:} Destacar en Rojo si las fallas subieron respecto a la misma fecha del año pasado, o en Verde si bajaron.
+    \item Comparativa de los Top Activos Críticos entre ambos periodos.
+\end{itemize} \\ \hline
+\end{longtable}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{imagenes/capturas/fallas/comparacion_26_anterior_grafico.png}
+    \caption{Gráfico comparativo: Año Actual vs Año Anterior.}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{imagenes/capturas/fallas/comparacion_25_anterior_grafico.png}
+    \caption{Ejemplo de análisis histórico (2025 vs 2024).}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{imagenes/capturas/fallas/comparacion_26_anterior_top.png}
+    \caption{Comparativa de Top Activos Críticos entre el año actual y el anterior.}
+\end{figure}
+
+\begin{longtable}{|p{3.5cm}|p{11.5cm}|}
+\hline
+\rowcolor{headergray} \textbf{ID Requisito} & \textbf{RF-FALLA-03: Detalle de Activo} \\ \hline
+\textbf{Descripción} & Vista profunda del comportamiento de un equipo específico. \\ \hline
+\textbf{Funcionalidad} & Al seleccionar un activo del ranking o del buscador:
+\begin{itemize}
+    \item Mostrar KPIs específicos del equipo (Costo acumulado, Tiempo de detención).
+    \item Historial gráfico del comportamiento del activo vs su desempeño el año pasado.
+    \item Listado detallado de todas las OTs de falla asociadas al equipo.
+\end{itemize} \\ \hline
+\end{longtable}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{imagenes/capturas/fallas/filtro_semana_activo.png}
+    \caption{Vista de detalle de un activo seleccionado filtrado por semana.}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{imagenes/capturas/fallas/comparacio_anterior_activo.png}
+    \caption{Comparación de desempeño de un activo específico vs año anterior.}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{imagenes/capturas/fallas/resumen_detallado_activo.png}
+    \caption{Tabla de resumen detallado de fallas del equipo.}
+\end{figure}
+
+% -----------------------------------------------------------------------------
+% 5. REQUERIMIENTOS FUNCIONALES - MÓDULO GASTOS
+% -----------------------------------------------------------------------------
+\section{Módulo de Control de Gastos}
+
+Gestión y monitoreo estratégico del presupuesto de mantenimiento, con integración directa a los costos reales reportados en el sistema ERP.
+
+\subsection{Configuración Presupuestaria}
+\begin{longtable}{|p{3.5cm}|p{11.5cm}|}
+\hline
+\rowcolor{headergray} \textbf{ID Requisito} & \textbf{RF-COST-01: Estructura Presupuestaria} \\ \hline
+\textbf{Descripción} & Interfaz para la definición de metas de gasto mensual y anual. \\ \hline
+\textbf{Jerarquía} & El sistema debe permitir separar los activos y presupuestos en:
+\begin{itemize}
+    \item Nivel 1: Maquinarias vs. Redes.
+    \item Nivel 2: Infraestructura.
+\end{itemize} 
+Los programadores deben poder ingresar el presupuesto mensual asignado a cada activo para generar el cronograma anual de gastos proyectados. \\ \hline
+\end{longtable}
+
+\subsection{Monitoreo de Ejecución y Alertas}
+\begin{longtable}{|p{3.5cm}|p{11.5cm}|}
+\hline
+\rowcolor{headergray} \textbf{ID Requisito} & \textbf{RF-COST-02: Monitoreo de Ejecución} \\ \hline
+\textbf{Descripción} & Comparación en tiempo real del Gasto Real (extraído de Oracle) vs. Presupuesto (SPM). \\ \hline
+\textbf{Funcionalidad} & 
+\begin{itemize}
+    \item Visualización de gastos consolidados por planta y centro de costo.
+    \item Carta Gantt de ejecución presupuestaria para visualizar la distribución del gasto en el tiempo.
+    \item \textbf{Alerta de Sobrecosto:} El sistema comparará si el gasto real ha alcanzado la meta presupuestaria. Si la meta se cumple o excede Y la OT asociada NO está finalizada, se debe destacar visualmente el dato para alertar que el trabajo continúa consumiendo recursos sin presupuesto disponible.
+\end{itemize} \\ \hline
+\end{longtable}
+
+\subsection{Desglose de Gastos}
+\begin{longtable}{|p{3.5cm}|p{11.5cm}|}
+\hline
+\rowcolor{headergray} \textbf{ID Requisito} & \textbf{RF-COST-03: Desglose de Gastos por Tipo} \\ \hline
+\textbf{Descripción} & Capacidad de explorar la composición detallada del costo de un activo específico, clasificando el origen del gasto. \\ \hline
+\textbf{Categorización} & Al seleccionar un activo o una OT, el sistema debe desplegar un gráfico o una tabla que separe los costos en las siguientes dimensiones:
+\begin{itemize}
+    \item \textbf{Bodega:} Costo de operación preventiva valorizado de materiales, repuestos e insumos retirados del inventario interno.
+    \item \textbf{Servicios Externos:} Costos de operación preventiva asociados a mano de obra contratada, servicios de terceros u Órdenes de Compra directas.
+    \item \textbf{Gasto Correctivo:} Identificación y segregación específica de los costos incurridos en OTs de tipo ''Corrección'' o ''Falla'', permitiendo aislar el costo del mantenimiento no planificado.
+    \item \textbf{Hito:} Costo mayor preventivo identificado por la existencia del identificador ''HITO'' en la descripción de un pedido de trabajo.
+    
+\end{itemize} \\ \hline
+\textbf{Detalle} & Tabla inferior con el detalle línea a línea de los movimientos (ej: ''Rodamiento SKF - \$50.000 - Bodega''). \\ \hline
+\end{longtable}
+
+% -----------------------------------------------------------------------------
+% 7. ARQUITECTURA DEL SISTEMA
+% -----------------------------------------------------------------------------
+\section{Arquitectura del Sistema}
+
+El sistema SPM adopta una arquitectura de tres capas, diseñada para garantizar la escalabilidad y la seguridad de los datos sensibles del ERP.
+
+\begin{description}
+    \item[Capa de Presentación (Frontend):] Interfaz de usuario interactiva distribuida en módulos de vistas independientes. Cada módulo está optimizado para la visualización de grandes volúmenes de datos, cuadros de mando y gráficos comparativos, consumiendo recursos del servidor de forma asíncrona para garantizar la fluidez de la información.
+    \item[Capa de Aplicación (Backend):] Servidor de aplicaciones que gestiona la lógica de negocio, el motor de clasificación de atrasos y los algoritmos de planificación. Actúa como puente seguro entre la base de datos y el cliente.
+    \item[Capa de Datos:] Persistencia híbrida en Oracle. Utiliza vistas y procedimientos para la lectura del ERP y tablas relacionales (\texttt{PF\_IM\_*}) para la gestión propia del sistema.
+\end{description}
+
+
+
+% -----------------------------------------------------------------------------
+% 8. REQUERIMIENTOS NO FUNCIONALES Y TÉCNICOS
+% -----------------------------------------------------------------------------
+\section{Esquema de Datos}
+
+El sistema operará mediante una arquitectura híbrida de base de datos Oracle:
+
+\begin{description}
+    \item[Esquema ERP (Lectura):] Conexión directa a las tablas maestras de Oracle para obtener:
+    \begin{itemize}
+        \item Tabla de Órdenes de Trabajo.
+        \item Tabla de Cumplimiento de Operaciones Técnicas.
+        \item Tabla Masiva con datos de Materiales (RMD) y Servicios Externos (RSE).
+        \item Tabla de Activos.
+        \item Tabla de Fallos.
+    \end{itemize}
+    
+    \item[Esquema SPM (Escritura):] Esquema adicional en Oracle para almacenar datos propios del sistema:
+    \begin{itemize}
+        \item Tabla \texttt{PF\_IM\_TECNICOS}: Nombre, Rol, Planta, Malla de Turnos.
+        \item Tabla \texttt{PF\_IM\_USUARIOS}: Roles de sistema y permisos.
+        \item Tabla \texttt{PF\_IM\_PLANIFICACION}: Turnos y asignaciones.
+        \item Tabla \texttt{PF\_IM\_CORTES\_CONTROL}: Historial semanal de seguimiento
+        \item Tabla \texttt{PF\_IM\_PRESUPUESTOS}: Metas financieras.
+    \end{itemize}
+\end{description}
+
+
+% -----------------------------------------------------------------------------
+% 9. SEGURIDAD Y REQUERIMIENTOS NO FUNCIONALES
+% -----------------------------------------------------------------------------
+\section{Seguridad}
+
+El sistema implementa múltiples capas de protección siguiendo el modelo de defensa en profundidad:
+
+\begin{itemize}
+    \item \textbf{Cifrado de Datos:} Obligatoriedad de protocolo HTTPS mediante certificados TLS 1.2 o superior para toda comunicación entre cliente y servidor.
+    \item \textbf{Seguridad de Aplicación (OWASP):} 
+    \begin{itemize}
+        \item Prevención de SQL Injection mediante el uso de consultas parametrizadas y ORM.
+        \item Protección contra Cross-Site Scripting (XSS) y Cross-Site Request Forgery (CSRF).
+        \item Cabeceras de seguridad HTTP (Helmet.js) para mitigar ataques de clickjacking.
+    \end{itemize}
+    \item \textbf{Control de Acceso:} Implementación de RBAC (Role-Based Access Control) donde el acceso a los módulos está estrictamente limitado por el rol asignado en la base de datos y la planta autorizada.
+    \item \textbf{Auditoría:} Registro de logs de operaciones críticas (modificaciones de planificación o cambios de presupuesto) para trazabilidad.
+    \item \textbf{Acceso:} El despliegue es exclusivo para la Intranet Corporativa de PF Alimentos.
+\end{itemize}
+
+
+
+
+% -----------------------------------------------------------------------------
+% 9. TECNOLOGÍAS E INFRAESTRUCTURA
+% -----------------------------------------------------------------------------
+\section{Tecnología y Stack de Desarrollo}
+
+Para cumplir con los estándares de velocidad y seguridad de PF Alimentos, se han seleccionado las siguientes tecnologías:
+
+\begin{itemize}
+    \item \textbf{Frontend:} React.js con TypeScript, utilizando una interfaz coherente con la imagen corporativa. Visualización de datos mediante librerías de gráficos de alto rendimiento.
+    \item \textbf{Backend:} Entorno de ejecución Node.js con Framework de alto nivel (Fastify o Express), utilizando \textit{TypeORM} para la comunicación segura con Oracle.
+    \item \textbf{Base de Datos:} Oracle Database 19c.
+    \item \textbf{Autenticación:} Integración vía SSO.
+    \item \textbf{Infraestructura:} Despliegue en servidores internos de PF Alimentos bajo servidor web \textbf{'Nginx/Apache/Contenedor'} con certificados SSL.
+\end{itemize}
+
+% -----------------------------------------------------------------------------
+% 10. ENTREGABLES DEL PROYECTO
+% -----------------------------------------------------------------------------
+\section{Entregables}
+
+Al finalizar el desarrollo, se hará entrega de los siguientes elementos:
+
+\begin{enumerate}
+    \item \textbf{Código Fuente:} Repositorio completo debidamente documentado.
+    \item \textbf{Documento de Especificación:} Versión final de este documento aprobada y firmada.
+    \item \textbf{Manual de Usuario:} Guía visual para Programadores y Analistas.
+    \item \textbf{Scripts de Base de Datos:} Definición del esquema \texttt{PF\_IM} y vistas de integración.
+    \item \textbf{Plan de Pruebas (QA):} Registro de validación de los algoritmos de clasificación y planificación.
+\end{enumerate}
+
+\end{document}

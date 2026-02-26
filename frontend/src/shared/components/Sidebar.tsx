@@ -141,8 +141,10 @@ export const Sidebar = ({
     <>
       {/* BACKDROP PARA MÓVILES */}
       {!isCollapsed && (
-        <div
-          className="fixed inset-0 bg-pf-neutral-900/30 backdrop-blur-[2px] z-40 md:hidden transition-opacity duration-300"
+        <button
+          type="button"
+          aria-label="Cerrar menú"
+          className="fixed inset-0 bg-pf-neutral-900/30 backdrop-blur-[2px] z-40 md:hidden transition-opacity duration-300 border-none cursor-default"
           onClick={() => setIsCollapsed(true)}
         />
       )}
@@ -168,12 +170,18 @@ export const Sidebar = ({
         <div className={`flex flex-col h-full w-full overflow-hidden transition-opacity duration-200 ${isCollapsed ? 'opacity-0 md:opacity-100' : 'opacity-100'}`}>
           {/* HEADER */}
           <div className={`p-6 flex flex-col items-center transition-all duration-300 ${isCollapsed ? 'px-2' : ''}`}>
-            <img
-              src="./Logo_PF_Alimentos.png"
-              alt="PF Logo"
+            <button
+              type="button"
               onClick={_hI}
-              className={`object-contain transition-all duration-300 cursor-pointer select-none active:scale-95 ${isCollapsed ? 'w-10 h-10' : 'w-32 mb-4'}`}
-            />
+              className="bg-transparent border-none p-0 focus:outline-none"
+            >
+              <img
+                src="./Logo_PF_Alimentos.png"
+                alt="PF Logo - Ir al inicio"
+                className={`object-contain transition-all duration-300 cursor-pointer select-none active:scale-95 ${isCollapsed ? 'w-10 h-10' : 'w-32 mb-4'
+                  }`}
+              />
+            </button>
             <div className={`h-0.5 w-16 bg-pf-red/20 rounded-full transition-opacity duration-200 ${isCollapsed ? 'opacity-0 hidden' : 'opacity-100'}`}></div>
             <p className={`text-[10px] text-pf-neutral-400 uppercase tracking-[0.2em] font-bold text-center mt-2 whitespace-nowrap overflow-hidden transition-all duration-300 ${isCollapsed ? 'opacity-0 h-0' : 'opacity-100 h-auto'}`}>
               Control Industrial

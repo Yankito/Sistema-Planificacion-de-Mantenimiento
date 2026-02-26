@@ -1,43 +1,39 @@
 export const sortPeriods = (a: string, b: string) => {
-  // Helper para extraer el año de cualquier formato
-  const getYear = (val: string) => {
-    if (/^\d{4}$/.test(val)) return Number.parseInt(val);
-    if (/^[A-Z]{3}-\d{2}$/.test(val)) {
-      const parts = val.split('-');
-      return Number.parseInt("20" + parts[1]);
-    }
-    if (/^\d{1,2}\/\d{4}$/.test(val)) return Number.parseInt(val.split('/')[1]);
-    if (/^\d{4}-\d{1,2}$/.test(val)) return Number.parseInt(val.split('-')[0]);
-    return 0;
+  const meses: Record<string, number> = {
+    "ENE": 1, "FEB": 2, "MAR": 3, "ABR": 4, "MAY": 5, "JUN": 6,
+    "JUL": 7, "AGO": 8, "SEP": 9, "OCT": 10, "NOV": 11, "DIC": 12
   };
 
-  const yearA = getYear(a);
-  const yearB = getYear(b);
+  const parsePeriod = (val: string) => {
+    let year = 0;
+    let month = 0; // 0 significa que es el resumen anual
 
-  if (yearA !== yearB) return yearA - yearB;
+    if (/^\d{4}$/.test(val)) {
+      year = Number.parseInt(val);
+    } else if (/^[A-Z]{3}-\d{2}$/.test(val)) {
+      const [m, y] = val.split('-');
+      year = Number.parseInt("20" + y);
+      month = meses[m] ?? 0;
+    } else if (/^\d{1,2}\/\d{4}$/.test(val)) {
+      const [m, y] = val.split('/');
+      year = Number.parseInt(y);
+      month = Number.parseInt(m);
+    } else if (/^\d{4}-\d{1,2}$/.test(val)) {
+      const [y, m] = val.split('-');
+      year = Number.parseInt(y);
+      month = Number.parseInt(m);
+    }
 
-  // Si es el mismo año
-  const isYearA = /^\d{4}$/.test(a);
-  const isYearB = /^\d{4}$/.test(b);
+    return { year, month };
+  };
 
-  // El resumen anual (YYYY) va PRIMERO si hay conflicto en el mismo año 
-  if (isYearA && !isYearB) return -1;
-  if (!isYearA && isYearB) return 1;
-  if (isYearA && isYearB) return 0;
+  const pA = parsePeriod(a);
+  const pB = parsePeriod(b);
 
-  // 2. Ambos son MESES
-  const meses: Record<string, number> = { "ENE": 0, "FEB": 1, "MAR": 2, "ABR": 3, "MAY": 4, "JUN": 5, "JUL": 6, "AGO": 7, "SEP": 8, "OCT": 9, "NOV": 10, "DIC": 11 };
-  const [mesA, anioA] = a.split('-');
-  const [mesB, anioB] = b.split('-');
+  // 1. Comparar años
+  if (pA.year !== pB.year) return pA.year - pB.year;
 
-  if (!anioA || !anioB) return a.localeCompare(b);
-
-  // Comparar años primero
-  const fullYearA = Number.parseInt("20" + anioA);
-  const fullYearB = Number.parseInt("20" + anioB);
-
-  if (fullYearA !== fullYearB) return fullYearA - fullYearB;
-
-  // Comparar meses
-  return (meses[mesA] ?? 0) - (meses[mesB] ?? 0);
+  // 2. Si es el mismo año, comparar meses 
+  // (El 0 del resumen anual hará que quede primero automáticamente)
+  return pA.month - pB.month;
 };
