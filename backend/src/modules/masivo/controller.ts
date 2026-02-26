@@ -251,15 +251,17 @@ export const MassiveController = {
                     linea: String(r["Nombre Línea Prod"]),
                     equipo: String(r["Equipo Nombre"]),
                     causa: String(r["Descripcion Causa"]),
-                    pedidoTrabajo: String(r["Pedido Trabajo"]),
-                    estadoPedido: String(r["Estado Pedido"]),
-                    tipoPedido: String(r["Tipo Pedido Trabajo"]),
-                    tecnico: String(r["Técnico"]),
+                    pedidoTrabajo: String(r["Pedido Trabajo"] || ""),
+                    estadoPedido: String(r["Estado Pedido"] || ""),
+                    tipoPedido: String(r["Tipo Pedido Trabajo"] || ""),
+                    tecnico: String(r["Técnico"] || ""),
                     duracionMinutos: parseDineroLocal(r["Duración Paro Oracle [min]"]),
                     gasto: parseDineroLocal(r["Gasto OM [$]"]),
                     perdidaKg: parseDineroLocal(r["Pérdida por Paro [kg]"]),
-                    descripcionOperador: String(r["Descripción Operador"]),
+                    descripcionOperador: String(r["Descripción Operador"] || ""),
                 }));
+
+                console.log(fallasMapped);
 
                 if (fallasMapped.length > 0) {
                     console.log(`[MASIVO-EAM] Insertando ${fallasMapped.length} fallas...`);

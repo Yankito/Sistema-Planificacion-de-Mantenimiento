@@ -30,39 +30,76 @@ export const TrendChart = ({ timelineStats, timelineStatsPrev, showComparison, s
     ? `Tendencia: ${filtroDrill.valor}`
     : "Tendencia Anual Global";
 
-  const globalMax = useMemo(() => {
-    return timelineStats.chartData.reduce((max: number, item: ChartDataItem) => {
-      const curr = item.count || 0;
-      let prev = 0;
-      if (showComparison && timelineStatsPrev) {
-        const itemPrev = timelineStatsPrev.chartData.find((p: ChartDataItem) => p.semana === item.semana);
-        prev = itemPrev ? itemPrev.count : 0;
-      }
-      return Math.max(max, curr, prev);
-    }, 0);
+  const { globalMax, stepSize } = useMemo(() => {
+    let max = 0;
+    if (timelineStats?.chartData) {
+      timelineStats.chartData.forEach((item: ChartDataItem) => {
+        max = Math.max(max, item.count || 0);
+      });
+    }
+    if (showComparison && timelineStatsPrev?.chartData) {
+      timelineStatsPrev.chartData.forEach((item: ChartDataItem) => {
+        max = Math.max(max, item.count || 0);
+      });
+    }
+
+    if (max === 0) return { globalMax: 10, stepSize: 2 };
+
+    const magnitude = Math.pow(10, Math.floor(Math.log10(max)));
+    const norm = max / magnitude;
+
+    let step;
+    if (norm <= 1.5) step = 0.2 * magnitude;
+    else if (norm <= 3) step = 0.5 * magnitude;
+    else if (norm <= 7) step = 1 * magnitude;
+    else step = 2 * magnitude;
+
+    step = Math.max(1, Math.round(step));
+    const gMax = Math.ceil(max / step) * step;
+
+    return { globalMax: gMax, stepSize: step };
   }, [timelineStats, timelineStatsPrev, showComparison]);
 
-  if (!timelineStats || timelineStats.chartData.length === 0) {
-    return (
-      <div className="bg-slate-50 border border-dashed border-slate-300 rounded-3xl p-8 text-center flex flex-col items-center gap-2">
-        <BarChart3 className="text-slate-300" size={32} />
-        <p className="text-slate-500 font-medium">No hay datos de tendencia actuales.</p>
-      </div>
-    );
-  }
+  const yAxisSteps = useMemo(() => {
+    const steps = [];
+    for (let i = 0; i <= globalMax; i += stepSize) {
+      steps.push(i);
+    }
+    return steps;
+  }, [globalMax, stepSize]);
 
-  // Si no hay datos, mostramos estado vacío
-  if (!timelineStats || timelineStats.chartData.length === 0) {
-    return (
-      <div className="bg-pf-neutral-50 border border-dashed border-pf-neutral-300 rounded-[2rem] p-12 text-center flex flex-col items-center gap-3">
-        <BarChart3 className="text-pf-neutral-300" size={40} />
-        <p className="text-pf-neutral-500 font-black uppercase tracking-widest text-[10px]">Sin datos de tendencia</p>
-      </div>
-    );
-  }
+  const currentWeekNumber = useMemo(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() + 3 - (d.getDay() + 6) % 7);
+    const week1 = new Date(d.getFullYear(), 0, 4);
+    return 1 + Math.round(((d.getTime() - week1.getTime()) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
+  }, []);
+
+  const totalWeeks = useMemo(() => {
+    if (!timelineStats) return currentWeekNumber;
+    const maxDataWeek = Math.max(0, ...timelineStats.chartData.map(d => d.semana), (timelineStatsPrev ? Math.max(0, ...timelineStatsPrev.chartData.map(d => d.semana)) : 0));
+    // Check if the data implies a past year (e.g., has weeks > currentWeek or just use 52 if it's over e.g. 10 weeks ahead)
+    if (maxDataWeek > currentWeekNumber + 4 && maxDataWeek > 40) return 52;
+    return Math.max(maxDataWeek, currentWeekNumber);
+  }, [timelineStats, timelineStatsPrev, currentWeekNumber]);
+
+  const fullChartData = useMemo(() => {
+    const data: ChartDataItem[] = [];
+    const sourceData = timelineStats?.chartData || [];
+    for (let i = 1; i <= totalWeeks; i++) {
+      const existing = sourceData.find(d => d.semana === i);
+      if (existing) {
+        data.push(existing);
+      } else {
+        data.push({ semana: i, count: 0, rango: "" });
+      }
+    }
+    return data;
+  }, [timelineStats, totalWeeks]);
 
   return (
-    <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden transition-all duration-300">
+    <div className="bg-white flex flex-col flex-1 h-full rounded-3xl border border-slate-200 shadow-sm overflow-hidden transition-all duration-300">
 
       {/* --- HEADER DEL GRÁFICO --- */}
       <div
@@ -101,37 +138,35 @@ export const TrendChart = ({ timelineStats, timelineStatsPrev, showComparison, s
       </div>
 
       {/* --- CUERPO DEL GRÁFICO --- */}
-      <div className={`transition-all duration-500 ease-in-out bg-white ${isChartExpanded ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}>
-        <div className="p-4">
-          <div className="flex">
+      <div className={`transition-all duration-500 ease-in-out bg-white flex flex-col ${isChartExpanded ? 'flex-1 max-h-[1000px] opacity-100 min-h-[250px]' : 'max-h-0 opacity-0 overflow-hidden flex-none'}`}>
+        <div className="flex flex-1 flex-col h-full relative">
+          <div className="flex flex-1 relative z-10 w-full">
 
-            {/* 1. EJE Y (FIJO) */}
-            {/* Se queda quieto mientras las barras se mueven a la derecha */}
-            <div className="relative h-50 border-r border-pf-neutral-100 pr-4 select-none z-20 bg-white">
-              <span className="absolute -top-3 right-1 text-[8px] font-black text-pf-neutral-600 bg-pf-neutral-100 px-1.5 py-0.5 rounded shadow-sm uppercase tracking-tighter">Fallas</span>
-              <div className="flex flex-col justify-between items-end h-full pt-6 pb-0 text-[10px] text-pf-neutral-400 font-mono font-bold">
-                <span className="-translate-y-1/2">{globalMax}</span>
-                <span className="-translate-y-1/2">{Math.round(globalMax / 2)}</span>
-                <span className="translate-y-0 text-pf-neutral-300">0</span>
-              </div>
+            {/* LÍNEAS DE FONDO FIJAS */}
+            <div className="absolute inset-0 bottom-[2.5rem] top-[2rem] right-0 left-[4rem] pointer-events-none opacity-40 z-0">
+              {yAxisSteps.map((step) => (
+                <div key={step} style={{ bottom: `${(step / globalMax) * 100}%` }} className="absolute w-full h-px border-b border-dashed border-pf-neutral-400"></div>
+              ))}
             </div>
 
-            {/* 2. ÁREA DE SCROLL HORIZONTAL */}
-            <div className="flex-1 pb-4">
+            {/* 1. EJE Y (FIJO) */}
+            <div className="relative border-r border-pf-neutral-300 select-none z-20 bg-white w-[4rem] min-w-[4rem] mb-[2.5rem] mt-[2rem]">
+              <span className="absolute -top-7 right-2 text-[8px] font-black text-pf-neutral-600 bg-pf-neutral-100 px-1.5 py-0.5 rounded shadow-sm uppercase tracking-tighter w-max border border-pf-neutral-200">Fallas</span>
+              {yAxisSteps.map((step) => (
+                <span key={step} style={{ bottom: `${(step / globalMax) * 100}%` }} className="absolute right-2 translate-y-1/2 text-[10px] text-pf-neutral-400 font-mono font-bold leading-none bg-white py-0.5 pl-1">
+                  {step}
+                </span>
+              ))}
+            </div>
 
-              {/* CONTENEDOR DE BARRAS (ANCHO FORZADO) */}
-              {/* min-w-[1500px] asegura que quepan 52 semanas holgadamente */}
-              <div className="h-48 flex items-end gap-2 px-6 relative pt-6 border-b border-pf-neutral-200 w-full overflow-x-auto hide-scrollbar">
+            {/* 2. ÁREA DE BARRAS (FILL HORIZONTAL) */}
+            <div className="flex-1 w-full relative mb-[2.5rem] mt-[2rem]">
 
-                {/* Líneas de fondo */}
-                <div className="absolute inset-0 w-full h-full flex flex-col justify-between pointer-events-none px-2 opacity-30">
-                  <div className="w-full h-px border-t border-dashed border-pf-neutral-200"></div>
-                  <div className="w-full h-px border-t border-dashed border-pf-neutral-200"></div>
-                  <div className="w-full h-px border-t border-dashed border-pf-neutral-200"></div>
-                </div>
+              {/* CONTENEDOR DE BARRAS (ANCHO FLEXIBLE) */}
+              <div className="absolute inset-0 flex items-end gap-1 px-2 md:px-6">
 
                 {/* Mapeo de Barras */}
-                {timelineStats.chartData.map((item: ChartDataItem) => {
+                {fullChartData.map((item: ChartDataItem) => {
                   const itemPrev = showComparison && timelineStatsPrev
                     ? timelineStatsPrev.chartData.find((p: ChartDataItem) => p.semana === item.semana)
                     : null;
@@ -150,18 +185,11 @@ export const TrendChart = ({ timelineStats, timelineStatsPrev, showComparison, s
                       key={item.semana}
                       onClick={() => (item.count > 0 || countPrev > 0) && setSemanaFiltro(String(item.semana))}
                       className={`
-                                        relative flex-1 flex flex-col justify-end group h-full z-10 min-w-[20px] 
-                                        ${isZero ? 'cursor-default' : 'cursor-pointer hover:scale-105 transition-transform'} 
+                                        relative flex-1 flex flex-col justify-end group h-full z-10 min-w-0
+                                        ${isZero ? 'cursor-default' : 'cursor-pointer hover:scale-[1.02] transition-transform'} 
                                         ${isDimmed ? 'opacity-30 grayscale' : 'opacity-100'}
                                     `}
                     >
-                      {/* Etiqueta Valor */}
-                      {!isZero && (
-                        <div className={`w-full text-center mb-1 text-[10px] font-black transition-all z-10 ${isSelected ? 'text-pf-red scale-125' : 'text-pf-blue-500 group-hover:text-pf-neutral-900 group-hover:scale-110'}`}>
-                          {item.count}
-                        </div>
-                      )}
-
                       {showComparison && (
                         <>
                           <div
@@ -171,11 +199,11 @@ export const TrendChart = ({ timelineStats, timelineStatsPrev, showComparison, s
                           />
                         </>
                       )}
-                      {/* Barra */}
+                      {/* Barra principal con su Etiqueta Valor anclada */}
                       {showComparison && !isZero ? (
                         <div
                           style={{ height: item.count === 0 ? '4px' : `${heightPercent}%` }}
-                          className={`w-full rounded-t-lg transition-all duration-300 z-10 shadow-sm ${isSelected
+                          className={`relative w-full rounded-t-lg transition-all duration-300 z-10 shadow-sm ${isSelected
                             ? isBetter
                               ? 'bg-pf-success-500 shadow-pf-success-200 shadow-xl'
                               : 'bg-pf-red shadow-pf-red-200 shadow-xl'
@@ -183,22 +211,34 @@ export const TrendChart = ({ timelineStats, timelineStatsPrev, showComparison, s
                               ? 'bg-pf-success-600/80 group-hover:bg-pf-success-500'
                               : 'bg-pf-red/60 group-hover:bg-pf-red-500'
                             }`}
-                        />
+                        >
+                          {!isZero && (
+                            <div className={`absolute bottom-full w-full left-0 text-center mb-1 text-[8px] md:text-[10px] font-black transition-all z-10 ${isSelected ? 'text-pf-red scale-110' : 'text-pf-blue-500 group-hover:text-pf-neutral-900 group-hover:scale-110'}`}>
+                              {item.count}
+                            </div>
+                          )}
+                        </div>
                       ) : (
                         <div
                           style={{ height: item.count === 0 ? '4px' : `${heightPercent}%` }}
-                          className={`w-full rounded-t-lg transition-all duration-300 z-10 shadow-sm ${isZero
+                          className={`relative w-full rounded-t-lg transition-all duration-300 z-10 shadow-sm ${isZero
                             ? 'bg-pf-neutral-50'
                             : isSelected
                               ? 'bg-pf-red shadow-lg shadow-pf-red/20 scale-105'
                               : 'bg-pf-blue-500 group-hover:bg-pf-blue-600'
                             }`}
-                        />
+                        >
+                          {!isZero && (
+                            <div className={`absolute bottom-full w-full left-0 text-center mb-1 text-[8px] md:text-[10px] font-black transition-all z-10 ${isSelected ? 'text-pf-red scale-110' : 'text-pf-blue-500 group-hover:text-pf-neutral-900 group-hover:scale-110'}`}>
+                              {item.count}
+                            </div>
+                          )}
+                        </div>
                       )}
 
                       {/* Eje X: Semana */}
-                      <div className="absolute top-full left-0 w-full flex flex-col items-center mt-3">
-                        <span className={`text-[10px] font-black font-mono transition-colors h-4 flex items-center justify-center whitespace-nowrap ${isSelected ? 'text-pf-red scale-110' : 'text-pf-neutral-400'}`}>
+                      <div className="absolute top-full left-0 w-full flex flex-col items-center mt-2 overflow-visible">
+                        <span className={`text-[7px] md:text-[9px] font-black font-mono transition-colors h-4 flex items-center justify-center whitespace-nowrap ${isSelected ? 'text-pf-red scale-110' : 'text-pf-neutral-400'}`}>
                           S{item.semana}
                         </span>
 

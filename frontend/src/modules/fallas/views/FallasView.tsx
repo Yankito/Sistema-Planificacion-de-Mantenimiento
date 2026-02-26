@@ -97,7 +97,7 @@ export const FallasView = () => {
 
                     <ExportButton
                         elementId="container-reporte-final"
-                        fileName={` ${plantaFiltro}_${semanaFiltro === 'TODAS' ? 'Anual' : 'S' + semanaFiltro}`}
+                        fileName={`${plantaFiltro}_${semanaFiltro === 'TODAS' ? 'Anual' : 'S' + semanaFiltro}`}
                         plantaSeleccionada={plantaFiltro === "TODAS" ? "TODAS LAS PLANTAS" : plantaFiltro}
                         rangoTexto={rangoTextoHeader}
                         semana={semanaFiltro}
