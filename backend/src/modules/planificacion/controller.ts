@@ -4,7 +4,7 @@ import { processExcelData } from './logic/excelProcessor.js';
 import { PlanificacionRepository } from './repository.js';
 import { PlannerService } from './logic/PlannerService.js';
 import { query } from "../../db/config.js";
-import type { OrdenTrabajo, Tecnico } from '../../types.js';
+import type { OrdenTrabajo, Tecnico } from '../../shared/types/index.js';
 
 export const PlanificacionController = {
 

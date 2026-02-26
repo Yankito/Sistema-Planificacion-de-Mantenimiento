@@ -1,5 +1,5 @@
 import { query } from '../../db/config.js';
-import type { OrdenTrabajo, TecnicoEstado } from '../../types.js';
+import type { OrdenTrabajo, TecnicoEstado } from '../../shared/types/index.js';
 
 export const SeguimientoRepository = {
   // Obtiene las OTs desde Oracle filtradas por fechas Y por las plantas del usuario
@@ -69,7 +69,7 @@ export const SeguimientoRepository = {
             p.descripcion as "DESCRIPCION",
             p.estado as "ESTADO",
             CASE
-                WHEN UPPER(p.estado) IN ('FINALIZADO', 'FINALIZAR - SIN CARGOS') THEN 'CUMPLIDA'
+                WHEN UPPER(p.estado) IN ('FINALIZADO', 'FINALIZAR - SIN CARGOS') THEN 'FINALIZADA'
                 WHEN ta.has_pending_tech = 1 THEN 'TECNICO / SERVICIO'
                 WHEN m.numero IS NULL THEN 'OC / OTRO'
                 WHEN m.rmd = 'NO' OR m.rse = 'NO' THEN 'OC / OTRO'

@@ -1,4 +1,4 @@
-import type { OrdenTrabajo } from "../../../types.js";
+import type { OrdenTrabajo } from "../../../shared/types/index.js";
 
 export interface OTFlowResult {
   ot: string;
@@ -49,8 +49,8 @@ export const analyzeBacklogFlow = (
     const key = normalizeKey(curr.ot);
     const prev = mapPrev.get(key);
 
-    // Si la clasificación es CUMPLIDA, es finalizada (aunque esté en el Excel de atrasos)
-    if (curr.clasificacion === 'CUMPLIDA') {
+    // Si la clasificación es FINALIZADA, es finalizada
+    if (curr.clasificacion === 'FINALIZADA') {
       stats.finalizadas.push({
         ot: curr.ot,
         descripcion: curr.descripcion,

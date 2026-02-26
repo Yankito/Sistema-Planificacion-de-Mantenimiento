@@ -53,6 +53,7 @@ export const SeguimientoModal = ({
             setFilters={setEmpFilters}
             activePlants={techData.activePlants}
             activePeriods={techData.activePeriods}
+            activeClasificaciones={techData.activeClasificaciones}
             onBack={resetTech}
             searchTerm={empSearch}
             setSearchTerm={setEmpSearch}

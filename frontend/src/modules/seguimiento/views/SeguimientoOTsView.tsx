@@ -99,8 +99,8 @@ export const SeguimientoOTsView = () => {
       if (selectedYear !== "TODOS" && !d.semana.startsWith(selectedYear)) return false;
       if (selectedSemana !== "TODAS" && d.semana !== selectedSemana) return false;
       if (aplicarFiltroModo) {
-        if (modoVista === "CUMPLIDAS") return d.clasificacion === "CUMPLIDA";
-        return d.clasificacion !== "CUMPLIDA";
+        if (modoVista === "CUMPLIDAS") return d.clasificacion === "FINALIZADA";
+        return d.clasificacion !== "FINALIZADA";
       }
       return true;
     });
@@ -196,7 +196,7 @@ export const SeguimientoOTsView = () => {
         }
         const stat = techMap.get(name)!;
         stat.totalAsignado++;
-        if (det.opFinalizada || row.clasificacion === 'CUMPLIDA') stat.finalizadas++;
+        if (det.opFinalizada || row.clasificacion === 'FINALIZADA') stat.finalizadas++;
         else stat.pendientes++;
         if (!stat.plantas.includes(row.planta)) stat.plantas.push(row.planta);
       });

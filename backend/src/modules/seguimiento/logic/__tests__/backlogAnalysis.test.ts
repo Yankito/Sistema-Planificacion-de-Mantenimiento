@@ -1,23 +1,23 @@
 // src/logic/__tests__/backlogAnalysis.test.ts
 import { describe, it, expect } from 'vitest';
 import { analyzeBacklogFlow } from '../backlogAnalysis.js';
-import { type AtrasoRow } from '../../types.js';
+import { type OrdenTrabajo } from '../../../../shared/types/index.js';
 
 describe('Backlog Evolution Analysis', () => {
-    const prevWeek: AtrasoRow[] = [
-        { ot: "OT-OLD-1", clasificacion: "TECNICO / SERVICIO", planta: "PF1", descripcion: "Vieja", estado: "PEND", periodo: "", semana: "", esOB: false },
-        { ot: "OT-CHANGE", clasificacion: "TECNICO / SERVICIO", planta: "PF1", descripcion: "Cambia", estado: "PEND", periodo: "", semana: "", esOB: false },
-        { ot: "OT-GONE", clasificacion: "TECNICO / SERVICIO", planta: "PF1", descripcion: "Se fue", estado: "PEND", periodo: "", semana: "", esOB: false },
+    const prevWeek: OrdenTrabajo[] = [
+        { ot: "OT-OLD-1", clasificacion: "TECNICO / SERVICIO", planta: "PF1", descripcion: "Vieja", estado: "PEND", periodo: "", semana: "", esOB: false, nroOrden: "1", equipo: "EQ1" },
+        { ot: "OT-CHANGE", clasificacion: "TECNICO / SERVICIO", planta: "PF1", descripcion: "Cambia", estado: "PEND", periodo: "", semana: "", esOB: false, nroOrden: "2", equipo: "EQ2" },
+        { ot: "OT-GONE", clasificacion: "TECNICO / SERVICIO", planta: "PF1", descripcion: "Se fue", estado: "PEND", periodo: "", semana: "", esOB: false, nroOrden: "3", equipo: "EQ3" },
     ];
 
-    const currentWeek: AtrasoRow[] = [
-        { ot: "OT-OLD-1", clasificacion: "TECNICO / SERVICIO", planta: "PF1", descripcion: "Vieja", estado: "PEND", periodo: "", semana: "", esOB: false },
-        { ot: "OT-CHANGE", clasificacion: "PROGRAMADOR", planta: "PF1", descripcion: "Cambia", estado: "PEND", periodo: "", semana: "", esOB: false },
-        { ot: "OT-NEW", clasificacion: "TECNICO / SERVICIO", planta: "PF1", descripcion: "Nueva", estado: "PEND", periodo: "", semana: "", esOB: false },
+    const currentWeek: OrdenTrabajo[] = [
+        { ot: "OT-OLD-1", clasificacion: "TECNICO / SERVICIO", planta: "PF1", descripcion: "Vieja", estado: "PEND", periodo: "", semana: "", esOB: false, nroOrden: "1", equipo: "EQ1" },
+        { ot: "OT-CHANGE", clasificacion: "PROGRAMADOR", planta: "PF1", descripcion: "Cambia", estado: "PEND", periodo: "", semana: "", esOB: false, nroOrden: "2", equipo: "EQ2" },
+        { ot: "OT-NEW", clasificacion: "TECNICO / SERVICIO", planta: "PF1", descripcion: "Nueva", estado: "PEND", periodo: "", semana: "", esOB: false, nroOrden: "4", equipo: "EQ4" },
     ];
 
-    const cumplimiento: AtrasoRow[] = [
-        { ot: "OT-GONE", clasificacion: "CUMPLIDA", planta: "PF1", descripcion: "Se fue", estado: "CERRADA", periodo: "", semana: "", esOB: false } 
+    const cumplimiento: OrdenTrabajo[] = [
+        { ot: "OT-GONE", clasificacion: "FINALIZADA", planta: "PF1", descripcion: "Se fue", estado: "CERRADA", periodo: "", semana: "", esOB: false, nroOrden: "3", equipo: "EQ3" }
     ];
 
     it('debe clasificar correctamente el flujo de OTs', () => {

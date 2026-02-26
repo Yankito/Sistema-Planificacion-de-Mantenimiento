@@ -4,7 +4,7 @@ import { analyzeBacklogFlow } from './logic/backlogAnalysis.js';
 import { analyzeTechnicians } from './logic/technicianAnalysis.js';
 import { generarExcelReporte } from './utils/exportUtils.js';
 import * as TemplateGenerator from './logic/templateGenerator.js';
-import type { OrdenTrabajo } from '../../types.js';
+import type { OrdenTrabajo } from '../../shared/types/index.js';
 
 export const SeguimientoController = {
 

@@ -21,7 +21,7 @@ export interface AtrasoRow {
   nroActivo?: string;
   descripcion: string;
   estado: string;
-  clasificacion: "CUMPLIDA" | "TECNICO / SERVICIO" | "PROGRAMADOR" | "OC / OTRO";
+  clasificacion: "FINALIZADA" | "TECNICO / SERVICIO" | "PROGRAMADOR" | "OC / OTRO";
   periodo: string;
   semana: string;
   esOB: boolean;

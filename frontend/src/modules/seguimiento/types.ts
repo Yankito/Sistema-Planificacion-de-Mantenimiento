@@ -1,6 +1,5 @@
 // src/types.ts
 import type { TecnicoEstado } from "../../shared/types/index";
-
 export interface SeguimientoRow {
   nroOT: string;
   descripcion: string;
@@ -21,7 +20,7 @@ export interface AtrasoRow {
   nroActivo?: string;
   descripcion: string;
   estado: string;
-  clasificacion: "CUMPLIDA" | "TECNICO / SERVICIO" | "PROGRAMADOR" | "OC / OTRO" | "MANTENIMIENTO";
+  clasificacion: "FINALIZADA" | "TECNICO / SERVICIO" | "PROGRAMADOR" | "OC / OTRO" | "MANTENIMIENTO";
   periodo: string;
   semana: string;
   esOB: boolean;
@@ -90,6 +89,7 @@ export interface TechFilters {
   planta: string;
   periodo: string;
   cumplimiento: string;
+  clasificacion?: string;
 }
 
 export interface ReporteExcel {

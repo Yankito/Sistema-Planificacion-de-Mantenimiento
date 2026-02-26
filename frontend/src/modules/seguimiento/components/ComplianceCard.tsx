@@ -13,7 +13,7 @@ export const ComplianceCard = ({ planta, esOB, dataSemanaActual, onClick }: Comp
   const universoKPI = universoRaw.filter(d => !d.descripcion.toUpperCase().startsWith("MOB"));
 
   const total = universoKPI.length;
-  const cumplidas = universoKPI.filter(d => d.clasificacion === "CUMPLIDA").length;
+  const cumplidas = universoKPI.filter(d => d.clasificacion === "FINALIZADA").length;
   const pendientes = total - cumplidas;
 
   const porcentaje = total > 0 ? Math.round((cumplidas / total) * 100) : 0;

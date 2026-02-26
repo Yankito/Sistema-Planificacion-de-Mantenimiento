@@ -1,4 +1,4 @@
-import type { OrdenTrabajo } from "../../../types.js";
+import type { OrdenTrabajo } from "../../../shared/types/index.js";
 
 export interface TechStats {
   nombre: string;
@@ -30,7 +30,7 @@ export const prepareTechProfile = (
     total: uniqueOrders.length,
     finalizadas: uniqueOrders.filter(o =>
       o.detallesTecnicos?.find(t => t.tecnico.nombre === techName)?.opFinalizada ||
-      o.clasificacion === 'CUMPLIDA'
+      o.clasificacion === 'FINALIZADA'
     ).length,
     pendientes: 0
   };

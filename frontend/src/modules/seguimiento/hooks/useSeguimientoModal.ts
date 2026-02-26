@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import type { AtrasoRow, TechStats } from "../types";
+import type { AtrasoRow, TechStats, TechFilters } from "../types";
 
 const normalizeOT = (ot: string) => String(ot).trim().toUpperCase();
 
@@ -29,7 +29,7 @@ export const useSeguimientoModal = ({
 
   // --- ESTADOS DE TECNICO (PARA EL PERFIL) ---
   const [selectedTech, setSelectedTech] = useState<string | null>(null);
-  const [empFilters, setEmpFilters] = useState({ planta: "TODAS", periodo: "TODOS", cumplimiento: "TODOS" });
+  const [empFilters, setEmpFilters] = useState<TechFilters>({ planta: "TODAS", periodo: "TODOS", clasificacion: "TODAS", cumplimiento: "TODOS" });
   const [empSearch, setEmpSearch] = useState("");
 
   const handleSelectTech = (name: string) => {
@@ -37,6 +37,7 @@ export const useSeguimientoModal = ({
     setEmpFilters({
       planta: !viewDetail.isGlobal ? viewDetail.id : "TODAS",
       periodo: viewDetail.periodo || "TODOS",
+      clasificacion: "TODAS",
       cumplimiento: "TODOS"
     });
   };
@@ -107,22 +108,18 @@ export const useSeguimientoModal = ({
 
   // --- DETALLE DE TECNICO ---
   const techData = useMemo(() => {
-    if (!selectedTech) return { orders: [], stats: null, activePlants: [], activePeriods: [] };
+    if (!selectedTech) return { orders: [], stats: null, activePlants: [], activeClasificaciones: [] };
 
     const baseOrders = dataModo.filter(d => d.detallesTecnicos?.some(t => t.tecnico.nombre === selectedTech));
 
-    // Aplicar filtros internos del perfil del tecnico
     const listOrders = baseOrders.filter(d => {
       const mPlanta = empFilters.planta === "TODAS" || d.planta === empFilters.planta;
-      const mPeriodo = empFilters.periodo === "TODOS" || d.periodo === empFilters.periodo;
-      const tec = d.detallesTecnicos?.find(t => t.tecnico.nombre === selectedTech);
-      const mCumple = empFilters.cumplimiento === "TODOS"
-        ? true
-        : (empFilters.cumplimiento === "CUMPLIDAS" ? tec?.opFinalizada : !tec?.opFinalizada);
+      const mPeriodo = empFilters.periodo === "TODOS" || !empFilters.periodo || d.periodo === empFilters.periodo;
+      const mClasificacion = empFilters.clasificacion === "TODAS" || !empFilters.clasificacion || d.clasificacion === empFilters.clasificacion;
 
       const mSearch = !empSearch || d.ot.toLowerCase().includes(empSearch.toLowerCase()) || d.descripcion.toLowerCase().includes(empSearch.toLowerCase());
 
-      return mPlanta && mPeriodo && mCumple && mSearch;
+      return mPlanta && mPeriodo && mClasificacion && mSearch;
     });
 
     const totalAsignado = listOrders.length;
@@ -154,7 +151,8 @@ export const useSeguimientoModal = ({
       })),
       stats,
       activePlants: Array.from(new Set(baseOrders.map(o => o.planta))).sort(),
-      activePeriods: Array.from(new Set(baseOrders.map(o => o.periodo))).sort()
+      activePeriods: Array.from(new Set(baseOrders.map(o => o.periodo))).sort(),
+      activeClasificaciones: Array.from(new Set(baseOrders.map(o => o.clasificacion))).filter(Boolean).sort()
     };
   }, [selectedTech, dataModo, empFilters, empSearch, previousOtSet, dataAnterior.length]);
 

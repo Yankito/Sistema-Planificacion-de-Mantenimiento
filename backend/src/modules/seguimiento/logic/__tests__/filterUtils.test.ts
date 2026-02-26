@@ -1,7 +1,7 @@
 // src/logic/__tests__/filterUtils.test.ts
 import { describe, it, expect } from 'vitest'; // o 'jest'
 import { filterOrders } from '../filterUtils.js';
-import { MOCK_DATA } from '../../../../test/mocks.js';
+import { MOCK_DATA_ATRASO } from '../../../../test/mocks.js';
 
 describe('filterUtils Logic', () => {
 
@@ -13,7 +13,7 @@ describe('filterUtils Logic', () => {
 
     it('debe filtrar correctamente por búsqueda de texto (OT)', () => {
         const result = filterOrders(
-            MOCK_DATA,
+            MOCK_DATA_ATRASO,
             {
                 viewDetail: { id: "PF1", esOB: false, isGlobal: false }, // Filtro base: Planta PF1, Mantención
                 filterEstado: "TODOS",
@@ -29,7 +29,7 @@ describe('filterUtils Logic', () => {
 
     it('debe filtrar por búsqueda de texto (Nombre Técnico)', () => {
         const result = filterOrders(
-            MOCK_DATA,
+            MOCK_DATA_ATRASO,
             {
                 viewDetail: { id: "PF ALIMENTOS", esOB: false, isGlobal: true },
                 filterEstado: "TODOS",
@@ -47,7 +47,7 @@ describe('filterUtils Logic', () => {
         const previousSet = new Set(["OT-100"]);
 
         const result = filterOrders(
-            MOCK_DATA,
+            MOCK_DATA_ATRASO,
             {
                 viewDetail: { id: "PF ALIMENTOS", esOB: false, isGlobal: true },
                 filterEstado: "NUEVAS",
@@ -67,7 +67,7 @@ describe('filterUtils Logic', () => {
     it('debe retornar baseDataForStates sin aplicar filtro de texto', () => {
         // Esto es crucial para que los dropdowns no se vacíen al escribir
         const result = filterOrders(
-            MOCK_DATA,
+            MOCK_DATA_ATRASO,
             {
                 viewDetail: { id: "PF1", esOB: false, isGlobal: false },
                 filterEstado: "TODOS",

@@ -1,5 +1,5 @@
 import XLSX from "xlsx-js-style";
-import type { OrdenTrabajo } from "../../../types.js";
+import type { OrdenTrabajo } from "../../../shared/types/index.js";
 import type { ReporteExcel } from "../types.js";
 
 // CONSTANTES
@@ -164,8 +164,8 @@ export const generarExcelReporte = async (
   const dataAnteriorNorm = normalizeDatasetPeriods(dataAnterior);
   const disableColorComparison = dataAnteriorNorm.length === 0;
 
-  const datasetAct = dataActualNorm.filter(d => modoVista === "CUMPLIDAS" ? d.clasificacion === "CUMPLIDA" : d.clasificacion !== "CUMPLIDA");
-  const datasetAnt = dataAnteriorNorm.filter(d => modoVista === "CUMPLIDAS" ? d.clasificacion === "CUMPLIDA" : d.clasificacion !== "CUMPLIDA");
+  const datasetAct = dataActualNorm.filter(d => modoVista === "CUMPLIDAS" ? d.clasificacion === "FINALIZADA" : d.clasificacion !== "FINALIZADA");
+  const datasetAnt = dataAnteriorNorm.filter(d => modoVista === "CUMPLIDAS" ? d.clasificacion === "FINALIZADA" : d.clasificacion !== "FINALIZADA");
 
   if (datasetAct.length === 0) {
     return {

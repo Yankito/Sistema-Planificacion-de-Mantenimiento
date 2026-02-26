@@ -1,5 +1,6 @@
 import { CheckCircle2, AlertCircle, Calendar } from "lucide-react";
-import type { AtrasoRow, TecnicoEstado } from "../types";
+import type { AtrasoRow } from "../types";
+import type { TecnicoEstado } from "../../../shared/types/index";
 
 interface OTCardProps {
   item: AtrasoRow;
@@ -11,7 +12,7 @@ interface OTCardProps {
 export const OTCard = ({ item, isNew, onSelectTech, selectedTech }: OTCardProps) => {
   const esNueva = isNew || item.isNew;
   return (
-    <div className={`bg-white p-4 rounded-xl border shadow-sm transition-all ${esNueva ? 'border-l-4 border-pf-red-600 shadow-pf-red-100' : 'border-pf-neutral-200'}`}>
+    <div className={`bg-white p-3 rounded-xl border shadow-sm transition-all ${esNueva ? 'border-l-4 border-pf-red-600 shadow-pf-red-100' : 'border-pf-neutral-200'}`}>
       <div className="flex justify-between items-start mb-3">
         <div className="flex items-center gap-2">
           <span className="text-sm font-black text-pf-neutral-900">{item.ot}</span>
@@ -24,15 +25,15 @@ export const OTCard = ({ item, isNew, onSelectTech, selectedTech }: OTCardProps)
         </div>
 
         {item.fecha && (
-          <div className="flex items-center gap-1 text-pf-neutral-400">
+          <div className="flex items-center gap-1 text-pf-neutral-500">
             <Calendar size={10} />
             <span className="text-[9px] font-bold">{item.fecha}</span>
           </div>
         )}
       </div>
 
-      <div className="mb-3">
-        <span className={`text-[9px] px-2 py-0.5 rounded-md font-black bg-white border ${item.clasificacion === 'CUMPLIDA' ? 'bg-pf-success-100 text-pf-success-700 border-pf-success-200' :
+      <div className="mb-2">
+        <span className={`text-[9px] px-2 py-0.5 rounded-md font-black bg-white border ${item.clasificacion === 'FINALIZADA' ? 'bg-pf-success-100 text-pf-success-700 border-pf-success-200' :
           item.clasificacion === 'PROGRAMADOR' ? 'bg-pf-blue-100 text-pf-blue-700 border-pf-blue-200' :
             item.clasificacion === 'TECNICO / SERVICIO' ? 'bg-pf-blue-50 text-pf-blue-600 border-pf-blue-200' :
               'bg-pf-warning-100 text-pf-warning-700 border-pf-warning-200'
@@ -69,9 +70,9 @@ export const OTCard = ({ item, isNew, onSelectTech, selectedTech }: OTCardProps)
         </div>
       </div>
 
-      <div className="flex items-center justify-between pt-2 border-t border-pf-neutral-50 text-[9px] font-black text-pf-neutral-400 uppercase tracking-widest">
+      <div className="flex items-center justify-between pt-2 border-t border-pf-neutral-100 text-[9px] font-black text-pf-neutral-800 uppercase tracking-widest">
         <span>{item.periodo}</span>
-        <span className="italic">{item.planta}</span>
+        <span>{item.planta}</span>
       </div>
     </div>
   );

@@ -89,7 +89,7 @@ export const AnalysisDashboard = ({
 
   // Filtros para el perfil del técnico
   const [techFilters, setTechFilters] = useState<TechFilters>({
-    planta: "TODAS", periodo: "TODOS", cumplimiento: "TODOS"
+    planta: "TODAS", periodo: "TODOS", cumplimiento: "TODOS", clasificacion: "TODAS"
   });
   const [techSearch, setTechSearch] = useState("");
 
@@ -102,7 +102,7 @@ export const AnalysisDashboard = ({
   };
 
   const handleSelectTech = (tech: TechStats, plantaInicial: string = "TODAS") => {
-    setTechFilters({ planta: plantaInicial, periodo: "TODOS", cumplimiento: "TODOS" });
+    setTechFilters({ planta: plantaInicial, periodo: "TODOS", cumplimiento: "TODOS", clasificacion: "TODAS" });
     setTechSearch("");
     pushView({ type: 'TECH_DETAIL', data: tech });
   };
@@ -118,17 +118,13 @@ export const AnalysisDashboard = ({
     const baseFiltered = allOrders.filter(o => {
       const matchPlanta = techFilters.planta === "TODAS" || o.planta === techFilters.planta;
       const matchPeriodo = techFilters.periodo === "TODOS" || o.periodo === techFilters.periodo;
+      const matchClasificacion = techFilters.clasificacion === "TODAS" || !techFilters.clasificacion || o.clasificacion === techFilters.clasificacion;
       const matchSearch = !techSearch || o.ot.toLowerCase().includes(techSearch.toLowerCase()) || o.descripcion.toLowerCase().includes(techSearch.toLowerCase());
-      return matchPlanta && matchPeriodo && matchSearch;
+      return matchPlanta && matchPeriodo && matchClasificacion && matchSearch;
     });
 
-    // 2. Filtrado final para la lista (incluye CUMPLIMIENTO)
-    const listFiltered = baseFiltered.filter(o => {
-      const techStatus = o.detallesTecnicos?.find(t => t.tecnico.nombre === techName);
-      if (techFilters.cumplimiento === "CUMPLIDAS") return techStatus?.opFinalizada === true;
-      if (techFilters.cumplimiento === "PENDIENTES") return techStatus?.opFinalizada === false;
-      return true;
-    });
+    // 2. Base de listado sin filtro de cumplimiento (el perfil local lo maneja)
+    const listFiltered = baseFiltered;
 
     // 3. Recalcular Stats para este set filtrado
     const totalAsignado = baseFiltered.length;
@@ -148,6 +144,7 @@ export const AnalysisDashboard = ({
       },
       activePlants: Array.from(new Set(allOrders.map(o => o.planta))).sort(),
       activePeriods: Array.from(new Set(allOrders.map(o => o.periodo))).sort(),
+      activeClasificaciones: Array.from(new Set(allOrders.map(o => o.clasificacion))).filter(Boolean).sort()
     };
   }, [currentView, currentData, techFilters, techSearch]);
 

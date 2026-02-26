@@ -12,7 +12,7 @@ describe('ComplianceCard Component', () => {
             ot: "OT-1",
             planta: "PF1",
             esOB: false,
-            clasificacion: "CUMPLIDA",
+            clasificacion: "FINALIZADA",
             descripcion: "Tarea 1",
             detallesTecnicos: [],
             periodo: "2026",
@@ -38,7 +38,7 @@ describe('ComplianceCard Component', () => {
             ot: "OT-3",
             planta: "PF1",
             esOB: false,
-            clasificacion: "CUMPLIDA",
+            clasificacion: "FINALIZADA",
             descripcion: "MOB Tarea 3", // Debería filtrarse por el prefix MOB
             detallesTecnicos: [],
             periodo: "2026",
@@ -59,7 +59,7 @@ describe('ComplianceCard Component', () => {
             />
         );
 
-        // Universo KPI (sin MOB): OT-1 (CUMPLIDA), OT-2 (PENDIENTE) -> Total 2
+        // Universo KPI (sin MOB): OT-1 (FINALIZADA), OT-2 (PENDIENTE) -> Total 2
         // Cumplidas: 1
         // Porcentaje: 50%
         expect(screen.getByText("50%")).toBeInTheDocument();
@@ -69,7 +69,7 @@ describe('ComplianceCard Component', () => {
     });
 
     it('debe mostrar 100% si todas están cumplidas', () => {
-        const allOk = mockData.map(d => ({ ...d, clasificacion: "CUMPLIDA" as const }));
+        const allOk = mockData.map(d => ({ ...d, clasificacion: "FINALIZADA" as const }));
         render(
             <ComplianceCard
                 planta="PF1"

@@ -93,7 +93,7 @@ export const DashboardListView = ({
           </div>
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-pf-neutral-400" size={14} />
-            <input type="text" placeholder="Buscar por OT o descripción..." className="w-full pl-10 pr-4 py-2.5 bg-pf-neutral-50 rounded-xl text-xs outline-none border border-pf-neutral-200 focus:border-pf-blue-300 transition-all shadow-sm" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+            <input type="text" placeholder={activeTab === "FLOW" ? "Buscar por OT o descripción..." : "Buscar por técnico..."} className="w-full pl-10 pr-4 py-2.5 bg-pf-neutral-50 rounded-xl text-xs outline-none border border-pf-neutral-200 focus:border-pf-blue-300 transition-all shadow-sm" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
           </div>
         </div>
       </div>

@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import XLSX from 'xlsx-js-style';
 import { generarExcelReporte } from '../exportUtils.js';
 import type { AtrasoRow } from '../../types.js';
-import type { OrdenTrabajo } from '../../../../types.js';
+import type { OrdenTrabajo } from '../../../../shared/types/index.js';
 
 // 2. Definimos el mock COMPLETAMENTE contenido dentro del factory.
 // Sin variables externas para evitar el error de "ReferenceError".

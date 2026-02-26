@@ -34,7 +34,7 @@ export interface OrdenTrabajo {
   id?: string;
   ot?: string;
   nroActivo?: string;
-  clasificacion?: "CUMPLIDA" | "TECNICO / SERVICIO" | "PROGRAMADOR" | "OC / OTRO";
+  clasificacion?: "FINALIZADA" | "TECNICO / SERVICIO" | "PROGRAMADOR" | "OC / OTRO";
   semana?: string;
   detallesTecnicos?: TecnicoEstado[];
   fecha?: string;
