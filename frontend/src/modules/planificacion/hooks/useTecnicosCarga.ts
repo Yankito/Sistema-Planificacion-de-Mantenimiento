@@ -20,8 +20,8 @@ export const useTecnicosCarga = (planResult: PlanResult[], plantaSel: string) =>
         if (primeraConFecha) {
             const parts = primeraConFecha.fechaSugerida.split('/');
             if (parts.length === 3) {
-                mes = parseInt(parts[1]);
-                anio = parseInt(parts[2]);
+                mes = Number.parseInt(parts[1]);
+                anio = Number.parseInt(parts[2]);
             }
         }
 

@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useControlGastos } from '../hooks/useControlGastos';
+import { ControlGastosService } from '../services/ControlGastosService';
 import type { ActivoEAM } from '../../../shared/types';
 import { toast } from 'sonner';
 import { confirmDialog } from '../../../shared/utils/confirmDialog';
@@ -58,6 +59,8 @@ export const BudgetConfig = ({ selectedYear, selectedPlanta, selectedMonth }: Bu
         loading
     } = useControlGastos();
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const executionFileInputRef = useRef<HTMLInputElement>(null);
+    const [executionUploading, setExecutionUploading] = useState(false);
 
     const loadData = useCallback(async () => {
         try {
@@ -166,10 +169,29 @@ export const BudgetConfig = ({ selectedYear, selectedPlanta, selectedMonth }: Bu
                 loadData();
             } catch (err) {
                 const error = err as Error;
-                toast.error('Error al cargar: ' + error.message);
+                toast.error('Error al cargar presupuesto: ' + error.message);
+            } finally {
+                if (e.target) e.target.value = '';
             }
         }
     }, [uploadPresupuesto, loadData]);
+
+    const handleExecutionFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            setExecutionUploading(true);
+            try {
+                await ControlGastosService.uploadGastosConsolidados(e.target.files[0]);
+                toast.success('Ejecución cargada correctamente');
+                loadData();
+            } catch (err) {
+                const error = err as Error;
+                toast.error('Error al cargar ejecución: ' + error.message);
+            } finally {
+                setExecutionUploading(false);
+                if (e.target) e.target.value = '';
+            }
+        }
+    }, [loadData]);
 
     const toggleExpand = useCallback((id: string) => {
         setExpandedRows(prev => ({ ...prev, [id]: !prev[id] }));
@@ -185,7 +207,7 @@ export const BudgetConfig = ({ selectedYear, selectedPlanta, selectedMonth }: Bu
     return (
         <div className="bg-white p-8 rounded-[2.5rem] border border-pf-neutral-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative min-h-[500px]">
             {loading && (
-                <div className="absolute inset-0 bg-white/40 backdrop-blur-md z-50 flex flex-col items-center justify-center rounded-[2.5rem] transition-all duration-500">
+                <div className="absolute inset-0 bg-white/40 z-50 flex flex-col items-center justify-center rounded-[2.5rem] transition-all duration-500">
                     <div className="relative">
                         <Loader2 className="animate-spin text-pf-red mb-6" size={48} />
                         <div className="absolute inset-0 animate-ping opacity-20 bg-pf-red rounded-full"></div>
@@ -207,6 +229,9 @@ export const BudgetConfig = ({ selectedYear, selectedPlanta, selectedMonth }: Bu
                 setSelectedAssetForManual={setSelectedAssetForManual}
                 fileInputRef={fileInputRef}
                 handleFileChange={handleFileChange}
+                executionFileInputRef={executionFileInputRef}
+                handleExecutionFileChange={handleExecutionFileChange}
+                executionUploading={executionUploading}
                 openRemapModal={openRemapModal}
                 months={months}
                 formatCurrency={formatCurrency}

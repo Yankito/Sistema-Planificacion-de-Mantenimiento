@@ -20,7 +20,7 @@ export const RemapAssetModal: React.FC<RemapAssetModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-pf-neutral-900/60 backdrop-blur-md z-[80] flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-pf-neutral-900/60 z-[80] flex items-center justify-center p-4">
       <div className="bg-white rounded-[2.5rem] shadow-2xl border border-pf-neutral-200 w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-300">
         <div className="p-6 border-b border-pf-neutral-100 flex justify-between items-center bg-pf-neutral-50/50">
           <div>

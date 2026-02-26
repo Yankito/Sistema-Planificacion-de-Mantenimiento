@@ -32,22 +32,4 @@ describe('ControlGastosController', () => {
         });
     });
 
-    describe('uploadGastosConsolidados', () => {
-        it('debe procesar el archivo Excel y guardar los datos correctamente', async () => {
-            // Nota: Este test requiere un mock más complejo de XLSX
-            // y del middleware de subida de archivos si se testea el flujo completo.
-            // Aquí testeamos que se llame al repositorio tras procesar los datos recibidos.
-
-            // Simulación simplificada
-            const req = {
-                file: {
-                    buffer: Buffer.from('') // Buffer vacío para simular archivo
-                }
-            };
-            const res = { json: vi.fn(), status: vi.fn().mockReturnThis() };
-
-            // Mock de la lógica interna de subida (si fuera posible sin refactorizar el controller)
-            // Por brevedad, este test confirma la estructura necesaria.
-        });
-    });
 });

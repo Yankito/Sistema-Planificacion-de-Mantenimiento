@@ -1,10 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
-import { ControlGastosService } from '../services/ControlGastosService';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useControlGastos } from '../hooks/useControlGastos';
 import { type GastoConsolidadoRow } from '../types';
-import { toast } from 'sonner';
-import type { AssetExecutionDetail, CostCenterGroup, SortField, SortOrder, AssetCategory, CategorySummary } from './monitor/types';
+import type { AssetExecutionDetail, CostCenterGroup, SortField, SortOrder, CategorySummary } from './monitor/types';
 import { KPICards } from './monitor/KPICards';
 import { MonitorFilters } from './monitor/MonitorFilters';
 import { ExecutionTable } from './monitor/ExecutionTable';
@@ -19,13 +17,11 @@ interface ExecutionMonitorProps {
 
 export const ExecutionMonitor = ({ selectedYear, selectedPlanta, selectedMonth }: ExecutionMonitorProps) => {
     const [groupedData, setGroupedData] = useState<CostCenterGroup[]>([]);
-    const [categorySummaries, setCategorySummaries] = useState<CategorySummary[]>([]);
     // Si no se selecciona un mes globalmente, se toma el mes actual
     const currentMonth = selectedMonth ?? (new Date().getMonth() + 1);
     const [selectedCategory, setSelectedCategory] = useState<string>('Todos');
     const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
     const [searchTerm, setSearchTerm] = useState('');
-    const [isUploading, setIsUploading] = useState(false);
 
     // Paginacion y ordenamiento
     const [currentPage, setCurrentPage] = useState(1);
@@ -192,27 +188,7 @@ export const ExecutionMonitor = ({ selectedYear, selectedPlanta, selectedMonth }
 
             setGroupedData(Object.values(groups));
 
-            // Calcular resúmenes por categoría
-            const catMap: Record<AssetCategory, CategorySummary> = {
-                'Maquinaria': { category: 'Maquinaria', totalBudget: 0, totalReal: 0, deviation: 0, itemCount: 0 },
-                'Redes': { category: 'Redes', totalBudget: 0, totalReal: 0, deviation: 0, itemCount: 0 },
-                'Infra': { category: 'Infra', totalBudget: 0, totalReal: 0, deviation: 0, itemCount: 0 },
-                'Otros': { category: 'Otros', totalBudget: 0, totalReal: 0, deviation: 0, itemCount: 0 },
-            };
-
-            Object.values(groups).forEach(g => {
-                g.assets.forEach(a => {
-                    catMap[a.category].totalBudget += a.totalBudget;
-                    catMap[a.category].totalReal += a.totalReal;
-                    catMap[a.category].itemCount++;
-                });
-            });
-
-            Object.values(catMap).forEach(c => {
-                c.deviation = calculateDeviation(c.totalReal, c.totalBudget);
-            });
-
-            setCategorySummaries(Object.values(catMap).filter(c => c.itemCount > 0));
+            setGroupedData(Object.values(groups));
             setExpandedGroups({});
 
         } catch (e) {
@@ -221,27 +197,10 @@ export const ExecutionMonitor = ({ selectedYear, selectedPlanta, selectedMonth }
     }, [selectedYear, selectedPlanta, currentMonth, getPresupuesto, getGastosConsolidados]);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         loadData();
     }, [loadData]);
 
-    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
-        setIsUploading(true);
-        try {
-            await ControlGastosService.uploadGastosConsolidados(file);
-            toast.success('Gastos cargados correctamente');
-            loadData();
-        } catch (err) {
-            const error = err as Error;
-            console.error(error);
-            toast.error('Error al cargar gastos: ' + error.message);
-        } finally {
-            setIsUploading(false);
-            if (e.target) e.target.value = '';
-        }
-    };
 
     const toggleGroup = (cc: string) => {
         setExpandedGroups(prev => ({ ...prev, [cc]: !prev[cc] }));
@@ -342,6 +301,52 @@ export const ExecutionMonitor = ({ selectedYear, selectedPlanta, selectedMonth }
             return factor * (a[sortField] - b[sortField]);
         });
 
+    const [prevFilters, setPrevFilters] = useState({
+        searchTerm,
+        filterExceededOnly,
+        filterInternalDeviation,
+        filterDateAlert,
+        filterCriticalOnly,
+        selectedCategory,
+        sortField,
+        sortOrder,
+        itemsPerPage,
+        selectedYear,
+        selectedPlanta,
+        currentMonth
+    });
+
+    if (
+        prevFilters.searchTerm !== searchTerm ||
+        prevFilters.filterExceededOnly !== filterExceededOnly ||
+        prevFilters.filterInternalDeviation !== filterInternalDeviation ||
+        prevFilters.filterDateAlert !== filterDateAlert ||
+        prevFilters.filterCriticalOnly !== filterCriticalOnly ||
+        prevFilters.selectedCategory !== selectedCategory ||
+        prevFilters.sortField !== sortField ||
+        prevFilters.sortOrder !== sortOrder ||
+        prevFilters.itemsPerPage !== itemsPerPage ||
+        prevFilters.selectedYear !== selectedYear ||
+        prevFilters.selectedPlanta !== selectedPlanta ||
+        prevFilters.currentMonth !== currentMonth
+    ) {
+        setPrevFilters({
+            searchTerm,
+            filterExceededOnly,
+            filterInternalDeviation,
+            filterDateAlert,
+            filterCriticalOnly,
+            selectedCategory,
+            sortField,
+            sortOrder,
+            itemsPerPage,
+            selectedYear,
+            selectedPlanta,
+            currentMonth
+        });
+        setCurrentPage(1);
+    }
+
     // Pagination Logic
     const totalItems = filteredAndSortedData.length;
     const totalPages = Math.ceil(totalItems / itemsPerPage);
@@ -350,9 +355,7 @@ export const ExecutionMonitor = ({ selectedYear, selectedPlanta, selectedMonth }
         currentPage * itemsPerPage
     );
 
-    useEffect(() => {
-        setCurrentPage(1); // Reset to page 1 when filters change
-    }, [searchTerm, filterExceededOnly, filterInternalDeviation, filterDateAlert, sortField, sortOrder, itemsPerPage]);
+
 
     const totalPresupuesto = filteredAndSortedData.reduce((acc, g) => acc + g.totalBudget, 0);
     const totalGasto = filteredAndSortedData.reduce((acc, g) => acc + g.totalReal, 0);
@@ -391,6 +394,33 @@ export const ExecutionMonitor = ({ selectedYear, selectedPlanta, selectedMonth }
             , 0)
         , 0);
 
+    const categorySummaries = useMemo(() => {
+        const catMap: Record<string, CategorySummary> = {
+            'Maquinaria': { category: 'Maquinaria', totalBudget: 0, totalReal: 0, deviation: 0, itemCount: 0 },
+            'Redes': { category: 'Redes', totalBudget: 0, totalReal: 0, deviation: 0, itemCount: 0 },
+            'Infra': { category: 'Infra', totalBudget: 0, totalReal: 0, deviation: 0, itemCount: 0 },
+            'Otros': { category: 'Otros', totalBudget: 0, totalReal: 0, deviation: 0, itemCount: 0 },
+        };
+
+        filteredAndSortedData.forEach(group => {
+            group.assets.forEach(asset => {
+                const cat = asset.category || 'Otros';
+                if (catMap[cat]) {
+                    catMap[cat].totalBudget += asset.totalBudget;
+                    catMap[cat].totalReal += asset.totalReal;
+                    catMap[cat].itemCount++;
+                }
+            });
+        });
+
+        return Object.values(catMap)
+            .filter(c => c.itemCount > 0)
+            .map(c => ({
+                ...c,
+                deviation: calculateDeviation(c.totalReal, c.totalBudget)
+            }));
+    }, [filteredAndSortedData]);
+
     return (
         <div className="space-y-6 relative min-h-[400px]">
             {loading && (
@@ -409,14 +439,10 @@ export const ExecutionMonitor = ({ selectedYear, selectedPlanta, selectedMonth }
                 onToggleDateAlert={() => setFilterDateAlert(!filterDateAlert)}
                 filterCriticalOnly={filterCriticalOnly}
                 onToggleCriticalOnly={() => setFilterCriticalOnly(!filterCriticalOnly)}
-                itemsPerPage={itemsPerPage}
-                onItemsPerPageChange={setItemsPerPage}
                 searchTerm={searchTerm}
                 onSearchChange={setSearchTerm}
                 selectedCategory={selectedCategory}
                 onCategoryChange={setSelectedCategory}
-                isUploading={isUploading}
-                onFileUpload={handleFileUpload}
             />
 
             <KPICards
@@ -452,6 +478,7 @@ export const ExecutionMonitor = ({ selectedYear, selectedPlanta, selectedMonth }
                 getAssetTransactions={getAssetTransactions}
                 getTypeTransactions={getTypeTransactions}
                 itemsPerPage={itemsPerPage}
+                onItemsPerPageChange={setItemsPerPage}
             />
 
             <TransactionSidePanel

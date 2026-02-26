@@ -66,18 +66,18 @@ export const SeguimientoOTsView = () => {
       // Caso 1: MMM-YY (ENE-25)
       if (/^[A-Z]{3}-\d{2}$/.test(row.periodo)) {
         const parts = row.periodo.split('-');
-        const yy = parseInt(parts[1], 10);
+        const yy = Number.parseInt(parts[1], 10);
         year = 2000 + yy;
       }
       // Caso 2: MM/YYYY (01/2025)
       else if (/^\d{1,2}\/\d{4}$/.test(row.periodo)) {
         const parts = row.periodo.split('/');
-        year = parseInt(parts[1], 10);
+        year = Number.parseInt(parts[1], 10);
       }
       // Caso 3: YYYY-MM (2025-01)
       else if (/^\d{4}-\d{1,2}$/.test(row.periodo)) {
         const parts = row.periodo.split('-');
-        year = parseInt(parts[0], 10);
+        year = Number.parseInt(parts[0], 10);
       }
 
       // Si detectamos un año y es menor al actual, lo comprimimos

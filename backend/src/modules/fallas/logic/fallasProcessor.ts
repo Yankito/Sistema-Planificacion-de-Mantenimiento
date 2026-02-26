@@ -17,7 +17,7 @@ export const processFallasDataFromDB = (fallasDb: Partial<FallaRow>[]): FallaRow
     }
 
     // SI LA FECHA ES INVÁLIDA
-    if (isNaN(fechaObj.getTime())) {
+    if (Number.isNaN(fechaObj.getTime())) {
       return {
         ...(row as Readonly<Partial<FallaRow>>),
         fecha: row.fecha || new Date(),

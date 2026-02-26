@@ -41,7 +41,7 @@ const parseFecha = (val: unknown): Date | null => {
     }
 
     const parsed = new Date(strVal);
-    return isNaN(parsed.getTime()) ? null : parsed;
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
 };
 
 // Helper SOLO FECHA (DD/MM/YYYY) para Cumplimiento y Masivo
@@ -64,8 +64,8 @@ const parseDineroLocal = (valor: unknown): number => {
         .replace(/\./g, '')
         .replace(',', '.');
 
-    const numero = parseFloat(limpio);
-    return isNaN(numero) ? 0 : numero;
+    const numero = Number.parseFloat(limpio);
+    return Number.isNaN(numero) ? 0 : numero;
 };
 
 export const MassiveController = {
@@ -182,7 +182,7 @@ export const MassiveController = {
                             // Reemplazar coma por punto por si viene formato europeo
                             const clean = String(val).replace(',', '.');
                             const num = Number(clean);
-                            return isNaN(num) ? 0 : num;
+                            return Number.isNaN(num) ? 0 : num;
                         })(),
                         rmd: (() => {
                             // Si son numéricos en DB, mejor pasar número o null. Si son string, pasar string.

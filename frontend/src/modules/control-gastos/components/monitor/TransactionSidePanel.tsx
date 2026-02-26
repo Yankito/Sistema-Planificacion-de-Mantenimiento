@@ -56,11 +56,11 @@ export const TransactionSidePanel: React.FC<TransactionSidePanelProps> = ({
 
     return (
         <div className="fixed inset-0 z-[100] overflow-hidden flex justify-end">
-            <div className="absolute inset-0 bg-pf-neutral-900/40 backdrop-blur-md transition-opacity duration-500" onClick={onClose}></div>
+            <div className="absolute inset-0 bg-pf-neutral-900/40 transition-opacity duration-500" onClick={onClose}></div>
 
             <div className="relative w-full max-w-2xl bg-white shadow-[0_0_50px_rgba(0,0,0,0.1)] h-full flex flex-col animate-in slide-in-from-right duration-500 rounded-l-[3rem] border-l border-pf-neutral-100">
                 {/* Panel Header */}
-                <div className="px-8 py-6 border-b border-pf-neutral-100 flex items-center justify-between bg-white/80 backdrop-blur-md rounded-tl-[3rem] sticky top-0 z-10">
+                <div className="px-8 py-6 border-b border-pf-neutral-100 flex items-center justify-between bg-white/80 rounded-tl-[3rem] sticky top-0 z-10">
                     <div>
                         <h3 className="text-xl font-black text-pf-neutral-800 select-text uppercase tracking-tight">{title}</h3>
                         <p className="text-[10px] text-pf-neutral-400 font-black uppercase tracking-widest mt-1">Suma y compara transacciones contra presupuesto</p>

@@ -26,6 +26,7 @@ interface ExecutionTableProps {
     getAssetTransactions: (activo: string, isHito: boolean) => GastoConsolidadoRow[];
     getTypeTransactions: (activo: string, isHito: boolean, type: string) => GastoConsolidadoRow[];
     itemsPerPage: number;
+    onItemsPerPageChange: (items: number) => void;
 }
 
 export const ExecutionTable: React.FC<ExecutionTableProps> = ({
@@ -45,7 +46,8 @@ export const ExecutionTable: React.FC<ExecutionTableProps> = ({
     getGroupTransactions,
     getAssetTransactions,
     getTypeTransactions,
-    itemsPerPage
+    itemsPerPage,
+    onItemsPerPageChange
 }) => {
     const renderSortIcon = (field: SortField) => {
         if (sortField !== field) return <ArrowUpDown size={14} className="ml-1 opacity-20" />;
@@ -60,6 +62,19 @@ export const ExecutionTable: React.FC<ExecutionTableProps> = ({
                     Monitoreo de Ejecución
                 </h2>
                 <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 bg-white px-3 py-1.5 rounded-full border border-pf-neutral-200 shadow-sm">
+                        <span className="text-[9px] font-black text-pf-neutral-400 uppercase tracking-widest">Ver:</span>
+                        <select
+                            value={itemsPerPage}
+                            onChange={(e) => onItemsPerPageChange(Number(e.target.value))}
+                            className="bg-transparent text-[10px] font-black text-pf-neutral-900 outline-none cursor-pointer px-1"
+                        >
+                            <option value={10}>10</option>
+                            <option value={20}>20</option>
+                            <option value={50}>50</option>
+                            <option value={100}>100</option>
+                        </select>
+                    </div>
                     <span className="text-[10px] font-black px-4 py-1.5 bg-white border border-pf-neutral-200 text-pf-neutral-400 rounded-full uppercase tracking-widest shadow-sm">Total: {totalItems}</span>
                     {totalPages > 1 && (
                         <span className="text-[10px] font-black px-4 py-1.5 bg-pf-neutral-900 text-white rounded-full uppercase tracking-widest shadow-lg shadow-pf-neutral-200">

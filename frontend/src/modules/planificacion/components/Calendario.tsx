@@ -1,6 +1,7 @@
 import { Moon, CheckCircle2, UserX, Users, Wand2, Loader2 } from "lucide-react";
 import { useCalendarioGrid } from "../hooks/useCalendarioGrid";
-import type { PlanResult, Tecnico } from "../types";
+import type { PlanResult } from "../types";
+import type { Tecnico } from "../../../shared/types/index";
 
 interface CalendarioProps {
   planResult: PlanResult[];
@@ -144,7 +145,7 @@ export const Calendario = ({
                     const estaFiltrado = mostrarSoloVacantes && !isActive && totalCount > 0;
                     const hasAnyVacancy = vacantesCount > 0;
 
-                    const diaNum = parseInt(fecha.split('/')[0]);
+                    const diaNum = Number.parseInt(fecha.split('/')[0]);
                     const esNocheOk = draggingOT && isNocheValid(draggingOT.tecnicos, fecha, mapaHorarios);
                     const isHovered = dragOverDate === fecha;
                     const isDaySelected = diaSeleccionado === fecha;

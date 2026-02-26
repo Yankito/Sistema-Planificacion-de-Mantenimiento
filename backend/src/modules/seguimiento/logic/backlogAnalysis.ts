@@ -74,15 +74,14 @@ export const analyzeBacklogFlow = (
       // NUEVA
       item.tipoMovimiento = "NUEVA";
       stats.nuevas.push(item);
-    } else {
+    } else if (prev.clasificacion !== curr.clasificacion) {
       // Verificamos si cambió la CLASIFICACIÓN
-      if (prev.clasificacion !== curr.clasificacion) {
-        item.tipoMovimiento = "CAMBIO_ESTADO";
-        stats.conAvance.push(item);
-      } else {
-        item.tipoMovimiento = "PERSISTENTE";
-        stats.sinCambios.push(item);
-      }
+      item.tipoMovimiento = "CAMBIO_ESTADO";
+      stats.conAvance.push(item);
+    } else {
+      // PERSISTENTE
+      item.tipoMovimiento = "PERSISTENTE";
+      stats.sinCambios.push(item);
     }
   });
 

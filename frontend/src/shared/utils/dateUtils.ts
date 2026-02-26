@@ -91,8 +91,8 @@ export const getRangeFromWeekID = (weekID: string): string => {
   if (!weekID || weekID === "TODAS") return "";
 
   const [yearStr, weekStr] = weekID.split("-S");
-  const year = parseInt(yearStr);
-  const week = parseInt(weekStr);
+  const year = Number.parseInt(yearStr);
+  const week = Number.parseInt(weekStr);
 
   // Encontrar el primer jueves del año (estándar ISO)
   const firstThursday = new Date(year, 0, 1);

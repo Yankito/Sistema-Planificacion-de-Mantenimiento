@@ -205,7 +205,7 @@ export const ManualBudgetModal: React.FC<ManualBudgetModalProps> = React.memo(({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-pf-neutral-900/80 backdrop-blur-md z-[70] flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-pf-neutral-900/80 z-[70] flex items-center justify-center p-4">
       <div className="bg-white rounded-[2.5rem] shadow-2xl border border-pf-neutral-200 w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col animate-in fade-in zoom-in duration-300">
         <div className="p-6 border-b border-pf-neutral-100 flex justify-between items-center bg-white">
           <div>
@@ -530,7 +530,7 @@ export const ManualBudgetModal: React.FC<ManualBudgetModalProps> = React.memo(({
           )}
         </div>
 
-        <div className="p-6 bg-pf-neutral-50/80 backdrop-blur-md border-t border-pf-neutral-100 flex justify-end gap-5">
+        <div className="p-6 bg-pf-neutral-50/80 border-t border-pf-neutral-100 flex justify-end gap-5">
           <button
             onClick={onClose}
             className="px-8 py-3 text-[10px] font-black uppercase tracking-widest text-pf-neutral-400 hover:bg-pf-red hover:text-white rounded-2xl transition-all active:scale-95 border border-transparent hover:border-pf-red hover:shadow-lg hover:shadow-pf-red/20"

@@ -6,9 +6,9 @@ export const limpiarKey = (valor: any): string => {
 export const buscarNombreEnFila = (fila: any): string => {
   const keys = Object.keys(fila);
   const keyNombre = keys.find(k => {
-      const cleanK = k.toUpperCase();
-      return (cleanK.includes("EMPLEADO") || cleanK.includes("TECNICO") || cleanK.includes("RESPONSABLE")) 
-             && !cleanK.includes("SOLICITA") && !cleanK.includes("CREADO");
+    const cleanK = k.toUpperCase();
+    return (cleanK.includes("EMPLEADO") || cleanK.includes("TECNICO") || cleanK.includes("RESPONSABLE"))
+      && !cleanK.includes("SOLICITA") && !cleanK.includes("CREADO");
   });
   if (keyNombre && fila[keyNombre]) return String(fila[keyNombre]).trim().toUpperCase();
   return "";

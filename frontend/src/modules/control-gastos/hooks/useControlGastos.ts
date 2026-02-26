@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { ControlGastosService } from '../services/ControlGastosService';
-import type { PresupuestoRow } from '../../../shared/types';
+import type { PresupuestoRow } from '../types';
 
 export const useControlGastos = () => {
   const [loadingCount, setLoadingCount] = useState(0);
@@ -9,8 +9,12 @@ export const useControlGastos = () => {
   const loading = loadingCount > 0;
 
   const uploadPresupuesto = useCallback(async (file: File) => {
-    setLoadingCount(prev => prev + 1);
-    setError(null);
+    // Para acciones iniciadas por el usuario (click), no es estrictamente necesario diferir,
+    // pero lo hacemos por consistencia.
+    Promise.resolve().then(() => {
+      setLoadingCount(prev => prev + 1);
+      setError(null);
+    });
     try {
       return await ControlGastosService.uploadPresupuesto(file);
     } catch (err) {
@@ -23,8 +27,10 @@ export const useControlGastos = () => {
   }, []);
 
   const getPresupuesto = useCallback(async (anio: number, planta?: string, activo?: string, mes?: number, silent: boolean = false) => {
-    if (!silent) setLoadingCount(prev => prev + 1);
-    setError(null);
+    Promise.resolve().then(() => {
+      if (!silent) setLoadingCount(prev => prev + 1);
+      setError(null);
+    });
     try {
       return await ControlGastosService.getPresupuesto(anio, planta, activo, mes);
     } catch (err) {
@@ -37,8 +43,10 @@ export const useControlGastos = () => {
   }, []);
 
   const getGastosConsolidados = useCallback(async (anio: number, planta?: string, mes?: number, silent: boolean = false) => {
-    if (!silent) setLoadingCount(prev => prev + 1);
-    setError(null);
+    Promise.resolve().then(() => {
+      if (!silent) setLoadingCount(prev => prev + 1);
+      setError(null);
+    });
     try {
       return await ControlGastosService.getGastosConsolidados(anio, planta, mes);
     } catch (err) {
@@ -50,7 +58,10 @@ export const useControlGastos = () => {
   }, []);
 
   const searchAssetsByCentroCosto = useCallback(async (cc: string) => {
-    setLoadingCount(prev => prev + 1);
+    Promise.resolve().then(() => {
+      setLoadingCount(prev => prev + 1);
+      setError(null);
+    });
     try {
       return await ControlGastosService.searchAssetsByCentroCosto(cc);
     } finally {
@@ -59,7 +70,10 @@ export const useControlGastos = () => {
   }, []);
 
   const updateAssetName = useCallback(async (oldName: string, newName: string, anio: number) => {
-    setLoadingCount(prev => prev + 1);
+    Promise.resolve().then(() => {
+      setLoadingCount(prev => prev + 1);
+      setError(null);
+    });
     try {
       return await ControlGastosService.updateAssetName(oldName, newName, anio);
     } finally {
@@ -68,7 +82,10 @@ export const useControlGastos = () => {
   }, []);
 
   const autoFixAssets = useCallback(async (anio: number) => {
-    setLoadingCount(prev => prev + 1);
+    Promise.resolve().then(() => {
+      setLoadingCount(prev => prev + 1);
+      setError(null);
+    });
     try {
       return await ControlGastosService.autoFixAssets(anio);
     } finally {
@@ -77,7 +94,10 @@ export const useControlGastos = () => {
   }, []);
 
   const getMaintainableAssets = useCallback(async (search?: string, silent: boolean = false) => {
-    if (!silent) setLoadingCount(prev => prev + 1);
+    Promise.resolve().then(() => {
+      if (!silent) setLoadingCount(prev => prev + 1);
+      setError(null);
+    });
     try {
       return await ControlGastosService.getMaintainableAssets(search);
     } finally {
@@ -86,14 +106,16 @@ export const useControlGastos = () => {
   }, []);
 
   const saveManualPresupuesto = useCallback(async (rows: PresupuestoRow[]) => {
-    setLoadingCount(prev => prev + 1);
+    Promise.resolve().then(() => {
+      setLoadingCount(prev => prev + 1);
+      setError(null);
+    });
     try {
       await ControlGastosService.saveManualPresupuesto(rows);
     } finally {
       setLoadingCount(prev => Math.max(0, prev - 1));
     }
   }, []);
-
 
   return {
     uploadPresupuesto,

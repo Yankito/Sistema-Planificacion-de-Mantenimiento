@@ -2,8 +2,8 @@ import { getWeekID } from '../../../shared/utils/dateUtils';
 export const excelDateToJS = (serial: number | string | Date): Date => {
   if (serial instanceof Date) return serial;
 
-  const serialNum = typeof serial === 'string' ? parseFloat(serial) : serial;
-  if (isNaN(serialNum) || serialNum === 0) return new Date();
+  const serialNum = typeof serial === 'string' ? Number.parseFloat(serial) : serial;
+  if (Number.isNaN(serialNum) || serialNum === 0) return new Date();
 
   // Excel usa el sistema de fechas 1900 (donde el serial 1 es 1/1/1900)
   // La diferencia real de días entre la base de JS (1970) y Excel es 25569.

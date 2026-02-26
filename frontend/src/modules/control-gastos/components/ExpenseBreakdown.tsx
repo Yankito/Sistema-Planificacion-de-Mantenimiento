@@ -120,7 +120,7 @@ export const ExpenseBreakdown = ({ selectedYear, selectedPlanta, selectedMonth }
     return (
         <div className="space-y-8 relative min-h-[500px] animate-in fade-in duration-500">
             {loading && (
-                <div className="absolute inset-0 bg-white/40 backdrop-blur-md z-50 flex flex-col items-center justify-center rounded-[2.5rem] transition-all duration-500">
+                <div className="absolute inset-0 bg-white/40 z-50 flex flex-col items-center justify-center rounded-[2.5rem] transition-all duration-500">
                     <div className="relative">
                         <Loader2 className="animate-spin text-pf-red mb-6" size={48} />
                         <div className="absolute inset-0 bg-pf-red opacity-10 animate-ping rounded-full"></div>

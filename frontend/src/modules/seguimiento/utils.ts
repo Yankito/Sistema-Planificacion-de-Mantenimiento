@@ -1,13 +1,13 @@
 export const sortPeriods = (a: string, b: string) => {
   // Helper para extraer el año de cualquier formato
   const getYear = (val: string) => {
-    if (/^\d{4}$/.test(val)) return parseInt(val);
+    if (/^\d{4}$/.test(val)) return Number.parseInt(val);
     if (/^[A-Z]{3}-\d{2}$/.test(val)) {
       const parts = val.split('-');
-      return parseInt("20" + parts[1]);
+      return Number.parseInt("20" + parts[1]);
     }
-    if (/^\d{1,2}\/\d{4}$/.test(val)) return parseInt(val.split('/')[1]);
-    if (/^\d{4}-\d{1,2}$/.test(val)) return parseInt(val.split('-')[0]);
+    if (/^\d{1,2}\/\d{4}$/.test(val)) return Number.parseInt(val.split('/')[1]);
+    if (/^\d{4}-\d{1,2}$/.test(val)) return Number.parseInt(val.split('-')[0]);
     return 0;
   };
 
@@ -33,8 +33,8 @@ export const sortPeriods = (a: string, b: string) => {
   if (!anioA || !anioB) return a.localeCompare(b);
 
   // Comparar años primero
-  const fullYearA = parseInt("20" + anioA);
-  const fullYearB = parseInt("20" + anioB);
+  const fullYearA = Number.parseInt("20" + anioA);
+  const fullYearB = Number.parseInt("20" + anioB);
 
   if (fullYearA !== fullYearB) return fullYearA - fullYearB;
 

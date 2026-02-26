@@ -66,13 +66,13 @@ const count = (data: OrdenTrabajo[], planta: string | string[], esOB: boolean, p
 const sortPeriods = (a: string, b: string) => {
   // Helper para extraer el año de cualquier formato
   const getYear = (val: string) => {
-    if (/^\d{4}$/.test(val)) return parseInt(val);
+    if (/^\d{4}$/.test(val)) return Number.parseInt(val);
     if (/^[A-Z]{3}-\d{2}$/.test(val)) {
       const parts = val.split('-');
-      return parseInt("20" + parts[1]);
+      return Number.parseInt("20" + parts[1]);
     }
-    if (/^\d{1,2}\/\d{4}$/.test(val)) return parseInt(val.split('/')[1]);
-    if (/^\d{4}-\d{1,2}$/.test(val)) return parseInt(val.split('-')[0]);
+    if (/^\d{1,2}\/\d{4}$/.test(val)) return Number.parseInt(val.split('/')[1]);
+    if (/^\d{4}-\d{1,2}$/.test(val)) return Number.parseInt(val.split('-')[0]);
     return 0; // Fallback
   };
 
@@ -95,8 +95,8 @@ const sortPeriods = (a: string, b: string) => {
     const mesMap: Record<string, number> = { "ENE": 0, "FEB": 1, "MAR": 2, "ABR": 3, "MAY": 4, "JUN": 5, "JUL": 6, "AGO": 7, "SEP": 8, "OCT": 9, "NOV": 10, "DIC": 11 };
 
     if (/^[A-Z]{3}-\d{2}$/.test(val)) return mesMap[val.split('-')[0]] ?? 0;
-    if (/^\d{1,2}\/\d{4}$/.test(val)) return parseInt(val.split('/')[0]) - 1;
-    if (/^\d{4}-\d{1,2}$/.test(val)) return parseInt(val.split('-')[1]) - 1;
+    if (/^\d{1,2}\/\d{4}$/.test(val)) return Number.parseInt(val.split('/')[0]) - 1;
+    if (/^\d{4}-\d{1,2}$/.test(val)) return Number.parseInt(val.split('-')[1]) - 1;
     return 0;
   };
 
@@ -117,7 +117,7 @@ const normalizeDatasetPeriods = (data: OrdenTrabajo[]): OrdenTrabajo[] => {
     // Caso 1: MMM-YY (ENE-25)
     if (/^[A-Z]{3}-\d{2}$/.test(row.periodo)) {
       const parts = row.periodo.split('-');
-      const yy = parseInt(parts[1], 10);
+      const yy = Number.parseInt(parts[1], 10);
       year = 2000 + yy;
       const mNames = ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"];
       month = mNames.indexOf(parts[0]) + 1;
@@ -125,14 +125,14 @@ const normalizeDatasetPeriods = (data: OrdenTrabajo[]): OrdenTrabajo[] => {
     // Caso 2: MM/YYYY (01/2025)
     else if (/^\d{1,2}\/\d{4}$/.test(row.periodo)) {
       const parts = row.periodo.split('/');
-      year = parseInt(parts[1], 10);
-      month = parseInt(parts[0], 10);
+      year = Number.parseInt(parts[1], 10);
+      month = Number.parseInt(parts[0], 10);
     }
     // Caso 3: YYYY-MM (2025-01)
     else if (/^\d{4}-\d{1,2}$/.test(row.periodo)) {
       const parts = row.periodo.split('-');
-      year = parseInt(parts[0], 10);
-      month = parseInt(parts[1], 10);
+      year = Number.parseInt(parts[0], 10);
+      month = Number.parseInt(parts[1], 10);
     }
 
     // Si detectamos un año y es menor al actual, lo transformamos a YYYY
@@ -194,7 +194,7 @@ export const generarExcelReporte = async (
     );
 
     // Labels Dinámicos
-    const anioAnterior = (parseInt(anioActual) - 1).toString();
+    const anioAnterior = (Number.parseInt(anioActual) - 1).toString();
     const headersLabels = [
       `REPORTE ${modoVista}`,
       ...columnasPeriodos,
@@ -362,8 +362,8 @@ export const generarExcelReporte = async (
       [{ v: "RESUMEN PLANTAS", t: 's', s: STYLE_HEADER_MAIN }], // Fila 0
       [
         { v: "Planta", t: 's', s: STYLE_HEADER_MAIN },
-        { v: parseInt(anioAnterior) || anioAnterior, t: 'n', s: STYLE_HEADER_MAIN },
-        { v: parseInt(anioActual) || anioActual, t: 'n', s: STYLE_HEADER_MAIN }
+        { v: Number.parseInt(anioAnterior) || anioAnterior, t: 'n', s: STYLE_HEADER_MAIN },
+        { v: Number.parseInt(anioActual) || anioActual, t: 'n', s: STYLE_HEADER_MAIN }
       ], // Fila 1
       { label: "PF1", id: "PF1_OM" },
       { label: "PF2", id: "PF2_OM" },

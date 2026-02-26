@@ -9,7 +9,7 @@ import { usePlanificacionManager } from "../hooks/usePlanificacionManager";
 import { usePlantasAcceso } from "../../../shared/hooks/usePlantasAcceso";
 import { getMonthOptions } from "../../../shared/utils/dateUtils";
 import { toast } from "sonner";
-import type { Tecnico } from "../types";
+import type { Tecnico } from "../../../shared/types/index";
 
 const BLOQUEOS_SABADO = ['L', 'V', 'LIC', 'LM', 'LP'];
 
@@ -152,7 +152,7 @@ export const PlanificacionView = () => {
 
       <div className="flex flex-1 gap-6 relative min-h-0">
         {cargandoPlan && (
-          <div className="absolute inset-0 bg-white/70 backdrop-blur-md z-[200] flex flex-col items-center justify-center rounded-[3rem] gap-4 shadow-2xl transition-all animate-in fade-in duration-300">
+          <div className="absolute inset-0 bg-white/70 z-[200] flex flex-col items-center justify-center rounded-[3rem] gap-4 shadow-2xl transition-all animate-in fade-in duration-300">
             <div className="relative">
               <Loader2 className="animate-spin text-pf-red" size={56} />
               <div className="absolute inset-0 animate-ping opacity-20 bg-pf-red rounded-full" />

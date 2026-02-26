@@ -36,7 +36,7 @@ export const PanelLateral = ({
 
     if (diaSeleccionado.startsWith("SEM-")) {
       console.log(diaSeleccionado);
-      const semanaNum = parseInt(diaSeleccionado.split("-")[1]);
+      const semanaNum = Number.parseInt(diaSeleccionado.split("-")[1]);
       Object.keys(ordenesPorDia).forEach((fecha) => {
         const fechaObj = parseDDMMYYYY(fecha);
         if (fechaObj) {
@@ -62,7 +62,7 @@ export const PanelLateral = ({
   const tituloPanel = useMemo((): string => {
     if (!diaSeleccionado) return "Pendientes";
     if (diaSeleccionado.startsWith("SEM-")) return `Semana ${diaSeleccionado.split("-")[1]}`;
-    return `Día ${parseInt(diaSeleccionado.split('/')[0])}`;
+    return `Día ${Number.parseInt(diaSeleccionado.split('/')[0])}`;
   }, [diaSeleccionado]);
 
   return (

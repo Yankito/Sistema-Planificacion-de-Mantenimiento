@@ -50,8 +50,8 @@ export const getMonthFromWeekId = (weekId: string): { anio: number, mes: number 
     // Default: Formato (YYYY-Sww o YYYY-Www)
     const parts = weekId.split(/[-S]/);
     if (parts.length >= 2) {
-      const year = parseInt(parts[0], 10);
-      const week = parseInt(parts[parts.length - 1], 10);
+      const year = Number.parseInt(parts[0], 10);
+      const week = Number.parseInt(parts[parts.length - 1], 10);
 
       // Calculamos el inicio conservador simplemente para saber qué mes le toca aprox.
       // Enero 1er jueves:
@@ -73,9 +73,9 @@ export const getMonthFromWeekId = (weekId: string): { anio: number, mes: number 
  */
 export const excelDateToJS = (serial: any): Date => {
   if (serial instanceof Date) return serial;
-  if (typeof serial === 'number' || (typeof serial === 'string' && !isNaN(Number(serial)))) {
+  if (typeof serial === 'number' || (typeof serial === 'string' && !Number.isNaN(Number(serial)))) {
     const date = new Date(Math.round((Number(serial) - 25569) * 86400 * 1000));
-    return isNaN(date.getTime()) ? new Date() : date;
+    return Number.isNaN(date.getTime()) ? new Date() : date;
   }
   return new Date();
 };

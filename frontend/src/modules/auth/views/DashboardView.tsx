@@ -217,7 +217,7 @@ export const DashboardView = ({ setActiveTab }: DashboardViewProps) => {
       </div>
 
       {/* FILA 2: GASTOS + DISTRIBUCIÓN */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* CONTROL DE GASTOS */}
         {(tieneAcceso('gastos') || tieneAcceso('gastos-consolidado')) ? (
           <ModuloCard

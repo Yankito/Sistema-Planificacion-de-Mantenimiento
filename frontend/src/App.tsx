@@ -47,7 +47,7 @@ const AppContent = () => {
         setActiveTab={(path) => navigate(path)}
         userRoles={roles}
       />
-      <main className="flex-1 overflow-y-auto p-10 space-y-12 shadow-inner">
+      <main className="flex-1 overflow-y-auto p-4 space-y-12 shadow-inner">
         <Routes>
           <Route path="/" element={
             <DashboardView

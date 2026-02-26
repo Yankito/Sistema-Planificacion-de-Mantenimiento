@@ -1,6 +1,8 @@
 import { API_ENDPOINTS } from '../../../shared/api/config';
 import { fetchAuth } from '../../../shared/api/fetchAuth';
-import type { PresupuestoRow, GastoConsolidadoRow, ActivoEAM } from '../../../shared/types';
+import type { ActivoEAM } from '../../../shared/types';
+import type { PresupuestoRow, GastoConsolidadoRow } from '../types';
+
 
 const API_BASE = API_ENDPOINTS.CONTROL_GASTOS;
 

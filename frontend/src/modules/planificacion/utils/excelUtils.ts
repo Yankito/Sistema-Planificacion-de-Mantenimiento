@@ -21,7 +21,7 @@ export const buscarNombreEnFila = (fila: Record<string, unknown>): string => {
     const cleanK = k.toUpperCase();
     return (
       (cleanK.includes("EMPLEADO") || cleanK.includes("TECNICO") || cleanK.includes("RESPONSABLE")) &&
-      !cleanK.includes("SOLICITA") && 
+      !cleanK.includes("SOLICITA") &&
       !cleanK.includes("CREADO")
     );
   });
