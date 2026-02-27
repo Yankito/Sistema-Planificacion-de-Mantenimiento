@@ -29,6 +29,42 @@ export const MasivoService = {
         }
     },
 
+    descargarPlantillaHorarios: async () => {
+        try {
+            const res = await fetchAuth(`${API_ENDPOINTS.MASIVO}/template/horarios`);
+            if (!res.ok) throw new Error("Error al descargar la plantilla de Horarios");
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = "Plantilla_Horarios.xlsx";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        } catch (error) {
+            throw new Error(error instanceof Error ? error.message : "No se pudo conectar con el servidor para la descarga");
+        }
+    },
+
+    descargarPlantillaEAM: async () => {
+        try {
+            const res = await fetchAuth(`${API_ENDPOINTS.MASIVO}/template/eam`);
+            if (!res.ok) throw new Error("Error al descargar la plantilla EAM");
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = "Plantilla_EAM.xlsx";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        } catch (error) {
+            throw new Error(error instanceof Error ? error.message : "No se pudo conectar con el servidor para la descarga");
+        }
+    },
+
     descargarPlantilla: async () => {
         const XLSX = await import("xlsx-js-style");
 

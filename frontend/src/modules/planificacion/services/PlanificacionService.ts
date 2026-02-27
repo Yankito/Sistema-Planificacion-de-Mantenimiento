@@ -5,37 +5,6 @@ import { fetchAuth } from "../../../shared/api/fetchAuth";
 
 const API_BASE = API_ENDPOINTS.PLANIFICACION;
 
-
-export async function procesarExcelEnServidor(
-    archivo: File,
-    modo: 'STRICT' | 'BALANCED',
-    mes?: number,
-    anio?: number
-): Promise<ProcesoExcelResponse | null> {
-    try {
-        const formData = new FormData();
-        formData.append('file', archivo);
-        formData.append('modo', modo);
-        formData.append('mes', String(mes));
-        formData.append('anio', String(anio));
-
-        const response = await fetchAuth(`${API_BASE}/procesar`, {
-            method: 'POST',
-            body: formData,
-        });
-
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || "Error en el procesamiento remoto");
-        }
-
-        return await response.json() as ProcesoExcelResponse;
-    } catch (error) {
-        console.error("Error al procesar en servidor:", error);
-        return null;
-    }
-}
-
 /**
  * Obtiene los horarios (matriz de turnos) desde la base de datos.
  */

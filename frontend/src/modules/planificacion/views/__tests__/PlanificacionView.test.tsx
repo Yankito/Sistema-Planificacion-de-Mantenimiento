@@ -93,7 +93,7 @@ describe('PlanificacionView', () => {
     mockedUseManager.mockReturnValue({ ...mockManager, cargandoPlan: true } as unknown as ReturnType<typeof usePlanificacionManager>);
 
     render(<PlanificacionView />);
-    expect(screen.getByText(/Sincronizando Oracle/i)).toBeInTheDocument();
+    expect(screen.getByText(/Sincronizando con Oracle/i)).toBeInTheDocument();
   });
 
   it('debería renderizar Calendario y Panel Lateral', () => {

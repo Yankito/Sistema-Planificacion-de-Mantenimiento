@@ -116,16 +116,6 @@ describe('PlanificacionController', () => {
         });
     });
 
-    describe('procesarExcel', () => {
-        it('debe requerir archivo', async () => {
-            const req = { file: null };
-            const res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
-
-            await PlanificacionController.procesarExcel(req as any, res as any);
-            expect(res.status).toHaveBeenCalledWith(400);
-        });
-    });
-
     describe('listarHorarios', () => {
         it('debe llamar al repositorio', async () => {
             const req = { query: { mes: 10, anio: 2025 } };

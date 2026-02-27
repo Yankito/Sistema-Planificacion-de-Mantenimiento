@@ -62,9 +62,9 @@ describe('ExportUtils Backend Tests', () => {
         '2026-S05'
       );
 
-      expect(reporte.fileName).toBe('Dashboard_Atrasos_S05.xlsx');
+      expect(reporte.fileName).toBe('Dashboard_ATRASOS_S05.xlsx');
 
-      // 3. AQUÍ ESTÁ EL TRUCO: Accedemos al mock a través del objeto importado.
+      // 3. Accedemos al mock a través del objeto importado.
       // Como XLSX está mockeado, sus métodos son vi.fn() y tienen la propiedad .mock
       const aoaMock = XLSX.utils.aoa_to_sheet as any;
       const matrix = aoaMock.mock.calls[0][0];

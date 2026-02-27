@@ -1,4 +1,4 @@
-import { Moon, CheckCircle2, UserX, Users, Wand2, Loader2 } from "lucide-react";
+import { Moon, CheckCircle2, UserX, Users, Wand2 } from "lucide-react";
 import { useCalendarioGrid } from "../hooks/useCalendarioGrid";
 import type { PlanResult } from "../types";
 import type { Tecnico } from "../../../shared/types/index";
@@ -21,7 +21,6 @@ interface CalendarioProps {
   handleSugerirTodo: () => void;
   periodoSeleccionado: string;
   mapaHorarios: Map<string, string[]>;
-  cargandoPlan?: boolean;
 }
 
 export const Calendario = ({
@@ -41,8 +40,7 @@ export const Calendario = ({
   mensajeExito = "Planificación Actualizada",
   handleSugerirTodo,
   periodoSeleccionado,
-  mapaHorarios,
-  cargandoPlan
+  mapaHorarios
 }: CalendarioProps) => {
 
   // USAMOS EL HOOK (Lógica de Fechas extraída)
@@ -99,12 +97,6 @@ export const Calendario = ({
       </div>
 
       <div className="bg-white p-8 rounded-[3rem] border border-pf-neutral-100 shadow-sm relative overflow-hidden">
-        {cargandoPlan && (
-          <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center gap-3">
-            <Loader2 size={40} className="text-pf-red animate-spin" />
-            <p className="font-black text-xs uppercase tracking-[0.3em] text-pf-neutral-500 animate-pulse">Sincronizando</p>
-          </div>
-        )}
         <div className="grid grid-cols-7 gap-3 mb-2 pl-6">
           {["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"].map(d => (
             <div key={d} className="text-center text-[10px] font-black text-pf-neutral-300 uppercase tracking-widest">{d}</div>

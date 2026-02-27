@@ -37,13 +37,15 @@ export const ManualBudgetModal: React.FC<ManualBudgetModalProps> = React.memo(({
   const [saveLoading, setSaveLoading] = useState(false);
   const [dataLoading, setDataLoading] = useState(false);
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const autoIncIdRef = useRef<number>(0);
 
   const lastLoadedAssetRef = useRef<string | null>(null);
 
   const createEmptyEntry = useCallback((freq = 'mensual', startMonth = 1): ManualEntryLine => {
+    autoIncIdRef.current += 1;
     const isPre = FRECUENCIAS_PREDEFINIDAS.includes(freq.toLowerCase());
     const entry: ManualEntryLine = {
-      id: Math.random().toString(36).substr(2, 9),
+      id: String(autoIncIdRef.current),
       frecuencia: freq,
       isPredefined: isPre,
       collapsed: false,

@@ -4,7 +4,14 @@ import { ControlGastosController } from '../modules/control-gastos/controller.js
 import multer from 'multer';
 
 const router = Router();
-const upload = multer({ storage: multer.memoryStorage() });
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 15 * 1024 * 1024,
+    files: 1
+  }
+});
+
 const controller = new ControlGastosController();
 
 router.post('/upload-presupuesto', upload.single('file'), (req, res) => controller.uploadPresupuesto(req, res));

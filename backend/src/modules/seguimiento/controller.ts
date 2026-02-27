@@ -73,7 +73,7 @@ export const SeguimientoController = {
       const plantasUsuario = req.authUser?.plantas || [];
       console.log(`[Seguimiento] getDatos: ${fechaInicio} -> ${fechaFin} | plantas: [${plantasUsuario.join(', ')}]`);
 
-      // UNA sola consulta a Oracle para todo
+      // Una sola consulta a Oracle
       const pedidos = await SeguimientoRepository.getPedidos(
         fechaInicio as string,
         fechaFin as string,

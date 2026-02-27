@@ -33,6 +33,11 @@ export const OTCard = ({ item, isNew, onSelectTech, selectedTech }: OTCardProps)
       </div>
 
       <div className="mb-2">
+        <span className="text-sm font-black text-pf-neutral-900">{item.nroActivo}</span>
+      </div>
+
+
+      <div className="mb-2">
         <span className={`text-[9px] px-2 py-0.5 rounded-md font-black bg-white border ${item.clasificacion === 'FINALIZADA' ? 'bg-pf-success-100 text-pf-success-700 border-pf-success-200' :
           item.clasificacion === 'PROGRAMADOR' ? 'bg-pf-blue-100 text-pf-blue-700 border-pf-blue-200' :
             item.clasificacion === 'TECNICO / SERVICIO' ? 'bg-pf-blue-50 text-pf-blue-600 border-pf-blue-200' :

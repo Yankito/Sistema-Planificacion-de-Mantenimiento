@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { FileSpreadsheet, Loader2, CalendarDays, Check } from "lucide-react";
 import { UploadCard } from "./UploadCard";
-
+import { MasivoService } from "../services/MasivoService";
 
 export type FileType = 'PLAN' | 'SEGUIMIENTO' | 'FALLAS' | 'MASIVO';
 
@@ -124,7 +124,13 @@ export const FileUploader = ({ onFileUpload, isLoading, status, highlightedModul
             {/* DESCARGA PLANILLA */}
             {pendingFile.tipo === 'MASIVO' && (
               <div className="bg-purple-50 p-3 rounded-xl border border-purple-100 flex items-center justify-between group cursor-pointer hover:bg-purple-100 transition-colors"
-                onClick={() => window.open('http://localhost:3001/api/masivo/template/eam', '_blank')}
+                onClick={async () => {
+                  try {
+                    await MasivoService.descargarPlantillaEAM();
+                  } catch (e) {
+                    alert("Error al descargar: " + (e as Error).message);
+                  }
+                }}
               >
                 <div className="flex items-center gap-3">
                   <div className="bg-purple-200 text-purple-700 p-2 rounded-lg"><FileSpreadsheet size={16} /></div>

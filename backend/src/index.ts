@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import { initDB } from './db/init.js';
 import { authMiddleware, plantaMiddleware } from './middleware/auth.js';
 
@@ -16,14 +18,59 @@ import authRoutes from './routes/auth.routes.js';
 dotenv.config();
 
 const app = express();
+app.disable('x-powered-by');
+
 const PORT = process.env.PORT || 3001;
 
 // --- MIDDLEWARES ---
 // CORS configurado para permitir la conexión desde el frontend en la red de Talca
-app.use(cors());
+// Definimos los orígenes permitidos (Whitelist)
+const whitelist = process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
+    : [];
 
-// Aumentamos el límite de JSON a 50mb porque los resultados de planificación 
-// desde Excel pueden generar objetos muy grandes al guardarlos.
+const corsOptions: cors.CorsOptions = {
+    origin: (origin, callback) => {
+        if (whitelist.includes(origin)) {
+            callback(null, true);
+        } else {
+            console.warn(`[CORS Blocked]: Petición desde origen no autorizado: ${origin}`);
+            callback(new Error('No permitido por CORS'));
+        }
+    },
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true
+};
+
+// Aplicamos el middleware con opciones
+app.use(cors(corsOptions));
+
+// --- SEGURIDAD OWASP ---
+// 1. Protección de Cabeceras HTTP (Mitigación XSS, Clickjacking, MIME sniffing)
+app.use(helmet());
+
+// 2. Límite de peticiones Globales (Prevención DDoS)
+const globalLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 1000,
+    message: 'Demasiadas peticiones desde esta IP, por favor intente más tarde.',
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+app.use('/api', globalLimiter);
+
+// 3. Límite estricto para inicio de sesión (Anti-Fuerza Bruta)
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 10, // Máximo 10 intentos de login cada 15 min
+    message: 'Demasiados intentos de inicio de sesión. Cuenta bloqueada temporalmente.'
+});
+app.use('/api/auth/login', authLimiter);
+
+// --- MIDDLEWARES DE CARGA ---
+// Se mantiene un límite alto (50mb) debido al volumen de datos en planificaciones masivas (arrays JSON gigantes). 
+// OWASP Alert: Puede ser susceptible a DoS si un payload maligno satura la memoria.
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 

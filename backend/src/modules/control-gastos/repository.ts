@@ -16,7 +16,57 @@ const normalizeFrecuencia = (f: string): string => {
   if (low.startsWith('hito')) return 'hito';
   return low;
 };
+const getTipoGasto = (tipo: string, tipoOt: string): string => {
+  if (tipo === 'B' && (tipoOt === 'Preventivo' || tipoOt === 'Procedimientos')) {
+    return 'BODEGA';
+  }
+  if (tipo === 'SER' && (tipoOt === 'Preventivo' || tipoOt === 'Procedimientos')) {
+    return 'SERV_EXT';
+  }
+  if (tipo === 'B' || tipo === 'SER' || tipo === 'OC') {
+    return 'CORRECTIVO';
+  }
+  return '';
+};
 
+const mapGastoRow = (row: Record<string, any>): GastoConsolidadoRow | null => {
+  const tipo = String(row.TIPO || '');
+  const tipoOt = String(row.TIPO_OT || '').trim();
+  const tipoGasto = getTipoGasto(tipo, tipoOt);
+
+  if (!tipoGasto) return null;
+
+  const descPedido = (row.DESC_OT || '');
+  const dPro = row.FECHA_PROG ? new Date(row.FECHA_PROG) : null;
+  const dTrx = row.FECHA_TRANSACCION ? new Date(row.FECHA_TRANSACCION) : null;
+
+  let alertaFecha = 0;
+  if (dTrx && dPro && (dTrx.getMonth() !== dPro.getMonth() || dTrx.getFullYear() !== dPro.getFullYear())) {
+    alertaFecha = 1;
+  }
+
+  return {
+    tipo: row.TIPO,
+    planta: row.PLANTA_CALC,
+    claseContable: row.CLASE_CONTABLE_ACTIVO,
+    numeroOt: row.NUMERO_OT,
+    tipoOt: row.TIPO_OT,
+    nroActivo: row.NRO_ACTIVO,
+    descripcionArticulo: row.DESCRIP_ARTICULO,
+    fechaTrx: row.FECHA_TRANSACCION,
+    fechaOtPro: dPro,
+    costoTrx: row.COSTO_TRX,
+    tipoGasto,
+    centroCosto: row.NRO_ACTIVO ? String(row.NRO_ACTIVO).slice(-6) : '',
+    anio: row.ANIO_CALC,
+    mes: row.MES_CALC,
+    alertaFecha,
+    descripcionOt: descPedido,
+    estadoTrabajo: row.ESTADO_OT,
+    esHito: descPedido.startsWith('HITO') || descPedido.startsWith('(HITO)'),
+    mantenible: row.MANTENIBLE_ACTIVO
+  };
+};
 
 export const ControlGastosRepository = {
   getOTDetails: async (ots: string[]): Promise<Map<string, { descripcion: string, fechaProg?: Date, estado?: string }>> => {
@@ -202,62 +252,10 @@ export const ControlGastosRepository = {
       const results: GastoConsolidadoRow[] = [];
 
       for (const row of rows) {
-        const tipo = String(row.TIPO || '');
-        const tipoOt = String(row.TIPO_OT || '').trim();
-        const descPedido = (row.DESC_OT || '');
-        const fechaProgPedido = row.FECHA_PROG ? new Date(row.FECHA_PROG) : null;
-        const estadoPedido = row.ESTADO_OT;
-        let tipoGasto = '';
-        // Determinamos si es HITO exclusivamente por la descripción
-        const esHitoValue = descPedido.startsWith('HITO') || descPedido.startsWith('(HITO)');
-
-        // Logica para clasificar la categoría (Bodega, Serv. Ext o Correctivo)
-        if (tipo === 'B' && (tipoOt === 'Preventivo' || tipoOt === 'Procedimientos')) {
-          tipoGasto = 'BODEGA';
-        } else if (tipo === 'SER' && (tipoOt === 'Preventivo' || tipoOt === 'Procedimientos')) {
-          tipoGasto = 'SERV_EXT';
-        } else if (tipo === 'B' || tipo === 'SER' || tipo === 'OC') {
-          tipoGasto = 'CORRECTIVO';
+        const mappedData = mapGastoRow(row);
+        if (mappedData) {
+          results.push(mappedData);
         }
-
-        // Si no coincide con ninguna categoría, lo salta
-        if (!tipoGasto) continue;
-
-        // Priorizamos la fecha programada del Pedido (Base)
-        const dTrx = row.FECHA_TRANSACCION ? new Date(row.FECHA_TRANSACCION) : null;
-        const dPro = fechaProgPedido;
-        let alertaFecha = 0;
-
-        if (dTrx && dPro) {
-          if (dTrx.getMonth() !== dPro.getMonth() || dTrx.getFullYear() !== dPro.getFullYear()) {
-            alertaFecha = 1;
-          }
-        }
-
-        // Calcular centro de costo (usamos últimos 6 caracteres)
-        const centroCosto = row.NRO_ACTIVO ? String(row.NRO_ACTIVO).slice(-6) : '';
-
-        results.push({
-          tipo: row.TIPO,
-          planta: row.PLANTA_CALC,
-          claseContable: row.CLASE_CONTABLE_ACTIVO,
-          numeroOt: row.NUMERO_OT,
-          tipoOt: row.TIPO_OT,
-          nroActivo: row.NRO_ACTIVO,
-          descripcionArticulo: row.DESCRIP_ARTICULO,
-          fechaTrx: row.FECHA_TRANSACCION,
-          fechaOtPro: dPro, // Usamos la fecha programada de base si existe
-          costoTrx: row.COSTO_TRX,
-          tipoGasto,
-          centroCosto,
-          anio: row.ANIO_CALC,
-          mes: row.MES_CALC,
-          alertaFecha,
-          descripcionOt: descPedido,
-          estadoTrabajo: estadoPedido,
-          esHito: esHitoValue,
-          mantenible: row.MANTENIBLE_ACTIVO
-        });
       }
       return results;
     });
@@ -472,7 +470,7 @@ export const ControlGastosRepository = {
         const resultSearch = await connection.execute(sqlSearch, { ccPattern: `%(${cc})%` });
         const searchRows = (resultSearch.rows || []) as Record<string, any>[];
 
-        if (searchRows && searchRows.length === 1) {
+        if (searchRows?.length === 1) {
           const newName = searchRows[0].NRO_DE_ACTIVO || searchRows[0][0];
 
           // 3. Actualizar

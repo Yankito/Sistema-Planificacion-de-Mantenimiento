@@ -31,19 +31,19 @@ const parsePeriodo = (val: string) => {
   let month = 0;
 
   if (/^\d{4}$/.test(val)) {
-    year = parseInt(val);
+    year = Number.parseInt(val, 10);
   } else if (/^[A-Z]{3}-\d{2}$/.test(val)) {
     const [m, y] = val.split('-');
-    year = 2000 + parseInt(y);
+    year = 2000 + Number.parseInt(y, 10);
     month = mesesMap[m] ?? 0;
   } else if (/^\d{1,2}\/\d{4}$/.test(val)) {
     const [m, y] = val.split('/');
-    year = parseInt(y);
-    month = parseInt(m);
+    year = Number.parseInt(y, 10);
+    month = Number.parseInt(m, 10);
   } else if (/^\d{4}-\d{1,2}$/.test(val)) {
     const [y, m] = val.split('-');
-    year = parseInt(y);
-    month = parseInt(m);
+    year = Number.parseInt(y, 10);
+    month = Number.parseInt(m, 10);
   }
   return { year, month, isFullYear: month === 0 };
 };
@@ -67,7 +67,7 @@ const getColLetter = (colIndex: number): string => {
   let temp = colIndex + 1;
   while (temp > 0) {
     const mod = (temp - 1) % 26;
-    letter = String.fromCharCode(65 + mod) + letter;
+    letter = String.fromCodePoint(65 + mod) + letter;
     temp = Math.floor((temp - mod) / 26);
   }
   return letter;
@@ -104,6 +104,164 @@ const normalizeDatasetPeriods = (data: OrdenTrabajo[]): OrdenTrabajo[] => {
   });
 };
 
+interface ExcelContext {
+  datasetAct: OrdenTrabajo[];
+  datasetAnt: OrdenTrabajo[];
+  periodosRaw: string[];
+  anioActualInt: number;
+  idxUltimoAnioAnterior: number;
+  disableColorComparison: boolean;
+  letraInicioActual: string;
+  letraFinActual: string;
+  letraTotalSemanaAct: string;
+  letraTotalSemanaAnt: string;
+}
+
+const buildRowTotalRefs = (grupoId: string, suffix: string, rowMap: Map<string, number>, colLetra: string) => {
+  const plantasHijas = DEFINICION_GRUPOS[grupoId as keyof typeof DEFINICION_GRUPOS] || [];
+  return plantasHijas.map(p => rowMap.get(`${p}_${suffix}`)).filter(r => r).map(r => `${colLetra}${r}`).join(",");
+};
+
+const procesarCategoria = (
+  cat: string,
+  grupo: any,
+  esOB: boolean,
+  context: ExcelContext,
+  currentRowIndex: number
+) => {
+  const { datasetAct, datasetAnt, periodosRaw, anioActualInt, idxUltimoAnioAnterior, disableColorComparison, letraInicioActual, letraFinActual, letraTotalSemanaAct, letraTotalSemanaAnt } = context;
+  const filaCat: any[] = [{ v: `   ${cat}`, t: 's', s: { border: BORDER_ALL } }];
+  const plantasTarget = grupo.isAgrupado ? DEFINICION_GRUPOS[grupo.id as keyof typeof DEFINICION_GRUPOS] : grupo.id;
+
+  let catTotalAct = 0;
+  let catTotalAnt = 0;
+
+  for (let cIdx = 0; cIdx < periodosRaw.length; cIdx++) {
+    const per = periodosRaw[cIdx];
+    const cVal = count(datasetAct, plantasTarget, esOB, per, cat);
+    const aVal = count(datasetAnt, plantasTarget, esOB, per, cat);
+    if (parsePeriodo(per).year === anioActualInt) {
+      catTotalAct += cVal;
+      catTotalAnt += aVal;
+    }
+    const extraStyle = (cIdx === idxUltimoAnioAnterior) ? BORDER_BOUNDARY_RIGHT : BORDER_ALL;
+    filaCat.push({ v: cVal, t: 'n', s: getTrafficLightStyle(cVal, aVal, false, extraStyle, disableColorComparison) });
+  }
+
+  const sTotal = getTrafficLightStyle(catTotalAct, catTotalAnt, true, undefined, disableColorComparison);
+  filaCat.push({ t: 'n', f: `SUM(${letraInicioActual}${currentRowIndex}:${letraFinActual}${currentRowIndex})`, v: catTotalAct, s: sTotal });
+  filaCat.push({ v: catTotalAnt, t: 'n', s: { border: BORDER_ALL, alignment: { horizontal: "center" } } });
+  filaCat.push({ t: 'n', f: `${letraTotalSemanaAct}${currentRowIndex}-${letraTotalSemanaAnt}${currentRowIndex}`, v: catTotalAct - catTotalAnt, s: sTotal });
+
+  return filaCat;
+};
+
+const procesarGrupo = (
+  grupo: any,
+  esOB: boolean,
+  context: ExcelContext,
+  rowMap: Map<string, number>,
+  currentRowIndex: number
+) => {
+  const { datasetAct, datasetAnt, periodosRaw, anioActualInt, idxUltimoAnioAnterior, disableColorComparison, letraInicioActual, letraFinActual, letraTotalSemanaAct, letraTotalSemanaAnt } = context;
+  const suffix = esOB ? "OB" : "OM";
+  const suffixDisplay = esOB ? "(OB)" : "(OM)";
+  const rowCells: any[] = [];
+  const matrixRows: any[][] = [];
+
+  let valTotalActActual = 0;
+  let valTotalAntActual = 0;
+
+  rowCells.push({ v: `${grupo.label} ${suffixDisplay}`, t: 's', s: { font: { bold: true }, border: BORDER_ALL, fill: { fgColor: { rgb: "FFFFE0" } } } });
+
+  for (let colIdx = 0; colIdx < periodosRaw.length; colIdx++) {
+    const per = periodosRaw[colIdx];
+    const excelColLetter = getColLetter(colIdx + 1);
+    const plantasTarget = grupo.isAgrupado ? DEFINICION_GRUPOS[grupo.id as keyof typeof DEFINICION_GRUPOS] : grupo.id;
+    const curVal = count(datasetAct, plantasTarget, esOB, per);
+    const antVal = count(datasetAnt, plantasTarget, esOB, per);
+
+    if (parsePeriodo(per).year === anioActualInt) {
+      valTotalActActual += curVal;
+      valTotalAntActual += antVal;
+    }
+
+    const extraStyle = (colIdx === idxUltimoAnioAnterior) ? BORDER_BOUNDARY_RIGHT : BORDER_ALL;
+    const style = getTrafficLightStyle(curVal, antVal, grupo.isAgrupado, extraStyle, disableColorComparison);
+
+    if (colIdx === 0) rowMap.set(`${grupo.id}_${suffix}`, currentRowIndex);
+
+    if (grupo.isAgrupado) {
+      const refs = buildRowTotalRefs(grupo.id, suffix, rowMap, excelColLetter);
+      rowCells.push({ t: 'n', f: refs ? `SUM(${refs})` : undefined, v: curVal, s: style });
+    } else {
+      rowCells.push({ v: curVal, t: 'n', s: style });
+    }
+  }
+
+  const styleTotalAct = getTrafficLightStyle(valTotalActActual, valTotalAntActual, true, undefined, disableColorComparison);
+
+  if (grupo.isAgrupado) {
+    const refs = buildRowTotalRefs(grupo.id, suffix, rowMap, letraTotalSemanaAct);
+    rowCells.push({ t: 'n', f: refs ? `SUM(${refs})` : undefined, v: valTotalActActual, s: styleTotalAct });
+  } else {
+    rowCells.push({ t: 'n', f: `SUM(${letraInicioActual}${currentRowIndex}:${letraFinActual}${currentRowIndex})`, v: valTotalActActual, s: styleTotalAct });
+  }
+
+  rowCells.push({ v: valTotalAntActual, t: 'n', s: { border: BORDER_ALL, alignment: { horizontal: "center" }, font: { bold: true } } });
+  rowCells.push({ t: 'n', f: `${letraTotalSemanaAct}${currentRowIndex}-${letraTotalSemanaAnt}${currentRowIndex}`, v: valTotalActActual - valTotalAntActual, s: styleTotalAct });
+
+  matrixRows.push(rowCells);
+  let nextRowIdx = currentRowIndex + 1;
+
+  for (const cat of CATEGORIAS) {
+    matrixRows.push(procesarCategoria(cat, grupo, esOB, context, nextRowIdx));
+    nextRowIdx++;
+  }
+  matrixRows.push([]); // fila vacia
+
+  return matrixRows;
+};
+
+const generarTablaResumen = (
+  matrix: any[][],
+  rowMap: Map<string, number>,
+  anioAnteriorStr: string,
+  anioActualInt: number,
+  periodosRaw: string[],
+  headersLabels: string[],
+  letraTotalSemanaAct: string
+) => {
+  const colIdxResumen = headersLabels.length + 1;
+  const idxAnioAntCol = periodosRaw.indexOf(anioAnteriorStr);
+  const letraAnt = idxAnioAntCol !== -1 ? getColLetter(idxAnioAntCol + 1) : null;
+
+  const buildRef = (id: string, col: string | null) => col && rowMap.has(id) ? `${col}${rowMap.get(id)}` : "0";
+
+  type ResumenRow = any[] | { label: string; id?: string; fAnt?: string; fAct?: string };
+  const resumenDefs: ResumenRow[] = [
+    [{ v: "RESUMEN PLANTAS", t: 's', s: STYLE_HEADER_MAIN }],
+    [{ v: "Planta", t: 's', s: STYLE_HEADER_MAIN }, { v: anioAnteriorStr, t: 's', s: STYLE_HEADER_MAIN }, { v: anioActualInt.toString(), t: 's', s: STYLE_HEADER_MAIN }],
+    ...["PF1", "PF2", "PF3", "PF4", "PF5", "PF6", "CDT"].map(p => ({ label: p, id: `${p}_OM` })),
+    { label: "OTROS", fAnt: letraAnt ? `SUM(${buildRef('DC_OM', letraAnt)},${buildRef('VENTAS_OM', letraAnt)},${buildRef('OTROS_OM', letraAnt)})` : "0", fAct: `SUM(${buildRef('DC_OM', letraTotalSemanaAct)},${buildRef('VENTAS_OM', letraTotalSemanaAct)},${buildRef('OTROS_OM', letraTotalSemanaAct)})` },
+    { label: "PF OB", id: "PF ALIMENTOS_OB" }
+  ];
+
+  for (let idx = 0; idx < resumenDefs.length; idx++) {
+    const rowDef = resumenDefs[idx];
+    while (matrix[idx].length < colIdxResumen) matrix[idx].push({ v: "", t: "s" });
+    if (Array.isArray(rowDef)) {
+      matrix[idx].push(...rowDef);
+    } else {
+      const fA = (rowDef as any).fAnt || buildRef((rowDef as any).id!, letraAnt);
+      const fH = (rowDef as any).fAct || buildRef((rowDef as any).id!, letraTotalSemanaAct);
+      matrix[idx].push({ v: (rowDef as any).label, t: 's', s: BORDER_ALL }, { t: 'n', f: fA, s: BORDER_ALL }, { t: 'n', f: fH, s: BORDER_ALL });
+    }
+  }
+
+  return colIdxResumen;
+};
+
 // --- FUNCIÓN PRINCIPAL ---
 export const generarExcelReporte = async (
   dataActual: OrdenTrabajo[],
@@ -127,7 +285,7 @@ export const generarExcelReporte = async (
       .filter(p => p !== "S/A" && p !== "S/D")
       .sort(sortPeriods);
 
-    const anioActualInt = parseInt(reporteActual.split('-')[0]);
+    const anioActualInt = Number.parseInt(reporteActual.split('-')[0], 10);
     const anioAnteriorStr = (anioActualInt - 1).toString();
 
     // Identificar frontera de año de forma robusta
@@ -141,6 +299,16 @@ export const generarExcelReporte = async (
     const letraInicioActual = getColLetter(indicesAnioActual[0]);
     const letraFinActual = getColLetter(indicesAnioActual[indicesAnioActual.length - 1]);
 
+    const colIdxTotalSemanaAct = periodosRaw.length + 1;
+    const colIdxTotalSemanaAnt = colIdxTotalSemanaAct + 1;
+    const letraTotalSemanaAct = getColLetter(colIdxTotalSemanaAct);
+    const letraTotalSemanaAnt = getColLetter(colIdxTotalSemanaAnt);
+
+    const context: ExcelContext = {
+      datasetAct, datasetAnt, periodosRaw, anioActualInt, idxUltimoAnioAnterior, disableColorComparison,
+      letraInicioActual, letraFinActual, letraTotalSemanaAct, letraTotalSemanaAnt
+    };
+
     const matrix: any[][] = [
       headersLabels.map((label, idx) => ({
         v: label, t: 's',
@@ -149,7 +317,7 @@ export const generarExcelReporte = async (
     ];
 
     const rowMap = new Map<string, number>();
-    let currentRowIndex = 2;
+    let currentRowIndex = 2; // Inicia en 2 por el header
 
     const ordenGrupos = [
       ...PLANTAS_INDIVIDUALES.map(p => ({ label: p, id: p, isAgrupado: false })),
@@ -157,119 +325,15 @@ export const generarExcelReporte = async (
       { label: "PF ALIMENTOS", id: "PF ALIMENTOS", isAgrupado: true }
     ];
 
-    const colIdxTotalSemanaAct = periodosRaw.length + 1;
-    const colIdxTotalSemanaAnt = colIdxTotalSemanaAct + 1;
-    const letraTotalSemanaAct = getColLetter(colIdxTotalSemanaAct);
-    const letraTotalSemanaAnt = getColLetter(colIdxTotalSemanaAnt);
-
-    [false, true].forEach(esOB => {
-      const suffix = esOB ? "OB" : "OM";
-      const suffixDisplay = esOB ? "(OB)" : "(OM)";
-
-      ordenGrupos.forEach(grupo => {
-        const rowCells: any[] = [];
-        let valTotalActActual = 0;
-        let valTotalAntActual = 0;
-
-        rowCells.push({ v: `${grupo.label} ${suffixDisplay}`, t: 's', s: { font: { bold: true }, border: BORDER_ALL, fill: { fgColor: { rgb: "FFFFE0" } } } });
-
-        periodosRaw.forEach((per, colIdx) => {
-          const excelColLetter = getColLetter(colIdx + 1);
-          const plantasTarget = grupo.isAgrupado ? DEFINICION_GRUPOS[grupo.id as keyof typeof DEFINICION_GRUPOS] : grupo.id;
-          const curVal = count(datasetAct, plantasTarget, esOB, per);
-          const antVal = count(datasetAnt, plantasTarget, esOB, per);
-
-          if (parsePeriodo(per).year === anioActualInt) {
-            valTotalActActual += curVal;
-            valTotalAntActual += antVal;
-          }
-
-          const extraStyle = (colIdx === idxUltimoAnioAnterior) ? BORDER_BOUNDARY_RIGHT : BORDER_ALL;
-          const style = getTrafficLightStyle(curVal, antVal, grupo.isAgrupado, extraStyle, disableColorComparison);
-
-          if (colIdx === 0) rowMap.set(`${grupo.id}_${suffix}`, currentRowIndex);
-
-          if (grupo.isAgrupado) {
-            const plantasHijas = DEFINICION_GRUPOS[grupo.id as keyof typeof DEFINICION_GRUPOS];
-            const refs = plantasHijas.map(p => rowMap.get(`${p}_${suffix}`)).filter(r => r).map(r => `${excelColLetter}${r}`).join(",");
-            rowCells.push({ t: 'n', f: refs ? `SUM(${refs})` : undefined, v: curVal, s: style });
-          } else {
-            rowCells.push({ v: curVal, t: 'n', s: style });
-          }
-        });
-
-        // Totales de fila
-        const styleTotalAct = getTrafficLightStyle(valTotalActActual, valTotalAntActual, true, undefined, disableColorComparison);
-
-        if (grupo.isAgrupado) {
-          const refs = DEFINICION_GRUPOS[grupo.id as keyof typeof DEFINICION_GRUPOS]
-            .map(p => rowMap.get(`${p}_${suffix}`)).filter(r => r).map(r => `${letraTotalSemanaAct}${r}`).join(",");
-          rowCells.push({ t: 'n', f: refs ? `SUM(${refs})` : undefined, v: valTotalActActual, s: styleTotalAct });
-        } else {
-          rowCells.push({ t: 'n', f: `SUM(${letraInicioActual}${currentRowIndex}:${letraFinActual}${currentRowIndex})`, v: valTotalActActual, s: styleTotalAct });
-        }
-
-        rowCells.push({ v: valTotalAntActual, t: 'n', s: { border: BORDER_ALL, alignment: { horizontal: "center" }, font: { bold: true } } });
-        rowCells.push({ t: 'n', f: `${letraTotalSemanaAct}${currentRowIndex}-${letraTotalSemanaAnt}${currentRowIndex}`, v: valTotalActActual - valTotalAntActual, s: styleTotalAct });
-
-        matrix.push(rowCells);
-        currentRowIndex++;
-
-        CATEGORIAS.forEach(cat => {
-          const filaCat: any[] = [{ v: `   ${cat}`, t: 's', s: { border: BORDER_ALL } }];
-          const plantasTarget = grupo.isAgrupado ? DEFINICION_GRUPOS[grupo.id as keyof typeof DEFINICION_GRUPOS] : grupo.id;
-          let catTotalAct = 0;
-          let catTotalAnt = 0;
-
-          periodosRaw.forEach((per, cIdx) => {
-            const cVal = count(datasetAct, plantasTarget, esOB, per, cat);
-            const aVal = count(datasetAnt, plantasTarget, esOB, per, cat);
-            if (parsePeriodo(per).year === anioActualInt) {
-              catTotalAct += cVal;
-              catTotalAnt += aVal;
-            }
-            const extraStyle = (cIdx === idxUltimoAnioAnterior) ? BORDER_BOUNDARY_RIGHT : BORDER_ALL;
-            filaCat.push({ v: cVal, t: 'n', s: getTrafficLightStyle(cVal, aVal, false, extraStyle, disableColorComparison) });
-          });
-
-          filaCat.push({ t: 'n', f: `SUM(${letraInicioActual}${currentRowIndex}:${letraFinActual}${currentRowIndex})`, v: catTotalAct, s: getTrafficLightStyle(catTotalAct, catTotalAnt, true, undefined, disableColorComparison) });
-          filaCat.push({ v: catTotalAnt, t: 'n', s: { border: BORDER_ALL, alignment: { horizontal: "center" } } });
-          filaCat.push({ t: 'n', f: `${letraTotalSemanaAct}${currentRowIndex}-${letraTotalSemanaAnt}${currentRowIndex}`, v: catTotalAct - catTotalAnt, s: getTrafficLightStyle(catTotalAct, catTotalAnt, true, undefined, disableColorComparison) });
-
-          matrix.push(filaCat);
-          currentRowIndex++;
-        });
-        matrix.push([]);
-        currentRowIndex++;
-      });
-    });
-
-    // --- TABLA RESUMEN ---
-    const colIdxResumen = headersLabels.length + 1;
-    const idxAnioAntCol = periodosRaw.indexOf(anioAnteriorStr);
-    const letraAnt = idxAnioAntCol !== -1 ? getColLetter(idxAnioAntCol + 1) : null;
-
-    const buildRef = (id: string, col: string | null) => col && rowMap.has(id) ? `${col}${rowMap.get(id)}` : "0";
-
-    type ResumenRow = any[] | { label: string; id?: string; fAnt?: string; fAct?: string };
-    const resumenDefs: ResumenRow[] = [
-      [{ v: "RESUMEN PLANTAS", t: 's', s: STYLE_HEADER_MAIN }],
-      [{ v: "Planta", t: 's', s: STYLE_HEADER_MAIN }, { v: anioAnteriorStr, t: 's', s: STYLE_HEADER_MAIN }, { v: anioActualInt.toString(), t: 's', s: STYLE_HEADER_MAIN }],
-      ...["PF1", "PF2", "PF3", "PF4", "PF5", "PF6", "CDT"].map(p => ({ label: p, id: `${p}_OM` })),
-      { label: "OTROS", fAnt: letraAnt ? `SUM(${buildRef('DC_OM', letraAnt)},${buildRef('VENTAS_OM', letraAnt)},${buildRef('OTROS_OM', letraAnt)})` : "0", fAct: `SUM(${buildRef('DC_OM', letraTotalSemanaAct)},${buildRef('VENTAS_OM', letraTotalSemanaAct)},${buildRef('OTROS_OM', letraTotalSemanaAct)})` },
-      { label: "PF OB", id: "PF ALIMENTOS_OB" }
-    ];
-
-    resumenDefs.forEach((rowDef, idx) => {
-      while (matrix[idx].length < colIdxResumen) matrix[idx].push({ v: "", t: "s" });
-      if (Array.isArray(rowDef)) {
-        matrix[idx].push(...rowDef);
-      } else {
-        const fA = rowDef.fAnt || buildRef(rowDef.id!, letraAnt);
-        const fH = rowDef.fAct || buildRef(rowDef.id!, letraTotalSemanaAct);
-        matrix[idx].push({ v: rowDef.label, t: 's', s: BORDER_ALL }, { t: 'n', f: fA, s: BORDER_ALL }, { t: 'n', f: fH, s: BORDER_ALL });
+    for (const esOB of [false, true]) {
+      for (const grupo of ordenGrupos) {
+        const rows = procesarGrupo(grupo, esOB, context, rowMap, currentRowIndex);
+        matrix.push(...rows);
+        currentRowIndex += rows.length;
       }
-    });
+    }
+
+    const colIdxResumen = generarTablaResumen(matrix, rowMap, anioAnteriorStr, anioActualInt, periodosRaw, headersLabels, letraTotalSemanaAct);
 
     const ws = XLSX.utils.aoa_to_sheet(matrix);
     ws['!merges'] = [{ s: { r: 0, c: colIdxResumen }, e: { r: 0, c: colIdxResumen + 2 } }];

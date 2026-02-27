@@ -1,11 +1,13 @@
 import { useRef, useEffect } from "react";
 import { HorarioView } from "../components/HorarioView";
-import { Wrench, Zap, Users, Info, Loader2, CalendarDays, FileSpreadsheet, Download } from "lucide-react";
+import { Wrench, Zap, Users, Info, CalendarDays, FileSpreadsheet, Download } from "lucide-react";
 import { usePlanificacionManager } from "../hooks/usePlanificacionManager";
 import { getMonthOptions } from "../../../shared/utils/dateUtils";
 import { usePlantasAcceso } from "../../../shared/hooks/usePlantasAcceso";
 import { confirmDialog } from "../../../shared/utils/confirmDialog";
 import { toast } from "sonner";
+import { MasivoService } from "../../../shared/services/MasivoService";
+import { LoadingOverlay } from "../../../shared/components/ui/LoadingOverlay";
 
 export const HorariosView = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -99,7 +101,8 @@ export const HorariosView = () => {
             <select
               value={periodoSeleccionado}
               onChange={(e) => setPeriodoSeleccionado(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-pf-red/20 transition-all"
+              disabled={cargandoPlan}
+              className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-pf-red/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {mesOpts.map(opt => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -112,7 +115,8 @@ export const HorariosView = () => {
             <select
               value={plantaPlan}
               onChange={(e) => setPlantaPlan(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-pf-red/20 transition-all"
+              disabled={cargandoPlan}
+              className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-pf-red/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {plantas.map((p) => <option key={p} value={p}>{p}</option>)}
             </select>
@@ -123,14 +127,22 @@ export const HorariosView = () => {
             <input type="file" ref={fileInputRef} className="hidden" accept=".xlsx,.xls" onChange={handleUploadHorarios} />
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="bg-purple-600 text-white p-3 rounded-2xl hover:bg-purple-700 transition-all shadow-lg shadow-purple-200 flex items-center justify-center"
+              disabled={cargandoPlan}
+              className="bg-purple-600 text-white p-3 rounded-2xl hover:bg-purple-700 transition-all shadow-lg shadow-purple-200 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
               title="Cargar Horarios"
             >
               <FileSpreadsheet size={20} />
             </button>
             <button
-              onClick={() => window.open('http://localhost:3001/api/masivo/template/horarios', '_blank')}
-              className="bg-white border border-slate-200 text-slate-400 p-3 rounded-2xl hover:text-purple-600 hover:border-purple-200 transition-all flex items-center justify-center"
+              onClick={async () => {
+                try {
+                  await MasivoService.descargarPlantillaHorarios();
+                } catch (e) {
+                  toast.error("Error al descargar: " + (e as Error).message);
+                }
+              }}
+              disabled={cargandoPlan}
+              className="bg-white border border-slate-200 text-slate-400 p-3 rounded-2xl hover:text-purple-600 hover:border-purple-200 transition-all flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
               title="Descargar Plantilla Horarios"
             >
               <Download size={20} />
@@ -164,10 +176,7 @@ export const HorariosView = () => {
       {/* GANTT CHRT */}
       <div className="bg-white rounded-[3rem] border border-pf-border shadow-md overflow-hidden min-h-[400px] relative">
         {cargandoPlan ? (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/60 backdrop-blur-sm z-10 gap-3">
-            <Loader2 size={40} className="text-pf-red animate-spin" />
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Consultando Oracle...</p>
-          </div>
+          <LoadingOverlay message="Consultando Oracle..." />
         ) : horariosResult.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-slate-400 gap-4">
             <CalendarDays size={64} className="opacity-20" />

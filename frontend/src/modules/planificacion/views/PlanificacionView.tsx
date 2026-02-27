@@ -4,12 +4,13 @@ import { necesitaValidacionTurno } from "../utils/planificacionUtils";
 import { Calendario } from "../components/Calendario";
 import { PanelLateral } from "../components/PanelLateral";
 import { ModalAsignacionTecnico } from "../components/ModalAsignacionTecnico";
-import { Loader2, CalendarDays } from "lucide-react";
+import { CalendarDays } from "lucide-react";
 import { usePlanificacionManager } from "../hooks/usePlanificacionManager";
 import { usePlantasAcceso } from "../../../shared/hooks/usePlantasAcceso";
 import { getMonthOptions } from "../../../shared/utils/dateUtils";
 import { toast } from "sonner";
 import type { Tecnico } from "../../../shared/types/index";
+import { LoadingOverlay } from "../../../shared/components/ui/LoadingOverlay";
 
 const BLOQUEOS_SABADO = ['L', 'V', 'LIC', 'LM', 'LP'];
 
@@ -92,7 +93,8 @@ export const PlanificacionView = () => {
             <select
               value={periodoSeleccionado}
               onChange={(e) => setPeriodoSeleccionado(e.target.value)}
-              className="w-full bg-pf-neutral-50 border border-pf-neutral-200 rounded-xl px-4 py-2.5 font-bold text-pf-neutral-700 outline-none focus:border-pf-red/30 transition-all shadow-sm"
+              disabled={cargandoPlan}
+              className="w-full bg-pf-neutral-50 border border-pf-neutral-200 rounded-xl px-4 py-2.5 font-bold text-pf-neutral-700 outline-none focus:border-pf-red/30 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {monthOpts.map(opt => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -107,7 +109,8 @@ export const PlanificacionView = () => {
             <select
               value={plantaPlan}
               onChange={(e) => setPlantaPlan(e.target.value)}
-              className="w-full bg-pf-neutral-50 border border-pf-neutral-200 rounded-xl px-4 py-2.5 font-bold text-pf-neutral-700 outline-none focus:border-pf-red/30 transition-all shadow-sm"
+              disabled={cargandoPlan}
+              className="w-full bg-pf-neutral-50 border border-pf-neutral-200 rounded-xl px-4 py-2.5 font-bold text-pf-neutral-700 outline-none focus:border-pf-red/30 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {plantas.map((p) => <option key={p} value={p}>{p}</option>)}
             </select>
@@ -122,14 +125,16 @@ export const PlanificacionView = () => {
           </div>
           <button
             onClick={() => planning.ejecutarPlanificacion('STRICT', periodoSeleccionado)}
-            className="flex items-center gap-2 px-5 py-2.5 bg-pf-neutral-900 hover:bg-black text-white rounded-xl text-[10px] font-black uppercase transition-all active:scale-95 shadow-lg shadow-pf-neutral-200"
+            disabled={cargandoPlan}
+            className="flex items-center gap-2 px-5 py-2.5 bg-pf-neutral-900 hover:bg-black text-white rounded-xl text-[10px] font-black uppercase transition-all active:scale-95 shadow-lg shadow-pf-neutral-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <CalendarDays size={14} className="text-pf-red" />
             Continuidad Técnico
           </button>
           <button
             onClick={() => planning.ejecutarPlanificacion('BALANCED', periodoSeleccionado)}
-            className="flex items-center gap-2 px-5 py-2.5 bg-white hover:bg-pf-neutral-100 text-pf-neutral-700 border border-pf-neutral-200 rounded-xl text-[10px] font-black uppercase transition-all active:scale-95 shadow-sm"
+            disabled={cargandoPlan}
+            className="flex items-center gap-2 px-5 py-2.5 bg-white hover:bg-pf-neutral-100 text-pf-neutral-700 border border-pf-neutral-200 rounded-xl text-[10px] font-black uppercase transition-all active:scale-95 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <div className="w-2 h-2 rounded-full bg-pf-red animate-pulse" />
             Balanceado
@@ -143,7 +148,8 @@ export const PlanificacionView = () => {
               if (ok) toast.success("Planificación guardada en Oracle");
               else toast.error("Error al guardar la planificación en Oracle.");
             }}
-            className="flex items-center gap-2 px-5 py-2.5 bg-pf-red hover:bg-pf-red-hover text-white rounded-xl text-[10px] font-black uppercase transition-all active:scale-95 shadow-lg shadow-pf-red/20 font-black"
+            disabled={cargandoPlan}
+            className="flex items-center gap-2 px-5 py-2.5 bg-pf-red hover:bg-pf-red-hover text-white rounded-xl text-[10px] font-black uppercase transition-all active:scale-95 shadow-lg shadow-pf-red/20 font-black disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Guardar Plan
           </button>
@@ -152,13 +158,7 @@ export const PlanificacionView = () => {
 
       <div className="flex flex-1 gap-6 relative min-h-0">
         {cargandoPlan && (
-          <div className="absolute inset-0 bg-white/70 z-[200] flex flex-col items-center justify-center rounded-[3rem] gap-4 shadow-2xl transition-all animate-in fade-in duration-300">
-            <div className="relative">
-              <Loader2 className="animate-spin text-pf-red" size={56} />
-              <div className="absolute inset-0 animate-ping opacity-20 bg-pf-red rounded-full" />
-            </div>
-            <p className="text-pf-neutral-600 font-black uppercase tracking-[0.3em] text-[11px] animate-pulse">Sincronizando Oracle</p>
-          </div>
+          <LoadingOverlay message="Sincronizando con Oracle" />
         )}
 
         <div className="flex-1 overflow-y-auto">
@@ -190,7 +190,6 @@ export const PlanificacionView = () => {
             }}
             periodoSeleccionado={periodoSeleccionado}
             mapaHorarios={mapaHorariosActual || new Map()}
-            cargandoPlan={logic.cargandoPlan}
           />
         </div>
 
