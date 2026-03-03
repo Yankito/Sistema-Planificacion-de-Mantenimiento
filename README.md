@@ -76,7 +76,7 @@ Basado en *Feature-Sliced Design* para máxima mantenibilidad.
 
 1.  **Clona el repositorio:**
     ```bash
-    git clone https://github.com/usuario/Sistema-Planificacion-de-Mantenimiento.git
+    git clone https://github.com/yankito/Sistema-Planificacion-de-Mantenimiento.git
     cd Sistema-Planificacion-de-Mantenimiento
     ```
 
