@@ -63,11 +63,6 @@ export const ExecutionMonitor = ({ selectedYear, selectedPlanta, selectedMonth }
                 getPresupuesto(selectedYear, selectedPlanta, undefined, currentMonth),
                 getGastosConsolidados(selectedYear, selectedPlanta, currentMonth)
             ]);
-            for (const trx of realExpenses) {
-                if (trx.nroActivo === "PF Conj Etiqu Foxjet P1 (0177)") {
-                    console.log(trx);
-                }
-            }
 
             const monthlyBudget = budgetData; // Ya viene filtrado por mes desde el backend
             const monthlyReal = realExpenses; // Ya viene filtrado por mes desde el backend

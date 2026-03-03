@@ -275,12 +275,6 @@ export const ControlGastosRepository = {
 
       for (const row of rows) {
         const mappedData = mapGastoRow(row);
-        if (row.NRO_ACTIVO === "PF Conj Etiqu Foxjet P1 (0177)") {
-          console.log(mappedData);
-        }
-        // if (row.NRO_ACTIVO === "PF Eq Apoyo Producc P1 (0240)") {
-        //   console.log(mappedData);
-        // }
         if (mappedData) {
           results.push(mappedData);
         }
