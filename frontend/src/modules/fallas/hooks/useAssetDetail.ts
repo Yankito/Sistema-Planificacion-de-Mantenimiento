@@ -11,7 +11,7 @@ export const useAssetDetail = (data: FallaRow[], assetName: string) => {
   const assetData = useMemo(() => {
     return data
       .filter(d => d.equipo === assetName)
-      .sort((a, b) => b.fecha.getTime() - a.fecha.getTime());
+      .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
   }, [data, assetName]);
 
   // Datos para la Tabla y KPIs (Filtrados si hay selección)

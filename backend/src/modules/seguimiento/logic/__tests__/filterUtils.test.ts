@@ -24,7 +24,7 @@ describe('filterUtils Logic', () => {
 
         // Debería encontrar 1 (OT-300) y descartar OT-100 aunque sea de PF1
         expect(result.filteredData).toHaveLength(1);
-        expect(result.filteredData[0].ot).toBe("OT-300");
+        expect(result.filteredData[0].nroOrden).toBe("OT-300");
     });
 
     it('debe filtrar por búsqueda de texto (Nombre Técnico)', () => {
@@ -39,7 +39,7 @@ describe('filterUtils Logic', () => {
         );
 
         expect(result.filteredData).toHaveLength(1);
-        expect(result.filteredData[0].ot).toBe("OT-100"); // Juan está en la OT-100
+        expect(result.filteredData[0].nroOrden).toBe("OT-100"); // Juan está en la OT-100
     });
 
     it('debe identificar OTs NUEVAS correctamente', () => {
@@ -61,7 +61,7 @@ describe('filterUtils Logic', () => {
         // OT-200 es OB (infra), el filtro viewDetail pide esOB: false -> DESCARTADA
 
         expect(result.filteredData).toHaveLength(1);
-        expect(result.filteredData[0].ot).toBe("OT-300");
+        expect(result.filteredData[0].nroOrden).toBe("OT-300");
     });
 
     it('debe retornar baseDataForStates sin aplicar filtro de texto', () => {
@@ -84,9 +84,9 @@ describe('filterUtils Logic', () => {
     });
     it('debe excluir órdenes que están fuera del periodo seleccionado', () => {
         const dataConVariosPeriodos = [
-            { ot: "OT-ENE", periodo: "ENE-25", planta: "PF1", esOB: false },
-            { ot: "OT-FEB", periodo: "FEB-25", planta: "PF1", esOB: false },
-            { ot: "OT-MAR", periodo: "MAR-25", planta: "PF1", esOB: false }
+            { nroOrden: "OT-ENE", periodo: "ENE-25", planta: "PF1", esOB: false },
+            { nroOrden: "OT-FEB", periodo: "FEB-25", planta: "PF1", esOB: false },
+            { nroOrden: "OT-MAR", periodo: "MAR-25", planta: "PF1", esOB: false }
         ];
 
         const result = filterOrders(
@@ -106,10 +106,10 @@ describe('filterUtils Logic', () => {
 
         // Debería traer solo 1 orden (la de FEB)
         expect(result.filteredData).toHaveLength(1);
-        expect(result.filteredData[0].ot).toBe("OT-FEB");
+        expect(result.filteredData[0].nroOrden).toBe("OT-FEB");
 
         // Las de ENE y MAR deben haber sido excluidas por la lógica
-        const otsResultantes = result.filteredData.map(o => o.ot);
+        const otsResultantes = result.filteredData.map(o => o.nroOrden);
         expect(otsResultantes).not.toContain("OT-ENE");
         expect(otsResultantes).not.toContain("OT-MAR");
     });

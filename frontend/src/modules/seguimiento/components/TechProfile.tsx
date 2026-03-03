@@ -72,7 +72,7 @@ export const TechProfile = ({
         if (timeA !== timeB) {
           return ordenFecha === "ASC" ? timeA - timeB : timeB - timeA;
         }
-        return a.ot.localeCompare(b.ot);
+        return a.nroOrden.localeCompare(b.nroOrden);
       });
     }
 
@@ -250,7 +250,7 @@ export const TechProfile = ({
         {datosPaginados.length > 0 ? (
           datosPaginados.map((item: AtrasoRow, idx: number) => (
             <OTCard
-              key={`${item.ot}-${idx}`}
+              key={`${item.nroOrden}-${idx}`}
               item={item}
               isNew={item.isNew}
               selectedTech={techName}

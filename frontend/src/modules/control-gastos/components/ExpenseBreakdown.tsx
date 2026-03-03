@@ -125,7 +125,7 @@ export const ExpenseBreakdown = ({ selectedYear, selectedPlanta, selectedMonth }
                         <Loader2 className="animate-spin text-pf-red mb-6" size={48} />
                         <div className="absolute inset-0 bg-pf-red opacity-10 animate-ping rounded-full"></div>
                     </div>
-                    <p className="text-pf-neutral-800 font-black uppercase tracking-[0.3em] text-[10px] animate-pulse">Auditando Transacciones...</p>
+                    <p className="text-pf-neutral-800 font-black uppercase tracking-[0.3em] text-[10px] animate-pulse">Cargando Transacciones...</p>
                 </div>
             )}
 

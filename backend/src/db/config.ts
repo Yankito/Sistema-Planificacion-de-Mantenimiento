@@ -4,12 +4,14 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Configuración global para recuperar CLOB como String automáticamente
+// Recuperar campos CLOB como String para facilitar el manejo en JavaScript
 oracledb.fetchAsString = [oracledb.CLOB];
 
-// En una aplicación real, usarías un pool (createPool), pero mantenemos
-// la estructura simple para compatibilidad con el entorno actual.
-
+/**
+ * Ejecuta una sentencia SQL con parámetros opcionales sobre Oracle DB.
+ * Abre y cierra la conexión por cada llamada (sin pool).
+ * Retorna null en caso de error (el error se loguea internamente).
+ */
 export const query = async (
   sql: string,
   params: oracledb.BindParameters = [],
@@ -43,6 +45,11 @@ export const query = async (
   }
 };
 
+/**
+ * Ejecuta una inserción/actualización masiva usando executeMany.
+ * Ideal para cargar grandes volúmenes de datos en Oracle (lotes de registros).
+ * Retorna null en caso de error.
+ */
 export const executeMany = async (
   sql: string,
   binds: Record<string, unknown>[] | unknown[][],
@@ -74,6 +81,11 @@ export const executeMany = async (
   }
 };
 
+/**
+ * Abre una conexión Oracle y la pasa a un callback para ejecutar múltiples operaciones
+ * bajo la misma conexión (evita abrir/cerrar por cada query en operaciones compuestas).
+ * Cierra la conexión automáticamente al terminar. Lanza el error si el callback falla.
+ */
 export const withConnection = async <T>(callback: (conn: oracledb.Connection) => Promise<T>): Promise<T> => {
   let connection;
   try {

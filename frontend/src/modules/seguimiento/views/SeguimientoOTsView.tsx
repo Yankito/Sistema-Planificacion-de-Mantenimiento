@@ -21,6 +21,37 @@ import { usePlantasAcceso } from "../../../shared/hooks/usePlantasAcceso";
 import * as SeguimientoService from "../services/SeguimientoService";
 import { sortPeriods } from "../utils";
 
+/**
+ * Recalcula estadísticas de técnicos (TechStats) a partir de un conjunto de datos filtrado.
+ * Extraído para reducir la profundidad de anidamiento en useMemo.
+ */
+const calculateTechStatsFromDataset = (data: AtrasoRow[]): TechStats[] => {
+  const techMap = new Map<string, TechStats>();
+
+  data.forEach(row => {
+    row.detallesTecnicos?.forEach(det => {
+      const name = det.tecnico.nombre;
+      if (!techMap.has(name)) {
+        techMap.set(name, {
+          nombre: name, totalAsignado: 0, finalizadas: 0, pendientes: 0, efectividad: 0, plantas: []
+        });
+      }
+      const stat = techMap.get(name)!;
+      stat.totalAsignado++;
+      if (det.opFinalizada || row.clasificacion === 'FINALIZADA') stat.finalizadas++;
+      else stat.pendientes++;
+      if (!stat.plantas.includes(row.planta)) stat.plantas.push(row.planta);
+    });
+  });
+
+  return Array.from(techMap.values())
+    .map(s => ({
+      ...s,
+      efectividad: s.totalAsignado > 0 ? Math.round((s.finalizadas / s.totalAsignado) * 100) : 0
+    }))
+    .sort((a, b) => b.totalAsignado - a.totalAsignado);
+};
+
 export const SeguimientoOTsView = () => {
   // Plantas filtradas según acceso del usuario
   const { plantasIndividuales, plantasComplejo, plantasPFAlimentos } = usePlantasAcceso();
@@ -130,10 +161,6 @@ export const SeguimientoOTsView = () => {
   const handleExportarExcelCompleto = async () => {
     if (!reporteActual) return;
     try {
-      console.log("Exportando Excel completo...");
-      console.log("Reporte actual:", reporteActual);
-      console.log("Modo vista:", modoVista);
-      console.log("Semana comparar:", semanaComparar);
       await SeguimientoService.descargarExcel(reporteActual, modoVista, semanaComparar || "", fechaInicio, fechaFin);
     } catch (error) {
       console.error("Error exportando", error);
@@ -174,50 +201,28 @@ export const SeguimientoOTsView = () => {
 
     // 1. Filtrar Flow Stats (Evolución)
     // Conservamos solo los movimientos de OTs que están en el dataset filtrado actual
-    const otsVisibles = new Set(dataDashboard.map(d => d.ot));
+    const otsVisibles = new Set(dataDashboard.map(d => d.nroOrden));
     const filteredFlow: BacklogStats = {
-      nuevas: serverStats.flowStats.nuevas.filter(ot => otsVisibles.has(ot.ot)),
-      finalizadas: serverStats.flowStats.finalizadas.filter(ot => otsVisibles.has(ot.ot)),
-      sinCambios: serverStats.flowStats.sinCambios.filter(ot => otsVisibles.has(ot.ot)),
-      conAvance: serverStats.flowStats.conAvance.filter(ot => otsVisibles.has(ot.ot)),
-      desaparecidas: serverStats.flowStats.desaparecidas.filter(ot => otsVisibles.has(ot.ot)),
+      nuevas: serverStats.flowStats.nuevas.filter(ot => otsVisibles.has(ot.nroOrden)),
+      finalizadas: serverStats.flowStats.finalizadas.filter(ot => otsVisibles.has(ot.nroOrden)),
+      sinCambios: serverStats.flowStats.sinCambios.filter(ot => otsVisibles.has(ot.nroOrden)),
+      conAvance: serverStats.flowStats.conAvance.filter(ot => otsVisibles.has(ot.nroOrden)),
+      desaparecidas: serverStats.flowStats.desaparecidas.filter(ot => otsVisibles.has(ot.nroOrden)),
     };
 
     // 2. Recalcular Tech Stats (Técnicos)
     // Es mucho más preciso recalcularlos desde los datos visibles que filtrar los agregados del servidor
-    const techMap = new Map<string, TechStats>();
-    dataDashboard.forEach(row => {
-      row.detallesTecnicos?.forEach(det => {
-        const name = det.tecnico.nombre;
-        if (!techMap.has(name)) {
-          techMap.set(name, {
-            nombre: name, totalAsignado: 0, finalizadas: 0, pendientes: 0, efectividad: 0, plantas: []
-          });
-        }
-        const stat = techMap.get(name)!;
-        stat.totalAsignado++;
-        if (det.opFinalizada || row.clasificacion === 'FINALIZADA') stat.finalizadas++;
-        else stat.pendientes++;
-        if (!stat.plantas.includes(row.planta)) stat.plantas.push(row.planta);
-      });
-    });
-
-    const filteredTech = Array.from(techMap.values())
-      .map(s => ({
-        ...s,
-        efectividad: s.totalAsignado > 0 ? Math.round((s.finalizadas / s.totalAsignado) * 100) : 0
-      }))
-      .sort((a, b) => b.totalAsignado - a.totalAsignado);
+    const filteredTech = calculateTechStatsFromDataset(dataDashboard);
 
     return { flow: filteredFlow, tech: filteredTech };
   }, [serverStats, dataDashboard, selectedYear, selectedSemana]);
 
   return (
-    <div className="relative p-6 h-full overflow-y-auto bg-pf-neutral-50 flex flex-col gap-4">
+    <div className="relative p-2 h-full overflow-y-auto bg-pf-neutral-50 flex flex-col gap-4">
       {isLoading && <LoadingOverlay message="Procesando datos..." />}
 
       {/* CABECERA PRINCIPAL */}
-      <header className="bg-white p-5 rounded-2xl shadow-sm border border-pf-neutral-200 flex flex-col gap-6">
+      <header className="bg-white p-4 rounded-2xl shadow-sm border border-pf-neutral-200 flex flex-col gap-2">
 
         {/* NIVEL 1: GESTIÓN DE REPORTES */}
         <div className="flex justify-between items-center pb-4 border-b border-pf-neutral-100">
@@ -245,8 +250,8 @@ export const SeguimientoOTsView = () => {
         </div>
 
         {/* NIVEL 2: FILTROS DE FECHA (CALENDARIO Y ATAJOS) */}
-        <div className="flex flex-wrap items-end gap-6 pb-2 border-b border-pf-neutral-50/50">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-end gap-2 border-b border-pf-neutral-50/50">
+          <div className="flex items-center gap-2">
             <div className="flex flex-col gap-1.5">
               <label className="text-[10px] font-black text-pf-neutral-400 uppercase tracking-wider flex items-center gap-1.5">
                 <CalendarIcon size={12} className="text-pf-red" /> Fecha Inicio

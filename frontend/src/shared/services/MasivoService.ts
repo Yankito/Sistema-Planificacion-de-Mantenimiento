@@ -2,12 +2,9 @@ import { API_ENDPOINTS } from "../../shared/api/config";
 import { fetchAuth } from "../../shared/api/fetchAuth";
 
 export const MasivoService = {
-    uploadExcel: async (file: File, targetWeek?: string, mes?: number, anio?: number): Promise<{ counts: Record<string, number> }> => {
+    uploadExcel: async (file: File, mes?: number, anio?: number): Promise<{ counts: Record<string, number> }> => {
         const formData = new FormData();
         formData.append('file', file);
-        if (targetWeek) {
-            formData.append('targetWeek', targetWeek);
-        }
         if (mes) formData.append('mes', String(mes));
         if (anio) formData.append('anio', String(anio));
 

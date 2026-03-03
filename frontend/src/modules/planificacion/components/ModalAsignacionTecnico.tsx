@@ -75,7 +75,7 @@ export const ModalAsignacionTecnico = ({
               );
             })}
 
-            <button onClick={sugerirTecnicosFaltantes} className="ml-auto flex items-center gap-1 text-[10px] font-bold bg-purple-600 hover:bg-purple-500 text-white px-3 py-1.5 rounded-lg transition-colors shadow-lg shadow-purple-900/20">
+            <button onClick={sugerirTecnicosFaltantes} className="ml-auto flex items-center gap-1 text-[10px] font-bold bg-pf-red hover:bg-pf-red/80 text-white px-3 py-1.5 rounded-lg transition-colors shadow-lg shadow-pf-red/20">
               <Wand2 size={12} /> Sugerir Disponibles
             </button>
           </div>

@@ -9,7 +9,8 @@ import type { AtrasoRow } from '../../types';
 describe('ComplianceCard Component', () => {
     const mockData: AtrasoRow[] = [
         {
-            ot: "OT-1",
+            nroOrden: "OT-1",
+            nroActivo: "1",
             planta: "PF1",
             esOB: false,
             clasificacion: "FINALIZADA",
@@ -22,7 +23,8 @@ describe('ComplianceCard Component', () => {
             estado: "Cerrada"
         },
         {
-            ot: "OT-2",
+            nroOrden: "OT-2",
+            nroActivo: "2",
             planta: "PF1",
             esOB: false,
             clasificacion: "OC / OTRO",
@@ -35,7 +37,8 @@ describe('ComplianceCard Component', () => {
             estado: "Pendiente"
         },
         {
-            ot: "OT-3",
+            nroOrden: "OT-3",
+            nroActivo: "3",
             planta: "PF1",
             esOB: false,
             clasificacion: "FINALIZADA",

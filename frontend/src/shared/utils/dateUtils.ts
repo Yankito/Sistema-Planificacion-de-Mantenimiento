@@ -9,8 +9,9 @@ export const fechaFmt = (d: Date | string) => {
 };
 
 // LÓGICA DE SEMANAS
-export const getWeekID = (date: Date): string => {
-  const d = new Date(date.valueOf());
+export const getWeekID = (date: Date | string): string => {
+  const parsed = typeof date === 'string' ? new Date(date) : date;
+  const d = new Date(parsed.valueOf());
   const dayNr = (d.getDay() + 6) % 7;
   d.setDate(d.getDate() - dayNr + 3);
   const firstThursday = d.valueOf();
@@ -26,8 +27,9 @@ export const getWeekID = (date: Date): string => {
 
 
 // Devuelve la descripción visual: "(26 Ene - 01 Feb)"
-export const getWeekRange = (date: Date): string => {
-  const lunes = new Date(date.valueOf());
+export const getWeekRange = (date: Date | string): string => {
+  const parsed = typeof date === 'string' ? new Date(date) : date;
+  const lunes = new Date(parsed.valueOf());
   const diaSemana = (lunes.getDay() + 6) % 7;
   lunes.setDate(lunes.getDate() - diaSemana);
 
@@ -110,8 +112,9 @@ export const getRangeFromWeekID = (weekID: string): string => {
 /**
  * Calcula el número de semana de forma consistente para el proyecto
  */
-export const getWeekNumber = (d: Date): number => {
-  const date = new Date(d.getTime());
+export const getWeekNumber = (d: Date | string): number => {
+  const parsed = typeof d === 'string' ? new Date(d) : d;
+  const date = new Date(parsed.getTime());
   date.setHours(0, 0, 0, 0);
   // Jueves de la semana actual determina el año de la semana
   date.setDate(date.getDate() + 3 - (date.getDay() + 6) % 7);
@@ -131,9 +134,10 @@ export const parseDDMMYYYY = (fechaStr: string): Date | null => {
 /**
  * Genera el label YYYY-SXX para consistencia en DB y filtros
  */
-export const getWeekLabel = (d: Date): string => {
-  const week = getWeekNumber(d);
-  return `${d.getFullYear()}-S${week.toString().padStart(2, '0')}`;
+export const getWeekLabel = (d: Date | string): string => {
+  const parsed = typeof d === 'string' ? new Date(d) : d;
+  const week = getWeekNumber(parsed);
+  return `${parsed.getFullYear()}-S${week.toString().padStart(2, '0')}`;
 };
 
 export const getMonthOptions = () => {

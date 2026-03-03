@@ -1,14 +1,11 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { toast } from "sonner";
 import {
-  esPlantaCompatible,
-  rolesCoinciden,
-  necesitaValidacionTurno
+  estaTecnicoDisponible
 } from "../utils/planificacionUtils";
 import type { PlanResult } from "../types";
 import type { Tecnico } from "../../../shared/types";
 
-const BLOQUEOS_SABADO = ['L', 'V', 'LIC', 'LM', 'LP'];
 
 interface UsePlanificacionProps {
   planResult: PlanResult[];
@@ -24,6 +21,77 @@ interface UsePlanificacionProps {
   setPlanResultSinAsignar?: (data: PlanResult[]) => void;
 }
 
+// --- HELPERS DE APOYO (Fuera del hook para evitar nesting profundo) ---
+
+const buscarCandidatoParaSlot = (
+  slot: Tecnico,
+  ot: PlanResult,
+  yaAsignados: string[],
+  diaIndex: number,
+  esSabado: boolean,
+  listaTecnicos: Tecnico[],
+  mapaHorarios: Map<string, string[]>
+) => {
+  if (slot.nombre !== "VACANTE") return slot;
+
+  const mejorCandidato = listaTecnicos.find((cand) =>
+    estaTecnicoDisponible(
+      cand,
+      slot,
+      ot.planta,
+      yaAsignados,
+      diaIndex,
+      esSabado,
+      mapaHorarios
+    )
+  );
+
+  if (mejorCandidato) {
+    const nombreFinal = mejorCandidato.nombre;
+    yaAsignados.push(nombreFinal.toUpperCase());
+    return { ...slot, nombre: nombreFinal, esSugerido: true };
+  }
+
+  return slot;
+};
+
+/**
+ * Procesa una OT intentando asignar técnicos a sus vacantes.
+ */
+const procesarVacantesOT = (ot: PlanResult, listaTecnicos: Tecnico[], mapaHorarios: Map<string, string[]>) => {
+  const tieneVacantes = ot.tecnicos.some((t) => t.nombre === "VACANTE");
+  if (!tieneVacantes || !ot.fechaSugerida) return { ot, cambios: 0 };
+
+  const [d, m, y] = ot.fechaSugerida.split("/").map(Number);
+  const diaIndex = d - 1;
+  const esSabado = new Date(y, m - 1, d).getDay() === 6;
+
+  // Nombres de técnicos ya asignados en esta OT para no duplicar
+  const yaAsignados = ot.tecnicos
+    .map((t) => t.nombre.toUpperCase())
+    .filter((n) => n !== "VACANTE");
+
+  let cambiosEnOT = 0;
+  const nuevosTecnicos = ot.tecnicos.map((slot) => {
+    const nuevoSlot = buscarCandidatoParaSlot(
+      slot,
+      ot,
+      yaAsignados,
+      diaIndex,
+      esSabado,
+      listaTecnicos,
+      mapaHorarios
+    );
+    if (nuevoSlot !== slot) cambiosEnOT++;
+    return nuevoSlot;
+  });
+
+  return {
+    ot: { ...ot, tecnicos: nuevosTecnicos },
+    cambios: cambiosEnOT,
+  };
+};
+
 export const usePlanificacionLogic = ({
   planResult,
   setPlanResult,
@@ -36,17 +104,19 @@ export const usePlanificacionLogic = ({
   setPlanResultSinAsignar
 }: UsePlanificacionProps) => {
 
-  const [diaSeleccionado, setDiaSeleccionado] = useState<string | null>(null);
+  const [diaSeleccionado, setDiaSeleccionado] = useState<string | null>(fechaSeleccionada);
   const [draggingOT, setDraggingOT] = useState<PlanResult | null>(null);
   const [dragOverDate, setDragOverDate] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [mensajeExito, setMensajeExito] = useState("Planificación Actualizada");
   const [mostrarSoloVacantes, setMostrarSoloVacantes] = useState(false);
 
-  // --- SINCRONIZACIÓN ---
-  useEffect(() => {
-    if (fechaSeleccionada) setDiaSeleccionado(fechaSeleccionada);
-  }, [fechaSeleccionada]);
+  // --- SINCRONIZACIÓN (Ajuste de estado durante el renderizado para evitar cascading renders) ---
+  const [prevFecha, setPrevFecha] = useState(fechaSeleccionada);
+  if (fechaSeleccionada !== prevFecha) {
+    setPrevFecha(fechaSeleccionada);
+    setDiaSeleccionado(fechaSeleccionada);
+  }
 
   // --- ORDENAMIENTO Y AGRUPACIÓN ---
   const ordenesPorDia = useMemo(() => {
@@ -70,63 +140,20 @@ export const usePlanificacionLogic = ({
   }, [planResult, itemsVisualizados]);
 
   // --- ALGORITMO MAGIC WAND ---
-  const handleSugerirTodo = () => {
-    let cambiosRealizados = 0;
 
-    // Convertimos el Map a una lista para iterar
+  const handleSugerirTodo = () => {
+    let totalCambios = 0;
     const listaTecnicos = Array.from(tecnicosMap.values());
 
     const ordenesActualizadas = planResult.map((ot) => {
-      const tieneVacantes = ot.tecnicos.some(t => t.nombre === 'VACANTE');
-      if (!tieneVacantes || !ot.fechaSugerida) return ot;
-
-      const [d, m, y] = ot.fechaSugerida.split('/').map(Number);
-      const diaIndex = d - 1; // Índice para el array de turnos (0-30)
-      const esSabado = new Date(y, m - 1, d).getDay() === 6;
-
-      // Nombres de técnicos ya asignados en esta OT para no duplicar
-      const yaAsignados = ot.tecnicos.map(t => t.nombre.toUpperCase()).filter(n => n !== 'VACANTE');
-
-      const nuevosTecnicos = ot.tecnicos.map((slot) => {
-        if (slot.nombre !== 'VACANTE') return slot;
-
-        // Buscamos el mejor candidato disponible
-        const mejorCandidato = listaTecnicos.find((cand) => {
-          const nombre = (cand.key || cand.nombre).toUpperCase();
-
-          if (yaAsignados.includes(nombre)) return false;
-          if (!rolesCoinciden(slot.rol, cand.rol)) return false;
-          if (!esPlantaCompatible(cand.planta, ot.planta)) return false;
-
-          // Si el rol no requiere validación de turno (ej: Jefaturas), pasa directo
-          if (!necesitaValidacionTurno(cand.rol)) return true;
-
-          const turnos = mapaHorarios.get(nombre);
-          if (!turnos) return false;
-
-          const turnoDia = String(turnos[diaIndex] || "").trim().toUpperCase();
-
-          // Lógica Sábado vs Día de Semana
-          return esSabado
-            ? !BLOQUEOS_SABADO.some(b => turnoDia.startsWith(b))
-            : turnoDia === 'N';
-        });
-
-        if (mejorCandidato) {
-          cambiosRealizados++;
-          const nombreFinal = mejorCandidato.key || mejorCandidato.nombre;
-          yaAsignados.push(nombreFinal);
-          return { ...slot, nombre: nombreFinal, esSugerido: true };
-        }
-        return slot;
-      });
-
-      return { ...ot, tecnicos: nuevosTecnicos };
+      const { ot: otProcesada, cambios } = procesarVacantesOT(ot, listaTecnicos, mapaHorarios);
+      totalCambios += cambios;
+      return otProcesada;
     });
 
-    if (cambiosRealizados > 0) {
+    if (totalCambios > 0) {
       setPlanResult(ordenesActualizadas);
-      setMensajeExito(`Se asignaron ${cambiosRealizados} técnicos automáticamente`);
+      setMensajeExito(`Se asignaron ${totalCambios} técnicos automáticamente`);
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
     } else {

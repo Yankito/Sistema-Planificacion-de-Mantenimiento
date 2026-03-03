@@ -72,7 +72,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const timeUntilWarning = timeUntilExpiry - WARNING_BEFORE_MS;
     if (timeUntilWarning > 0) {
       warningTimerRef.current = setTimeout(() => {
-        console.warn('⚠️ La sesión expirará en 5 minutos');
+        console.warn('La sesión expirará en 5 minutos');
         toast.warning('Tu sesión expirará en 5 minutos. Guarda tu trabajo.');
       }, timeUntilWarning);
     }

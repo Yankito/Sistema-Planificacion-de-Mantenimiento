@@ -38,7 +38,7 @@ describe('EamRepository', () => {
 
   describe('insertarActivos', () => {
     it('debe llamar a executeMany con los datos mapeados', async () => {
-      const mockItems = [{ nro_de_activo: 'ACT1', planta: 'P1' }];
+      const mockItems = [{ nro_de_activo: 'ACT1', planta: 'P1', activo: 'ACT1', clase_contable: 'CL1', organizacion: 'ORG1' }];
       vi.mocked(dbConfig.executeMany).mockResolvedValue({ rowsAffected: 1 } as any);
 
       await EamRepository.insertarActivos(mockItems);

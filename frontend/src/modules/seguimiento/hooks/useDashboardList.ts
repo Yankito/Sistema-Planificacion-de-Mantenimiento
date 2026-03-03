@@ -3,6 +3,28 @@ import type { BacklogStats, TechStats, OTFlowResult } from "../types";
 
 type DashboardItem = OTFlowResult | TechStats;
 
+/**
+ * Helper para filtrar items del dashboard sin anidamiento excesivo.
+ */
+const filterDashboardItem = (item: DashboardItem, filterPlanta: string, searchTerm: string): boolean => {
+  // 1. Filtro por Planta
+  const matchPlanta = filterPlanta === "TODAS" || (
+    "plantas" in item
+      ? (item as TechStats).plantas.includes(filterPlanta)
+      : (item as OTFlowResult).planta === filterPlanta
+  );
+
+  // 2. Filtro por Búsqueda
+  const term = searchTerm.toLowerCase();
+  if (!term) return matchPlanta;
+
+  const matchSearch = "nroOrden" in item
+    ? (item.nroOrden.toLowerCase().includes(term) || item.descripcion.toLowerCase().includes(term))
+    : (item as TechStats).nombre.toLowerCase().includes(term);
+
+  return matchPlanta && matchSearch;
+};
+
 export const useDashboardList = (
   flowStats: BacklogStats | null,
   techStats: TechStats[] | null,
@@ -30,25 +52,8 @@ export const useDashboardList = (
       list = [...techStats];
     }
 
-    // 1. Filtrado
-    const filtered = list.filter((item) => {
-      // Filtro por Planta
-      const matchPlanta = filterPlanta === "TODAS" || (
-        "plantas" in item
-          ? (item as TechStats).plantas.includes(filterPlanta)
-          : (item as OTFlowResult).planta === filterPlanta
-      );
-
-      // Filtro por Búsqueda
-      const term = searchTerm.toLowerCase();
-      if (!term) return matchPlanta;
-
-      const matchSearch = "ot" in item
-        ? (item.ot.toLowerCase().includes(term) || item.descripcion.toLowerCase().includes(term))
-        : (item as TechStats).nombre.toLowerCase().includes(term);
-
-      return matchPlanta && matchSearch;
-    });
+    // 1. Filtrado (Depth 3)
+    const filtered = list.filter((item) => filterDashboardItem(item, filterPlanta, searchTerm));
 
     // 2. Ordenado (Solo para Técnicos si hay configuración)
     if (activeTab === "TECNICOS" && sortConfig) {

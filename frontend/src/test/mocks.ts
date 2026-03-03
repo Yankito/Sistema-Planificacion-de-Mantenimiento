@@ -4,7 +4,8 @@ import type { AtrasoRow } from "../modules/seguimiento/types";
 export const MOCK_DATA: AtrasoRow[] = [
   {
     planta: "PF1",
-    ot: "OT-100",
+    nroOrden: "OT-100",
+    nroActivo: "1",
     descripcion: "Falla bomba",
     estado: "EN PROCESO",
     clasificacion: "TECNICO / SERVICIO",
@@ -15,7 +16,8 @@ export const MOCK_DATA: AtrasoRow[] = [
   },
   {
     planta: "PF2",
-    ot: "OT-200",
+    nroOrden: "OT-200",
+    nroActivo: "2",
     descripcion: "Reparación techo",
     estado: "PENDIENTE",
     clasificacion: "OC / OTRO",
@@ -26,7 +28,8 @@ export const MOCK_DATA: AtrasoRow[] = [
   },
   {
     planta: "PF1",
-    ot: "OT-300",
+    nroOrden: "OT-300",
+    nroActivo: "3",
     descripcion: "Ajuste sensor",
     estado: "EN PROCESO",
     clasificacion: "PROGRAMADOR",
@@ -39,7 +42,8 @@ export const MOCK_DATA: AtrasoRow[] = [
 
 export const MOCK_SEGUIMIENTO_DATA: AtrasoRow[] = [
   {
-    ot: '100',
+    nroOrden: '100',
+    nroActivo: '1',
     planta: 'PF1',
     estado: 'Pendiente',
     esOB: false,
@@ -50,7 +54,8 @@ export const MOCK_SEGUIMIENTO_DATA: AtrasoRow[] = [
     detallesTecnicos: [{ tecnico: { nombre: 'JUAN', rol: 'M', planta: 'PF1' }, opFinalizada: false }]
   },
   {
-    ot: '101',
+    nroOrden: '101',
+    nroActivo: '2',
     planta: 'PF1',
     estado: 'En Proceso',
     esOB: false,
@@ -61,7 +66,8 @@ export const MOCK_SEGUIMIENTO_DATA: AtrasoRow[] = [
     detallesTecnicos: [{ tecnico: { nombre: 'JUAN', rol: 'M', planta: 'PF1' }, opFinalizada: true }]
   },
   {
-    ot: '102',
+    nroOrden: '102',
+    nroActivo: '3',
     planta: 'PF2',
     estado: 'Pendiente',
     esOB: false,

@@ -7,14 +7,15 @@ import * as AuthService from '../../auth/services/AuthService';
 import type { DashboardIndicadores } from '../../auth/types';
 import {
   Factory, Users, AlertTriangle, Wrench, BarChart2,
-  ClipboardList, Clock, TrendingUp, ArrowRight, Building2, Lock,
+  ClipboardList, Clock, TrendingUp, ArrowRight, Lock,
   type LucideIcon
 } from 'lucide-react';
 import { FileUploader, type FileType, type UploadEvent } from '../../../shared/components/FileUploader';
-import { getWeekOptions } from '../../../shared/utils/dateUtils';
 import { usePlanificacionManager } from '../../planificacion/hooks/usePlanificacionManager';
 import { useSeguimientoData } from '../../seguimiento/hooks/useSeguimientoData';
 import { useFallasManager } from '../../fallas/hooks/useFallasManager';
+import { MasivoService } from '../../../shared/services/MasivoService';
+
 
 const PERMISOS_MODULOS: Record<string, string[]> = {
   programador: ['planificacion', 'gastos', 'seguimiento-planta'],
@@ -34,7 +35,6 @@ export const DashboardView = ({ setActiveTab }: DashboardViewProps) => {
 
   const [indicadores, setIndicadores] = useState<DashboardIndicadores | null>(null);
   const [loading, setLoading] = useState(true);
-  const [targetUploadWeek, setTargetUploadWeek] = useState(getWeekOptions().default);
   const [highlightedModule] = useState<FileType | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -66,8 +66,7 @@ export const DashboardView = ({ setActiveTab }: DashboardViewProps) => {
     setIsProcessing(true);
     try {
       if (tipo === 'MASIVO') {
-        const { MasivoService } = await import('../../../shared/services/MasivoService');
-        const res = await MasivoService.uploadExcel(file, targetUploadWeek, extraData?.mes, extraData?.anio);
+        const res = await MasivoService.uploadExcel(file, extraData?.mes, extraData?.anio);
         toast.success(
           <div className="flex flex-col gap-1">
             <span className="font-bold">Carga Masiva Exitosa:</span>
@@ -118,55 +117,113 @@ export const DashboardView = ({ setActiveTab }: DashboardViewProps) => {
         </div>
       </div>
 
-      {/* INDICADORES GENERALES */}
+      {/* INDICADORES GENERALES - RESUMIDOS */}
       {loading ? (
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="bg-white rounded-2xl border border-slate-100 p-6 animate-pulse">
-              <div className="h-4 bg-slate-100 rounded w-20 mb-3" />
-              <div className="h-8 bg-slate-100 rounded w-16" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="bg-white rounded-2xl border border-slate-100 p-4 animate-pulse">
+              <div className="h-3 bg-slate-100 rounded w-16 mb-2" />
+              <div className="h-6 bg-slate-100 rounded w-12" />
             </div>
           ))}
         </div>
       ) : contadores && (
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-          <IndicadorCard
-            icon={Wrench}
-            label="Órdenes de Trabajo"
-            value={contadores.totalOTs}
-            color="text-blue-600"
-            bgColor="bg-blue-50"
-          />
-          <IndicadorCard
-            icon={Users}
-            label="Técnicos Activos"
-            value={contadores.totalTecnicos}
-            color="text-green-600"
-            bgColor="bg-green-50"
-          />
-          <IndicadorCard
-            icon={AlertTriangle}
-            label="Fallas Registradas"
-            value={contadores.totalFallas}
-            color="text-amber-600"
-            bgColor="bg-amber-50"
-          />
-          <IndicadorCard
-            icon={Factory}
-            label="Activos Registrados"
-            value={contadores.totalActivos}
-            color="text-purple-600"
-            bgColor="bg-purple-50"
-          />
-          <IndicadorCard
-            icon={Building2}
-            label="Plantas Activas"
-            value={contadores.plantasActivas}
-            color="text-pf-red"
-            bgColor="bg-red-50"
-          />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <IndicadorCardMini icon={Wrench} label="OTs en Planta" value={contadores.totalOTs} color="text-blue-600" bgColor="bg-blue-50" />
+          <IndicadorCardMini icon={Users} label="Técnicos" value={contadores.totalTecnicos} color="text-green-600" bgColor="bg-green-50" />
+          <IndicadorCardMini icon={AlertTriangle} label="Fallas" value={contadores.totalFallas} color="text-amber-600" bgColor="bg-amber-50" />
+          <IndicadorCardMini icon={Factory} label="Activos" value={contadores.totalActivos} color="text-purple-600" bgColor="bg-purple-50" />
         </div>
       )}
+
+      {/* ACTIVIDAD RECIENTE - EL CORE DE LA VISTA */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* ÚLTIMAS FALLAS REGISTRADAS */}
+        <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden flex flex-col">
+          <div className="p-6 border-b border-slate-50 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-amber-50 rounded-xl text-amber-500">
+                <AlertTriangle size={20} />
+              </div>
+              <div>
+                <h3 className="text-sm font-black text-slate-800 uppercase tracking-tighter">Últimas Fallas</h3>
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">En tus plantas asignadas</p>
+              </div>
+            </div>
+            <button onClick={() => setActiveTab('fallas')} className="text-[10px] font-black text-pf-red hover:underline uppercase">Ver todas</button>
+          </div>
+          <div className="flex-1">
+            {indicadores?.ultimasFallas && indicadores.ultimasFallas.length > 0 ? (
+              <div className="divide-y divide-slate-50">
+                {indicadores.ultimasFallas.map((f, i) => (
+                  <div key={i} className="p-4 hover:bg-slate-50 transition-colors flex items-center gap-4 group">
+                    <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-amber-100 group-hover:text-amber-600 transition-colors shrink-0">
+                      <span className="text-[10px] font-black">{f.PLANTA}</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-black text-slate-700 truncate">{f.EQUIPO}</p>
+                      <p className="text-[10px] text-slate-400 font-medium truncate italic">"{f.CAUSA}"</p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="text-[10px] font-black text-slate-600">{f.DURACION_MINUTOS} min</p>
+                      <p className="text-[9px] text-slate-400">{new Date(f.FECHA).toLocaleDateString()}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="p-12 text-center text-slate-300">
+                <p className="text-xs font-medium italic">Sin fallas recientes en el sistema</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ÚLTIMAS ÓRDENES DE TRABAJO */}
+        <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden flex flex-col">
+          <div className="p-6 border-b border-slate-50 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-blue-50 rounded-xl text-blue-500">
+                <ClipboardList size={20} />
+              </div>
+              <div>
+                <h3 className="text-sm font-black text-slate-800 uppercase tracking-tighter">Trabajos Recientes</h3>
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Nuevas cargas y asignaciones</p>
+              </div>
+            </div>
+            <button onClick={() => setActiveTab('atrasos')} className="text-[10px] font-black text-blue-600 hover:underline uppercase">Ver OTs</button>
+          </div>
+          <div className="flex-1">
+            {indicadores?.ultimasOTs && indicadores.ultimasOTs.length > 0 ? (
+              <div className="divide-y divide-slate-50">
+                {indicadores.ultimasOTs.map((ot, i) => (
+                  <div key={i} className="p-4 hover:bg-slate-50 transition-colors flex items-center gap-4 group">
+                    <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-blue-100 group-hover:text-blue-600 transition-colors shrink-0">
+                      <span className="text-[10px] font-black">{ot.PLANTA || 'S/P'}</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-black text-slate-700 truncate">OT {ot.ID}</p>
+                      <p className="text-[10px] text-slate-400 font-medium truncate">{ot.DESCRIPCION}</p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <span className={`text-[8px] font-black px-2 py-0.5 rounded-full uppercase ${ot.ESTADO === 'LIBERADA' ? 'bg-green-100 text-green-600' :
+                        ot.ESTADO === 'ABIERT' ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-500'
+                        }`}>
+                        {ot.ESTADO}
+                      </span>
+                      <p className="text-[9px] text-slate-400 mt-1">{new Date(ot.FECHA).toLocaleDateString()}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="p-12 text-center text-slate-300">
+                <p className="text-xs font-medium italic">Sin actividad de órdenes reciente</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
 
       {/* MÓDULOS RÁPIDOS */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -175,75 +232,69 @@ export const DashboardView = ({ setActiveTab }: DashboardViewProps) => {
           <ModuloCard
             icon={ClipboardList}
             title="Planificación"
-            desc="Gestión de OTs, horarios y asignaciones técnicas de tus plantas."
+            desc="Carga de OTs y gestión de horarios técnicos."
             color="text-pf-red"
             bgColor="bg-pf-red/10"
             onClick={() => setActiveTab('planificacion')}
           />
         ) : (
-          <ModuloCardLocked title="Planificación" desc="Sin acceso según tu rol actual." />
+          <ModuloCardLocked title="Planificación" desc="Sin acceso prioritario." />
         )}
 
         {/* SEGUIMIENTO KPI - Analistas ven global, Programadores ven su planta */}
         {(tieneAcceso('seguimiento-global') || tieneAcceso('seguimiento-planta')) ? (
           <ModuloCard
             icon={BarChart2}
-            title="Seguimiento / KPI"
-            desc={tieneAcceso('seguimiento-global')
-              ? 'Visión global de todas las plantas.'
-              : 'Seguimiento operativo de tus plantas asignadas.'
-            }
+            title="KPI / Seguimiento"
+            desc="Gestión de atrasos y cumplimiento operativo."
             color="text-blue-600"
             bgColor="bg-blue-50"
             onClick={() => setActiveTab('atrasos')}
           />
         ) : (
-          <ModuloCardLocked title="Seguimiento / KPI" desc="Sin acceso según tu rol actual." />
+          <ModuloCardLocked title="Seguimiento / KPI" desc="Sin acceso prioritario." />
         )}
 
         {/* FALLAS - Solo analistas y supervisores */}
         {tieneAcceso('fallas') ? (
           <ModuloCard
             icon={AlertTriangle}
-            title="Fallas y Análisis"
-            desc="Acceso completo al módulo de fallas y análisis de activos."
+            title="Fallas de Activos"
+            desc="Análisis de MTBF/MTTR y avisos técnicos."
             color="text-amber-500"
             bgColor="bg-amber-50"
             onClick={() => setActiveTab('fallas')}
           />
         ) : (
-          <ModuloCardLocked title="Fallas y Análisis" desc="Sin acceso según tu rol actual." />
+          <ModuloCardLocked title="Fallas de Activos" desc="Sin acceso prioritario." />
         )}
       </div>
 
-      {/* FILA 2: GASTOS + DISTRIBUCIÓN */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      {/* FILA 3: GASTOS + DISTRIBUCIÓN */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* CONTROL DE GASTOS */}
         {(tieneAcceso('gastos') || tieneAcceso('gastos-consolidado')) ? (
           <ModuloCard
             icon={TrendingUp}
-            title="Control de Gastos"
-            desc={tieneAcceso('gastos')
-              ? 'Carga y gestión del presupuesto mensual.'
-              : 'Visualización del estado presupuestario consolidado.'
-            }
+            title="Control Presupuestario"
+            desc="Seguimiento de costos y presupuesto mensual."
             color="text-emerald-600"
             bgColor="bg-emerald-50"
             onClick={() => setActiveTab('gastos')}
           />
         ) : (
-          <ModuloCardLocked title="Control de Gastos" desc="Sin acceso según tu rol actual." />
+          <ModuloCardLocked title="Gastos" desc="Sin acceso prioritario." />
         )}
 
         {/* DISTRIBUCIÓN POR PLANTA */}
         {indicadores && indicadores.tecnicosPorPlanta.length > 0 && (
-          <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-6 hover:shadow-md transition-all">
+          <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-6">
             <div className="flex items-center gap-2 mb-4">
               <div className="p-2 bg-slate-100 rounded-xl">
-                <Users size={18} className="text-slate-500" />
+                <Users size={16} className="text-slate-500" />
               </div>
               <h3 className="text-sm font-black text-slate-800 uppercase tracking-tighter">
-                Técnicos por Planta
+                Distribución por Planta
               </h3>
             </div>
             <div className="space-y-2">
@@ -252,16 +303,16 @@ export const DashboardView = ({ setActiveTab }: DashboardViewProps) => {
                 const pct = maxVal > 0 ? (item.CANTIDAD / maxVal) * 100 : 0;
                 return (
                   <div key={item.PLANTA} className="flex items-center gap-3">
-                    <span className="text-[10px] font-black text-slate-500 uppercase w-12 text-right">
+                    <span className="text-[10px] font-black text-slate-500 uppercase w-12 text-right shrink-0">
                       {item.PLANTA}
                     </span>
-                    <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                    <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
                       <div
                         className="h-full bg-gradient-to-r from-blue-500 to-blue-400 rounded-full transition-all duration-1000"
                         style={{ width: `${pct}%` }}
                       />
                     </div>
-                    <span className="text-xs font-black text-slate-700 w-8 text-right">
+                    <span className="text-[10px] font-black text-slate-700 w-8 text-right">
                       {item.CANTIDAD}
                     </span>
                   </div>
@@ -304,7 +355,7 @@ export const DashboardView = ({ setActiveTab }: DashboardViewProps) => {
         </div>
       )}
 
-      {/* FILE UPLOADER - Solo para programadores y supervisores */}
+      {/* FILE UPLOADER - Solo debug */}
       {(tieneAcceso('planificacion')) && (
         <FileUploader
           onFileUpload={handleFileProcess}
@@ -315,9 +366,6 @@ export const DashboardView = ({ setActiveTab }: DashboardViewProps) => {
             fallas: fallas.data.length > 0
           }}
           highlightedModule={highlightedModule}
-          targetWeek={targetUploadWeek}
-          setTargetWeek={setTargetUploadWeek}
-          weekOptions={getWeekOptions().options}
         />
       )}
     </div>
@@ -326,17 +374,19 @@ export const DashboardView = ({ setActiveTab }: DashboardViewProps) => {
 
 // ===== COMPONENTES AUXILIARES =====
 
-const IndicadorCard = ({ icon: Icon, label, value, color, bgColor }: {
+const IndicadorCardMini = ({ icon: Icon, label, value, color, bgColor }: {
   icon: LucideIcon; label: string; value: number; color: string; bgColor: string;
 }) => (
-  <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 hover:shadow-md transition-all group">
-    <div className="flex items-center gap-3 mb-3">
-      <div className={`p-2 ${bgColor} rounded-xl group-hover:scale-110 transition-transform`}>
-        <Icon size={18} className={color} />
+  <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 hover:shadow-md transition-all group">
+    <div className="flex items-center gap-3">
+      <div className={`p-2 ${bgColor} rounded-xl group-hover:scale-110 transition-transform shrink-0`}>
+        <Icon size={16} className={color} />
+      </div>
+      <div className="min-w-0">
+        <span className="block text-[9px] font-black text-slate-400 uppercase tracking-wider truncate">{label}</span>
+        <span className={`block text-xl font-black ${color} leading-none mt-0.5`}>{value.toLocaleString()}</span>
       </div>
     </div>
-    <span className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">{label}</span>
-    <span className={`block text-3xl font-black ${color} mt-1`}>{value.toLocaleString()}</span>
   </div>
 );
 

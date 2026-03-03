@@ -3,8 +3,12 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import jwt from 'jsonwebtoken';
-import { authMiddleware, plantaMiddleware, generateToken, verificarAccesoPlanta, JWT_SECRET } from '../auth.js';
+import { authMiddleware, plantaMiddleware, generateToken, verificarAccesoPlanta } from '../auth.js';
 import type { Request, Response, NextFunction } from 'express';
+
+// Definir secret para los tests
+const JWT_SECRET = 'test-secret-key-123';
+process.env.JWT_SECRET = JWT_SECRET;
 
 // Helper para crear mocks de Express
 const createMockReqRes = (overrides: Partial<Request> = {}) => {
@@ -84,7 +88,6 @@ describe('authMiddleware', () => {
 
   it('debería retornar 401 si el token ha expirado', () => {
     // Crear un token que ya expiró
-    console.log(JWT_SECRET);
     const expiredToken = jwt.sign(
       { usuario: 'test', roles: ['programador'], plantas: ['PF1'], nombreCompleto: 'Test' },
       JWT_SECRET!,

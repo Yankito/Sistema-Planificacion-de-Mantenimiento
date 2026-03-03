@@ -64,9 +64,9 @@ export const EvolutionGroup = ({ title, data, color, icon: Icon, sublabel }: Evo
             </thead>
             <tbody className="divide-y divide-pf-neutral-100">
               {data.map((row) => (
-                <tr key={row.ot} className="hover:bg-white transition-colors">
+                <tr key={row.nroOrden} className="hover:bg-white transition-colors">
                   <td className="px-3 py-2 font-black text-pf-neutral-700 text-[10px] uppercase w-16">{row.planta}</td>
-                  <td className="px-3 py-2 font-mono text-pf-neutral-500 w-24">{row.ot}</td>
+                  <td className="px-3 py-2 font-mono text-pf-neutral-500 w-24">{row.nroOrden}</td>
                   <td className="px-3 py-2 text-pf-neutral-600">
                     <div className="flex flex-col">
                       <span className="truncate max-w-[200px] font-bold text-pf-neutral-800">{row.descripcion}</span>

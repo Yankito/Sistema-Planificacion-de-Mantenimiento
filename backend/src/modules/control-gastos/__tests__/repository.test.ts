@@ -2,7 +2,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ControlGastosRepository } from '../repository.js';
 import * as dbConfig from '../../../db/config.js';
-import type { PresupuestoRow } from '../repository.js';
+import type { PresupuestoRow } from '../../../shared/types/index.js';
 
 vi.mock('../../../db/config.js', () => ({
     withConnection: vi.fn(async (callback) => {
@@ -32,7 +32,7 @@ describe('ControlGastosRepository', () => {
                     TIPO_OT: 'Preventivo',
                     NRO_ACTIVO: 'ACT-001 (10001)',
                     DESCRIP_ARTICULO: 'Rodamiento',
-                    FECHA_TRANSACCION: new Date(2026, 1, 15),
+                    FECHA_TRANSACCION: new Date(2026, 2, 15),
                     COSTO_TRX: 1000,
                     DESC_OT: 'Mantenimiento Preventivo',
                     FECHA_PROG: new Date(2026, 1, 15),

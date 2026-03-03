@@ -11,10 +11,8 @@ export const useControlGastos = () => {
   const uploadPresupuesto = useCallback(async (file: File) => {
     // Para acciones iniciadas por el usuario (click), no es estrictamente necesario diferir,
     // pero lo hacemos por consistencia.
-    Promise.resolve().then(() => {
-      setLoadingCount(prev => prev + 1);
-      setError(null);
-    });
+    setLoadingCount(prev => prev + 1);
+    setError(null);
     try {
       return await ControlGastosService.uploadPresupuesto(file);
     } catch (err) {
@@ -27,10 +25,8 @@ export const useControlGastos = () => {
   }, []);
 
   const getPresupuesto = useCallback(async (anio: number, planta?: string, activo?: string, mes?: number, silent: boolean = false) => {
-    Promise.resolve().then(() => {
-      if (!silent) setLoadingCount(prev => prev + 1);
-      setError(null);
-    });
+    if (!silent) setLoadingCount(prev => prev + 1);
+    setError(null);
     try {
       return await ControlGastosService.getPresupuesto(anio, planta, activo, mes);
     } catch (err) {
@@ -43,10 +39,8 @@ export const useControlGastos = () => {
   }, []);
 
   const getGastosConsolidados = useCallback(async (anio: number, planta?: string, mes?: number, silent: boolean = false) => {
-    Promise.resolve().then(() => {
-      if (!silent) setLoadingCount(prev => prev + 1);
-      setError(null);
-    });
+    if (!silent) setLoadingCount(prev => prev + 1);
+    setError(null);
     try {
       return await ControlGastosService.getGastosConsolidados(anio, planta, mes);
     } catch (err) {
@@ -58,10 +52,8 @@ export const useControlGastos = () => {
   }, []);
 
   const searchAssetsByCentroCosto = useCallback(async (cc: string) => {
-    Promise.resolve().then(() => {
-      setLoadingCount(prev => prev + 1);
-      setError(null);
-    });
+    setLoadingCount(prev => prev + 1);
+    setError(null);
     try {
       return await ControlGastosService.searchAssetsByCentroCosto(cc);
     } finally {
@@ -70,10 +62,8 @@ export const useControlGastos = () => {
   }, []);
 
   const updateAssetName = useCallback(async (oldName: string, newName: string, anio: number) => {
-    Promise.resolve().then(() => {
-      setLoadingCount(prev => prev + 1);
-      setError(null);
-    });
+    setLoadingCount(prev => prev + 1);
+    setError(null);
     try {
       return await ControlGastosService.updateAssetName(oldName, newName, anio);
     } finally {
@@ -82,10 +72,8 @@ export const useControlGastos = () => {
   }, []);
 
   const autoFixAssets = useCallback(async (anio: number) => {
-    Promise.resolve().then(() => {
-      setLoadingCount(prev => prev + 1);
-      setError(null);
-    });
+    setLoadingCount(prev => prev + 1);
+    setError(null);
     try {
       return await ControlGastosService.autoFixAssets(anio);
     } finally {
@@ -94,10 +82,8 @@ export const useControlGastos = () => {
   }, []);
 
   const getMaintainableAssets = useCallback(async (search?: string, silent: boolean = false) => {
-    Promise.resolve().then(() => {
-      if (!silent) setLoadingCount(prev => prev + 1);
-      setError(null);
-    });
+    if (!silent) setLoadingCount(prev => prev + 1);
+    setError(null);
     try {
       return await ControlGastosService.getMaintainableAssets(search);
     } finally {
@@ -106,10 +92,8 @@ export const useControlGastos = () => {
   }, []);
 
   const saveManualPresupuesto = useCallback(async (rows: PresupuestoRow[]) => {
-    Promise.resolve().then(() => {
-      setLoadingCount(prev => prev + 1);
-      setError(null);
-    });
+    setLoadingCount(prev => prev + 1);
+    setError(null);
     try {
       await ControlGastosService.saveManualPresupuesto(rows);
     } finally {

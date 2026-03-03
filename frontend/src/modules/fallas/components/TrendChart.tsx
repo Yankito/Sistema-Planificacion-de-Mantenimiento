@@ -98,13 +98,30 @@ export const TrendChart = ({ timelineStats, timelineStatsPrev, showComparison, s
     return data;
   }, [timelineStats, totalWeeks]);
 
+  // Mapa de datos anteriores para evitar find anidado (Reduce profundidad de 5 a 3)
+  const prevDataMap = useMemo(() => {
+    const map = new Map<number, number>();
+    if (showComparison && timelineStatsPrev) {
+      timelineStatsPrev.chartData.forEach(p => map.set(p.semana, p.count));
+    }
+    return map;
+  }, [timelineStatsPrev, showComparison]);
+
   return (
     <div className="bg-white flex flex-col flex-1 h-full rounded-3xl border border-slate-200 shadow-sm overflow-hidden transition-all duration-300">
 
       {/* --- HEADER DEL GRÁFICO --- */}
       <div
-        className="p-5 bg-pf-neutral-50/50 border-b border-pf-neutral-100 flex justify-between items-center cursor-pointer hover:bg-pf-neutral-50 transition-colors"
+        role="button"
+        tabIndex={0}
+        className="p-5 bg-pf-neutral-50/50 border-b border-pf-neutral-100 flex justify-between items-center cursor-pointer hover:bg-pf-neutral-50 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-pf-blue-500"
         onClick={() => setIsChartExpanded(!isChartExpanded)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setIsChartExpanded(!isChartExpanded);
+          }
+        }}
       >
         <div className="flex items-center gap-4">
           <div className={`p-2.5 rounded-xl shadow-lg transition-all ${filtroDrill ? 'bg-pf-blue-600 text-white shadow-pf-blue-200' : (semanaFiltro !== "TODAS" ? 'bg-pf-red text-white shadow-pf-red-200' : 'bg-white border border-pf-neutral-200 text-pf-neutral-700')}`}>
@@ -122,14 +139,22 @@ export const TrendChart = ({ timelineStats, timelineStatsPrev, showComparison, s
 
         <div className="flex items-center gap-2">
           {semanaFiltro !== "TODAS" && (
-            <span onClick={(e) => { e.stopPropagation(); setSemanaFiltro("TODAS") }} className="px-3.5 py-1.5 bg-pf-red text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-md cursor-pointer hover:bg-pf-red-600 flex items-center gap-1.5 transition-all active:scale-95">
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setSemanaFiltro("TODAS") }}
+              className="px-3.5 py-1.5 bg-pf-red text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-md cursor-pointer hover:bg-pf-red-600 flex items-center gap-1.5 transition-all active:scale-95 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pf-red"
+            >
               S{semanaFiltro} <XCircle size={14} />
-            </span>
+            </button>
           )}
           {filtroDrill && (
-            <span onClick={(e) => { e.stopPropagation(); setFiltroDrill(null) }} className="px-3.5 py-1.5 bg-pf-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-md cursor-pointer hover:bg-pf-blue-700 flex items-center gap-1.5 transition-all active:scale-95">
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setFiltroDrill(null) }}
+              className="px-3.5 py-1.5 bg-pf-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-md cursor-pointer hover:bg-pf-blue-700 flex items-center gap-1.5 transition-all active:scale-95 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pf-blue-600"
+            >
               Activo <XCircle size={14} />
-            </span>
+            </button>
           )}
           <button className="text-pf-neutral-400 hover:text-pf-neutral-600 p-2 transition-colors">
             {isChartExpanded ? <ChevronUp size={22} /> : <ChevronDown size={22} />}
@@ -167,10 +192,7 @@ export const TrendChart = ({ timelineStats, timelineStatsPrev, showComparison, s
 
                 {/* Mapeo de Barras */}
                 {fullChartData.map((item: ChartDataItem) => {
-                  const itemPrev = showComparison && timelineStatsPrev
-                    ? timelineStatsPrev.chartData.find((p: ChartDataItem) => p.semana === item.semana)
-                    : null;
-                  const countPrev = itemPrev ? itemPrev.count : 0;
+                  const countPrev = prevDataMap.get(item.semana) || 0;
 
                   const heightPercent = globalMax === 0 ? 0 : (item.count / globalMax) * 100;
                   const heightPercentPrev = globalMax === 0 ? 0 : (countPrev / globalMax) * 100;
@@ -181,23 +203,24 @@ export const TrendChart = ({ timelineStats, timelineStatsPrev, showComparison, s
 
                   const isBetter = item.count < countPrev;
                   return (
-                    <div
+                    <button
                       key={item.semana}
+                      type="button"
+                      disabled={isZero}
                       onClick={() => (item.count > 0 || countPrev > 0) && setSemanaFiltro(String(item.semana))}
+                      aria-label={`Semana ${item.semana}: ${item.count} fallas`}
                       className={`
-                                        relative flex-1 flex flex-col justify-end group h-full z-10 min-w-0
-                                        ${isZero ? 'cursor-default' : 'cursor-pointer hover:scale-[1.02] transition-transform'} 
-                                        ${isDimmed ? 'opacity-30 grayscale' : 'opacity-100'}
-                                    `}
+                        relative flex-1 flex flex-col justify-end group h-full z-10 min-w-0 border-none bg-transparent p-0
+                        ${isZero ? 'cursor-default' : 'cursor-pointer hover:scale-[1.02] transition-transform focus:outline-none focus:ring-2 focus:ring-pf-blue-400 rounded-sm'} 
+                        ${isDimmed ? 'opacity-30 grayscale' : 'opacity-100'}
+                      `}
                     >
                       {showComparison && (
-                        <>
-                          <div
-                            style={{ height: countPrev === 0 ? '0px' : `${heightPercentPrev}%` }}
-                            className={`absolute bottom-0 w-full bg-pf-neutral-200 rounded-t-sm ${isBetter ? 'z-0' : 'z-20'} border border-pf-neutral-300 group-hover:bg-pf-neutral-300 transition-all`}
-                            title={`Año Pasado: ${countPrev}`}
-                          />
-                        </>
+                        <div
+                          style={{ height: countPrev === 0 ? '0px' : `${heightPercentPrev}%` }}
+                          className={`absolute bottom-0 w-full bg-pf-neutral-200 rounded-t-sm ${isBetter ? 'z-0' : 'z-20'} border border-pf-neutral-300 group-hover:bg-pf-neutral-300 transition-all`}
+                          title={`Año Pasado: ${countPrev}`}
+                        />
                       )}
                       {/* Barra principal con su Etiqueta Valor anclada */}
                       {showComparison && !isZero ? (
@@ -249,7 +272,7 @@ export const TrendChart = ({ timelineStats, timelineStatsPrev, showComparison, s
                           </span>
                         )}
                       </div>
-                    </div>
+                    </button>
                   );
                 })}
               </div>

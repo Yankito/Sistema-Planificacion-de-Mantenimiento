@@ -129,7 +129,7 @@ export const UploadCard = ({
         </p>
       </div>
 
-      <input type="file" ref={inputRef} className="hidden" accept=".xlsx, .xls" onChange={handleInputChange} disabled={isLoading} />
+      <input type="file" ref={inputRef} className="hidden" accept=".xlsx, .xls, .xlsm" onChange={handleInputChange} disabled={isLoading} />
 
       {isDragging && (
         <div className="absolute inset-0 bg-white/90 flex items-center justify-center z-10">

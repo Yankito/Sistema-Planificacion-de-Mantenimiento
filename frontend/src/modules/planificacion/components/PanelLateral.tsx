@@ -4,11 +4,10 @@ import { TarjetaOrden } from "./ui/TarjetaOrden";
 import type { PlanResult } from "../types";
 import { getWeekNumber, parseDDMMYYYY } from "../../../shared/utils/dateUtils";
 
-
 interface PanelLateralProps {
   diaSeleccionado: string | null;
   setDiaSeleccionado: (dia: string | null) => void;
-  ordenesPorDia: Record<string, PlanResult[]>; // Tipado como Record
+  ordenesPorDia: Record<string, PlanResult[]>;
   planResultSinAsignar: PlanResult[];
   handleDragStart: (e: React.DragEvent, ot: PlanResult) => void;
   handleDragEnd: () => void;
@@ -35,7 +34,6 @@ export const PanelLateral = ({
     let listaFiltrada: PlanResult[] = [];
 
     if (diaSeleccionado.startsWith("SEM-")) {
-      console.log(diaSeleccionado);
       const semanaNum = Number.parseInt(diaSeleccionado.split("-")[1]);
       Object.keys(ordenesPorDia).forEach((fecha) => {
         const fechaObj = parseDDMMYYYY(fecha);
@@ -65,8 +63,55 @@ export const PanelLateral = ({
     return `Día ${Number.parseInt(diaSeleccionado.split('/')[0])}`;
   }, [diaSeleccionado]);
 
+  const renderSubtitle = () => {
+    if (!diaSeleccionado) return "Pendientes de Planificar";
+    const statusText = mostrarSoloVacantes ? 'Incompletas' : 'Asignadas';
+    return `${ordenesVisualizadas.length} Órdenes ${statusText}`;
+  };
+
+  const renderContent = () => {
+    if (diaSeleccionado) {
+      if (ordenesVisualizadas.length > 0) {
+        return ordenesVisualizadas.map((orden, i) => (
+          <TarjetaOrden
+            key={`${orden.nroOrden}-${i}`}
+            orden={orden}
+            handleDragStart={handleDragStart}
+            handleDragEnd={handleDragEnd}
+            esAsignada={true}
+            onEditTecnicos={onEditTecnicos}
+          />
+        ));
+      }
+      return (
+        <div className="flex flex-col items-center justify-center py-16 text-pf-neutral-300">
+          <Calendar size={48} className="mb-4 stroke-[1.5] opacity-20" />
+          <span className="text-[11px] font-black uppercase tracking-[0.2em] text-center max-w-[200px] leading-relaxed">
+            {mostrarSoloVacantes
+              ? "Todas las órdenes completas"
+              : "Sin órdenes planificadas"}
+          </span>
+        </div>
+      );
+    }
+
+    return planResultSinAsignar.map((ot, i) => (
+      <TarjetaOrden
+        key={ot.nroOrden || i}
+        orden={{
+          ...ot,
+          planta: ot.planta || plantaSeleccionada,
+        }}
+        handleDragStart={handleDragStart}
+        handleDragEnd={handleDragEnd}
+        esAsignada={false}
+        onEditTecnicos={onEditTecnicos}
+      />
+    ));
+  };
+
   return (
-    <div className="w-96 flex flex-col h-full">
+    <div className="w-full h-full flex flex-col">
       <div className="bg-white rounded-[2.5rem] border border-pf-neutral-100 shadow-2xl flex-1 flex flex-col overflow-hidden">
         <div className="p-7 border-b border-white/10 flex justify-between items-center bg-pf-neutral-900 text-white shadow-lg">
           <div>
@@ -74,9 +119,7 @@ export const PanelLateral = ({
               {tituloPanel}
             </h4>
             <p className="text-[10px] font-black text-white/60 uppercase mt-2 tracking-widest pl-0.5">
-              {diaSeleccionado
-                ? `${ordenesVisualizadas.length} Órdenes ${mostrarSoloVacantes ? 'Incompletas' : 'Asignadas'}`
-                : "Pendientes de Planificar"}
+              {renderSubtitle()}
             </p>
           </div>
           {diaSeleccionado && (
@@ -90,43 +133,7 @@ export const PanelLateral = ({
         </div>
 
         <div className="flex-1 overflow-y-auto p-6 space-y-5 bg-pf-neutral-50/40 custom-scrollbar">
-          {diaSeleccionado ? (
-            ordenesVisualizadas.length > 0 ? (
-              ordenesVisualizadas.map((orden, i) => (
-                <TarjetaOrden
-                  key={`${orden.nroOrden}-${i}`}
-                  orden={orden}
-                  handleDragStart={handleDragStart}
-                  handleDragEnd={handleDragEnd}
-                  esAsignada={true}
-                  onEditTecnicos={onEditTecnicos}
-                />
-              ))
-            ) : (
-              <div className="flex flex-col items-center justify-center py-16 text-pf-neutral-300">
-                <Calendar size={48} className="mb-4 stroke-[1.5] opacity-20" />
-                <span className="text-[11px] font-black uppercase tracking-[0.2em] text-center max-w-[200px] leading-relaxed">
-                  {mostrarSoloVacantes
-                    ? "Todas las órdenes completas"
-                    : "Sin órdenes planificadas"}
-                </span>
-              </div>
-            )
-          ) : (
-            planResultSinAsignar.map((ot, i) => (
-              <TarjetaOrden
-                key={ot.nroOrden || i}
-                orden={{
-                  ...ot,
-                  planta: ot.planta || plantaSeleccionada,
-                }}
-                handleDragStart={handleDragStart}
-                handleDragEnd={handleDragEnd}
-                esAsignada={false}
-                onEditTecnicos={onEditTecnicos}
-              />
-            ))
-          )}
+          {renderContent()}
         </div>
 
         {!diaSeleccionado && (

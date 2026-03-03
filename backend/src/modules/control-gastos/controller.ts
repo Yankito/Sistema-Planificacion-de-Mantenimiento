@@ -10,6 +10,11 @@ import type { PresupuestoRow, GastoConsolidadoRow } from '../../shared/types/ind
  */
 export class ControlGastosController {
 
+  /**
+   * Busca el índice de la fila que contiene los nombres de los meses (ej: 'enero', 'febrero').
+   * Escanea solo las primeras 20 filas para acotar la búsqueda.
+   * Retorna -1 si no se encuentra.
+   */
   private findMonthRowIndex(data: unknown[][]): number {
     for (let i = 0; i < Math.min(20, data.length); i++) {
       const row = data[i];
@@ -20,6 +25,10 @@ export class ControlGastosController {
     return -1;
   }
 
+  /**
+   * Construye un array de mapeo columna -> número de mes (1-12) a partir de la fila de meses.
+   * Permite saber a qué mes pertenece cada columna del Excel de presupuesto.
+   */
   private getColToMonthMapping(monthRow: unknown[]): number[] {
     const colToMonth: number[] = [];
     let currentMonth = 0;
@@ -39,6 +48,10 @@ export class ControlGastosController {
     return colToMonth;
   }
 
+  /**
+   * Mapea cada columna a su tipo de gasto específico (Bodega, Serv. Externo, Correctivo)
+   * a partir de la fila de subencabezados ubicada justo bajo la fila de meses.
+   */
   private getSubHeaderColMap(subRow: unknown[] | undefined, colToMonth: number[]) {
     const colMap: Record<number, { month: number, type: 'bod' | 'ext' | 'corr' | 'qty' }> = {};
     if (!subRow) return colMap;
@@ -56,10 +69,13 @@ export class ControlGastosController {
     return colMap;
   }
 
+  /**
+   * Determina si una fila debe ser ignorada durante la extracción del presupuesto.
+   * Excluye filas de totales, diferencias, encabezados de sección y subtotales.
+   */
   private isIgnoredRow(colA: string): boolean {
     const colAUpper = colA.toUpperCase();
-    return colAUpper.includes('TOTAL') ||
-      colAUpper.includes('DIFERENCIA') ||
+    return colAUpper.includes('DIFERENCIA') ||
       colAUpper.includes('PRES 202') ||
       colAUpper.includes('GASTO 20') ||
       colAUpper.includes('BASADO EN') ||
@@ -68,6 +84,10 @@ export class ControlGastosController {
       colAUpper === 'MANTENIMIENTO CORRECTIVO';
   }
 
+  /**
+   * Convierte un valor de celda del Excel a número, tolerando formatos con separadores
+   * de miles (puntos), signo $ y comas decimales. Retorna 0 si no puede parsear.
+   */
   private parseNumericValue(val: unknown): number {
     if (typeof val === 'number') return val;
     if (typeof val === 'string') {
@@ -79,6 +99,10 @@ export class ControlGastosController {
     return 0;
   }
 
+  /**
+   * Extrae los montos por mes y tipo de gasto de una fila de datos del presupuesto.
+   * Retorna el mapa de meses con sus cifras y un flag indicando si hay al menos un valor > 0.
+   */
   private extractRowValues(row: unknown[], colMap: Record<number, { month: number, type: 'bod' | 'ext' | 'corr' | 'qty' }>) {
     const monthData: Record<number, { bod: number, ext: number, corr: number }> = {};
     let hasAnyValue = false;
@@ -101,6 +125,11 @@ export class ControlGastosController {
     return { monthData, hasAnyValue };
   }
 
+  /**
+   * Itera sobre las filas de datos del presupuesto a partir del índice dado
+   * y construye el array de PresupuestoRow para insertar en la base de datos.
+   * Detecta activos por patrón de código entre paréntesis y luego sus frecuencias.
+   */
   private processPresupuestoData(
     data: unknown[][],
     startIndex: number,
@@ -115,6 +144,11 @@ export class ControlGastosController {
       if (!row) continue;
 
       const colA = String(row[0] || '').trim();
+      const colAUpper = colA.toUpperCase();
+
+      // Terminar la lectura si encontramos una celda con "TOTAL"
+      if (colAUpper.includes('TOTAL')) break;
+
       if (!colA || this.isIgnoredRow(colA)) continue;
 
       // Detección de Activo: 
@@ -199,8 +233,6 @@ export class ControlGastosController {
         return res.status(400).json({ error: 'No se encontraron datos de presupuesto válidos en las hojas especificadas' });
       }
 
-      // Limpiar presupuesto previo del mismo año y guardar los nuevos datos
-      await ControlGastosRepository.clearPresupuesto(year);
       await ControlGastosRepository.savePresupuesto(allRowsToInsert);
 
       res.json({ success: true, count: allRowsToInsert.length });
@@ -211,19 +243,10 @@ export class ControlGastosController {
     }
   }
 
-  private findGastosHeaderRowIndex(rawData: unknown[][]): number {
-    for (let i = 0; i < Math.min(20, rawData.length); i++) {
-      const row = rawData[i];
-      if (row?.some((cell) => {
-        const str = String(cell).toUpperCase().replace(/[\s_]/g, '');
-        return str.includes('NUMEROOT') || str.includes('NROOT');
-      })) {
-        return i;
-      }
-    }
-    return 0;
-  }
-
+  /**
+   * Convierte un valor de fecha proveniente del Excel de gastos a un objeto Date.
+   * Soporta instancias Date, números seriales de Excel y strings DD/MM/YYYY.
+   */
   private parseGastosDate(val: unknown): Date | null {
     if (!val) return null;
     if (val instanceof Date) return val;
@@ -243,6 +266,10 @@ export class ControlGastosController {
     return null;
   }
 
+  /**
+   * Obtiene el valor de una columna del Excel de gastos usando un conjunto de posibles
+   * nombres de cabecera (tolerante a variaciones en el nombre de la columna).
+   */
   private getGastosVal(row: unknown[], keys: string[], colMap: Record<string, number>): unknown {
     for (const k of keys) {
       if (colMap[k] !== undefined) return row[colMap[k]];
@@ -250,8 +277,13 @@ export class ControlGastosController {
     return undefined;
   }
 
-  private processGastosData(rawData: unknown[][], headerRowIndex: number): GastoConsolidadoRow[] {
-    const headerRow = rawData[headerRowIndex];
+  /**
+   * Procesa las filas del Excel de gastos consolidados a partir del índice de cabecera.
+   * Construye el array de GastoConsolidadoRow para insertar en Oracle.
+   * Omite filas sin número de OT, activo ni tipo.
+   */
+  private processGastosData(rawData: unknown[][]): GastoConsolidadoRow[] {
+    const headerRow = rawData[0];
     const colMap: Record<string, number> = {};
     if (headerRow) {
       headerRow.forEach((cell, idx: number) => {
@@ -262,7 +294,7 @@ export class ControlGastosController {
 
     const rowsToInsert: GastoConsolidadoRow[] = [];
 
-    for (let i = headerRowIndex + 1; i < rawData.length; i++) {
+    for (let i = 1; i < rawData.length; i++) {
       const row = rawData[i];
       if (!row || row.length === 0) continue;
 
@@ -313,10 +345,8 @@ export class ControlGastosController {
         return res.status(400).json({ error: 'El archivo está vacío' });
       }
 
-      const headerRowIndex = this.findGastosHeaderRowIndex(rawData);
-      const rowsToInsert = this.processGastosData(rawData, headerRowIndex);
+      const rowsToInsert = this.processGastosData(rawData);
 
-      console.log(`Procesando ${rowsToInsert.length} filas de gastos consolidados.`);
       await ControlGastosRepository.saveGastosConsolidados(rowsToInsert);
 
       res.json({ success: true, count: rowsToInsert.length });
@@ -360,6 +390,10 @@ export class ControlGastosController {
     }
   }
 
+  /**
+   * GET /api/control-gastos/activos?cc=XXXXXX
+   * Busca activos mantenibles cuyo código contiene el centro de costo indicado.
+   */
   async searchAssetsByCentroCosto(req: Request, res: Response) {
     try {
       const cc = req.query.cc as string;
@@ -372,6 +406,10 @@ export class ControlGastosController {
     }
   }
 
+  /**
+   * PUT /api/control-gastos/activos/rename
+   * Renombra el código de activo en el presupuesto de un año (ej: corregir un nombre mal copiado del Excel).
+   */
   async updateAssetPresupuesto(req: Request, res: Response) {
     try {
       const { oldName, newName, anio } = req.body;
@@ -384,6 +422,11 @@ export class ControlGastosController {
     }
   }
 
+  /**
+   * POST /api/control-gastos/activos/auto-fix
+   * Intenta corregir automáticamente los códigos de activo del presupuesto que no coinciden
+   * exactamente con ningún activo en PF_EAM_ACTIVOS, buscando por centro de costo.
+   */
   async autoFixAssets(req: Request, res: Response) {
     try {
       const anio = Number(req.body.anio);
@@ -396,6 +439,10 @@ export class ControlGastosController {
     }
   }
 
+  /**
+   * GET /api/control-gastos/activos/mantenibles
+   * Retorna los activos marcados como mantenibles en EAM, con filtro opcional por nombre o clase.
+   */
   async getMaintainableAssets(req: Request, res: Response) {
     try {
       const search = req.query.search as string;
@@ -407,6 +454,11 @@ export class ControlGastosController {
     }
   }
 
+  /**
+   * POST /api/control-gastos/presupuesto/manual
+   * Guarda o reemplaza el presupuesto ingresado manualmente desde el modal de edición.
+   * Elimina el presupuesto previo del mismo activo/año antes de insertar el nuevo.
+   */
   async saveManualPresupuesto(req: Request, res: Response) {
     try {
       const { rows } = req.body;

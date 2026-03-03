@@ -27,6 +27,18 @@ export const useSeguimientoModal = ({
   const [pagina, setPagina] = useState(1);
   const itemsPorPagina = 10;
 
+  // --- ESTADO DE ORDENAMIENTO ---
+  const [sortConfig, setSortConfig] = useState<{ key: "nroOrden" | "fecha"; direction: "asc" | "desc" } | null>(null);
+
+  const handleSort = (key: "nroOrden" | "fecha") => {
+    setSortConfig(prev => {
+      if (prev?.key === key) {
+        return { key, direction: prev.direction === "asc" ? "desc" : "asc" };
+      }
+      return { key, direction: "asc" };
+    });
+  };
+
   // --- ESTADOS DE TECNICO (PARA EL PERFIL) ---
   const [selectedTech, setSelectedTech] = useState<string | null>(null);
   const [empFilters, setEmpFilters] = useState<TechFilters>({ planta: "TODAS", periodo: "TODOS", clasificacion: "TODAS", cumplimiento: "TODOS" });
@@ -35,7 +47,7 @@ export const useSeguimientoModal = ({
   const handleSelectTech = (name: string) => {
     setSelectedTech(name);
     setEmpFilters({
-      planta: !viewDetail.isGlobal ? viewDetail.id : "TODAS",
+      planta: viewDetail.isGlobal ? "TODAS" : viewDetail.id,
       periodo: viewDetail.periodo || "TODOS",
       clasificacion: "TODAS",
       cumplimiento: "TODOS"
@@ -44,19 +56,23 @@ export const useSeguimientoModal = ({
 
   // Set de OTs de la semana anterior para identificar "NUEVAS"
   const previousOtSet = useMemo(() => {
-    return new Set(dataAnterior.map(d => normalizeOT(d.ot)));
+    return new Set(dataAnterior.map(d => normalizeOT(d.nroOrden)));
   }, [dataAnterior]);
 
-  // --- LÓGICA DE FILTRADO GENERAL ---
+  // --- LÓGICA DE FILTRADO Y ORDENAMIENTO ---
   const { filteredGeneral, estadosDisponibles } = useMemo(() => {
-    // Filtrar por el contexto del clic en la tabla de resumen
+    // 1. Filtrar por el contexto del clic en la tabla de resumen
     const base = dataModo.filter(d => {
       // EXCLUSIÓN DE MOB (Mobiliario/Muebles) - Solo para CUMPLIMIENTO
       if (modoVista === "CUMPLIDAS" && d.descripcion.toUpperCase().startsWith("MOB")) return false;
 
-      const matchPlanta = viewDetail.isGlobal
-        ? (viewDetail.id === "COMPLEJO" ? PLANTAS_COMPLEJO.includes(d.planta) : PLANTAS_PF_ALIMENTOS.includes(d.planta))
-        : d.planta === viewDetail.id;
+      // 1. Filtrar por planta
+      let matchPlanta = d.planta === viewDetail.id;
+      if (viewDetail.isGlobal) {
+        matchPlanta = viewDetail.id === "COMPLEJO"
+          ? PLANTAS_COMPLEJO.includes(d.planta)
+          : PLANTAS_PF_ALIMENTOS.includes(d.planta);
+      }
 
       const matchOB = d.esOB === viewDetail.esOB;
 
@@ -68,15 +84,16 @@ export const useSeguimientoModal = ({
       return matchPlanta && matchOB && matchCat && matchPeriodo;
     });
 
-    // Aplicar filtros de la UI del Modal (Buscador y Estado)
-    const filtered = base.filter(d => {
+    // 2. Aplicar filtros de la UI del Modal (Buscador y Estado)
+    let filtered = base.filter(d => {
       const matchSearch = !searchTerm ||
-        d.ot.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        d.descripcion.toLowerCase().includes(searchTerm.toLowerCase());
+        d.nroOrden.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        d.descripcion.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        d.nroActivo.toLowerCase().includes(searchTerm.toLowerCase());
 
       let matchEstado = true;
       if (filterEstado === "NUEVAS") {
-        matchEstado = !previousOtSet.has(normalizeOT(d.ot));
+        matchEstado = !previousOtSet.has(normalizeOT(d.nroOrden));
       } else if (filterEstado !== "TODOS") {
         matchEstado = d.estado === filterEstado;
       }
@@ -84,7 +101,26 @@ export const useSeguimientoModal = ({
       return matchSearch && matchEstado;
     });
 
-    // 3. Obtener lista de estados únicos para el select
+    // 3. Aplicar Ordenamiento
+    if (sortConfig) {
+      filtered = [...filtered].sort((a, b) => {
+        const valA = a[sortConfig.key] || "";
+        const valB = b[sortConfig.key] || "";
+
+        if (sortConfig.key === "fecha") {
+          const dateA = new Date(valA).getTime() || 0;
+          const dateB = new Date(valB).getTime() || 0;
+          return sortConfig.direction === "asc" ? dateA - dateB : dateB - dateA;
+        }
+
+        // Default: string comparison (e.g., for nroOrden)
+        return sortConfig.direction === "asc"
+          ? String(valA).localeCompare(String(valB))
+          : String(valB).localeCompare(String(valA));
+      });
+    }
+
+    // 4. Obtener lista de estados únicos para el select
     const estados = new Set(base.map(d => d.estado));
     const listaLabels = ["TODOS"];
     if (dataAnterior.length > 0) listaLabels.push("NUEVAS");
@@ -96,7 +132,7 @@ export const useSeguimientoModal = ({
         ...Array.from(estados).sort((a, b) => a.localeCompare(b))
       ]
     };
-  }, [dataModo, viewDetail, PLANTAS_COMPLEJO, PLANTAS_PF_ALIMENTOS, filterEstado, searchTerm, previousOtSet, dataAnterior.length, modoVista]);
+  }, [dataModo, viewDetail, PLANTAS_COMPLEJO, PLANTAS_PF_ALIMENTOS, filterEstado, searchTerm, sortConfig, previousOtSet, dataAnterior.length, modoVista]);
 
   // --- PAGINACIÓN SEGURA ---
   const totalPaginas = Math.ceil(filteredGeneral.length / itemsPorPagina);
@@ -117,7 +153,7 @@ export const useSeguimientoModal = ({
       const mPeriodo = empFilters.periodo === "TODOS" || !empFilters.periodo || d.periodo === empFilters.periodo;
       const mClasificacion = empFilters.clasificacion === "TODAS" || !empFilters.clasificacion || d.clasificacion === empFilters.clasificacion;
 
-      const mSearch = !empSearch || d.ot.toLowerCase().includes(empSearch.toLowerCase()) || d.descripcion.toLowerCase().includes(empSearch.toLowerCase());
+      const mSearch = !empSearch || d.nroOrden.toLowerCase().includes(empSearch.toLowerCase()) || d.descripcion.toLowerCase().includes(empSearch.toLowerCase());
 
       return mPlanta && mPeriodo && mClasificacion && mSearch;
     });
@@ -133,7 +169,7 @@ export const useSeguimientoModal = ({
     const efectividad = totalAsignado > 0 ? Math.round((finalizadas / totalAsignado) * 100) : 0;
 
     // Obtener plantas únicas donde el técnico tiene asignaciones en este dataset filtrado
-    const plantasTecnico = Array.from(new Set(listOrders.map(o => o.planta))).sort();
+    const plantasTecnico = Array.from(new Set(listOrders.map(o => o.planta))).sort((a, b) => a.localeCompare(b));
 
     const stats: TechStats = {
       nombre: selectedTech,
@@ -147,12 +183,12 @@ export const useSeguimientoModal = ({
     return {
       orders: listOrders.map(o => ({
         ...o,
-        isNew: dataAnterior.length > 0 && !previousOtSet.has(normalizeOT(o.ot))
+        isNew: dataAnterior.length > 0 && !previousOtSet.has(normalizeOT(o.nroOrden))
       })),
       stats,
-      activePlants: Array.from(new Set(baseOrders.map(o => o.planta))).sort(),
-      activePeriods: Array.from(new Set(baseOrders.map(o => o.periodo))).sort(),
-      activeClasificaciones: Array.from(new Set(baseOrders.map(o => o.clasificacion))).filter(Boolean).sort()
+      activePlants: Array.from(new Set(baseOrders.map(o => o.planta))).sort((a, b) => a.localeCompare(b)),
+      activePeriods: Array.from(new Set(baseOrders.map(o => o.periodo))).sort((a, b) => a.localeCompare(b)),
+      activeClasificaciones: Array.from(new Set(baseOrders.map(o => o.clasificacion))).filter(Boolean).sort((a, b) => a.localeCompare(b))
     };
   }, [selectedTech, dataModo, empFilters, empSearch, previousOtSet, dataAnterior.length]);
 
@@ -173,6 +209,7 @@ export const useSeguimientoModal = ({
     empFilters, setEmpFilters,
     techData,
     resetTech: () => setSelectedTech(null),
-    previousOtSet
+    previousOtSet,
+    sortConfig, handleSort
   };
 };

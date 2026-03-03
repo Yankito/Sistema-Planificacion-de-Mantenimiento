@@ -1,8 +1,11 @@
+/** Activo físico del catálogo EAM (máquina o instalación mantenible) */
 export interface ActivoEAM {
   activo: string;
   claseContable: string;
   organizacion: string;
 }
+
+/** Técnico de mantenimiento con su planta de asignación y especialidad */
 export interface Tecnico {
   nombre: string;
   rol: string;
@@ -14,14 +17,16 @@ export interface Tecnico {
   existe?: boolean;
 }
 
+/** Estado de un técnico en una OT: incluye si finalizó su operación */
 export interface TecnicoEstado {
   tecnico: Tecnico;
   opFinalizada: boolean;
 }
 
+/** Orden de Trabajo (OT) con datos de planificación y seguimiento */
 export interface OrdenTrabajo {
   nroOrden: string;
-  equipo: string;
+  nroActivo: string;
   descripcion: string;
   planta: string;
   estado: string;
@@ -31,10 +36,7 @@ export interface OrdenTrabajo {
   mes?: number;
   anio?: number;
   esOB?: boolean;
-  // Campos para seguimiento
-  id?: string;
-  ot?: string;
-  nroActivo?: string;
+  // Campos de seguimiento (backlog/cumplimiento)
   clasificacion?: "FINALIZADA" | "TECNICO / SERVICIO" | "PROGRAMADOR" | "OC / OTRO";
   semana?: string;
   detallesTecnicos?: TecnicoEstado[];
@@ -43,6 +45,7 @@ export interface OrdenTrabajo {
   rse?: string;
 }
 
+/** Fila del presupuesto anual por activo, frecuencia y tipo de gasto */
 export interface PresupuestoRow {
   activo: string;
   mes: number;
@@ -57,6 +60,7 @@ export interface PresupuestoRow {
   organizacion?: string;
 }
 
+/** Fila de gasto real por transacción (materiales, servicios externos, correctivos) */
 export interface GastoConsolidadoRow {
   tipo: string;
   numeroOt: string;
@@ -79,6 +83,7 @@ export interface GastoConsolidadoRow {
   mantenible?: string;
 }
 
+/** Usuario autenticado en el sistema con sus permisos de acceso */
 export interface AuthUser {
   id?: string;
   username: string;

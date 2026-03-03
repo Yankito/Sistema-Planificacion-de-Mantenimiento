@@ -58,7 +58,7 @@ export const SeguimientoRepository = {
                  MAX(CASE WHEN c.op_finalizada = 'No' THEN 1 ELSE 0 END) as has_pending_tech,
                  MAX(c.planta) as planta_cump
           FROM PF_EAM_CUMPLIMIENTO c
-          LEFT JOIN PF_IM_TECNICOS t ON TRIM(UPPER(c.empleado)) = TRIM(UPPER(t.nombre))
+          LEFT JOIN PF_SPM_TECNICOS t ON TRIM(UPPER(c.empleado)) = TRIM(UPPER(t.nombre))
           WHERE c.empleado IS NOT NULL
           GROUP BY TRIM(nro_ot)
        )
@@ -75,12 +75,17 @@ export const SeguimientoRepository = {
                 WHEN m.rmd = 'NO' OR m.rse = 'NO' THEN 'OC / OTRO'
                 ELSE 'PROGRAMADOR'
             END as "CLASIFICACION",
-            CASE WHEN p.pedido_trabajo LIKE 'OB%' OR UPPER(p.descripcion) LIKE '%(INFRA)%' THEN 1 ELSE 0 END as "ES_OB",
+            CASE 
+                WHEN p.pedido_trabajo LIKE 'OB%' 
+                     OR UPPER(p.descripcion) LIKE '%(INFRA)%' 
+                     OR UPPER(a.clase_contable) LIKE '%INFRA%' 
+                THEN 1 ELSE 0 
+            END as "ES_OB",
             TO_CHAR(p.fecha_inicial_programada, 'MM/YYYY') as "PERIODO",
             TO_CHAR(p.fecha_inicial_programada, 'YYYY-"S"IW') as "SEMANA",
             TO_CHAR(p.fecha_inicial_programada, 'DD/MM/YYYY') as "FECHA",
 
-            -- Determinación de Planta (Lógica Unificada convertida a CASE)
+            -- Determinación de Planta (Prioridad: Cumplimiento -> Org -> Clase -> Fallback Activo)
             COALESCE(
                   CASE 
                       WHEN ta.planta_cump = 'Mantenimiento Planta I' THEN 'PF1'
@@ -88,69 +93,65 @@ export const SeguimientoRepository = {
                       WHEN ta.planta_cump = 'Mantenimiento Centro de Distribucion Santiago' THEN 'MPS'
                       ELSE NULL
                   END,
-                  CASE a.organizacion
-                      WHEN 'MP1' THEN 'PF1'
-                      WHEN 'MP2' THEN 'PF2'
-                      WHEN 'MPS' THEN 'MPS'
-                      ELSE NULL
-                  END,
-                  CASE a.clase_contable
-                      WHEN 'Edif ElabC' THEN 'PF3'
-                      WHEN 'Edif Mant' THEN 'PF3'
-                      WHEN 'Higiene P3' THEN 'PF3'
-                      WHEN 'Infra ElaC' THEN 'PF3'
-                      WHEN 'Infra Mant' THEN 'PF3'
-                      WHEN 'Mant AMB' THEN 'PF3'
-                      WHEN 'Rack ElabC' THEN 'PF3'
-                      WHEN 'Edif Jamon' THEN 'PF4'
-                      WHEN 'Higiene P4' THEN 'PF4'
-                      WHEN 'Infra Jam' THEN 'PF4'
-                      WHEN 'Mant Jamon' THEN 'PF4'
-                      WHEN 'Rack Jam' THEN 'PF4'
-                      WHEN 'Edif Pizza' THEN 'PF5'
-                      WHEN 'Higiene P5' THEN 'PF5'
-                      WHEN 'Infra Pizz' THEN 'PF5'
-                      WHEN 'Mant Pizza' THEN 'PF5'
-                      WHEN 'Rack Pizz' THEN 'PF5'
-                      WHEN 'Higiene P6' THEN 'PF6'
-                      WHEN 'Infra Plat' THEN 'PF6'
-                      WHEN 'Mant Plato' THEN 'PF6'
-                      WHEN 'Rack Plato' THEN 'PF6'
-                      WHEN 'Redes Plat' THEN 'PF6'
-                      WHEN 'Edif PR Ad' THEN 'OTROS'
-                      WHEN 'Edif PR PF' THEN 'OTROS'
-                      WHEN 'Equipo PF' THEN 'OTROS'
-                      WHEN 'Gerencia' THEN 'OTROS'
-                      WHEN 'Infra Lomb' THEN 'OTROS'
-                      WHEN 'Infra Comp' THEN 'OTROS'
-                      WHEN 'Edif CDT' THEN 'CDT'
-                      WHEN 'Infra CDT' THEN 'CDT'
-                      WHEN 'Mant CDT' THEN 'CDT'
-                      WHEN 'Rack CDT' THEN 'CDT'
-                      WHEN 'Edif DataC' THEN 'DC'
-                      WHEN 'Infra DatC' THEN 'DC'
-                      WHEN 'Mant DataC' THEN 'DC'
-                      WHEN 'Edif Vent' THEN 'VENTAS'
-                      WHEN 'Infra Vent' THEN 'VENTAS'
-                      WHEN 'Mant Vent' THEN 'VENTAS'
-                      WHEN NULL THEN 'OTROS'
-                      ELSE NULL
+                  CASE 
+                      WHEN a.organizacion = 'MP1' THEN 'PF1'
+                      WHEN a.organizacion = 'MP2' THEN 'PF2'
+                      WHEN a.organizacion = 'MPS' THEN 'MPS'
+                      ELSE CASE a.clase_contable
+                          WHEN 'Edif ElabC' THEN 'PF3'
+                          WHEN 'Edif Mant' THEN 'PF3'
+                          WHEN 'Higiene P3' THEN 'PF3'
+                          WHEN 'Infra ElaC' THEN 'PF3'
+                          WHEN 'Infra Mant' THEN 'PF3'
+                          WHEN 'Mant AMB' THEN 'PF3'
+                          WHEN 'Rack ElabC' THEN 'PF3'
+                          WHEN 'Edif Jamon' THEN 'PF4'
+                          WHEN 'Higiene P4' THEN 'PF4'
+                          WHEN 'Infra Jam' THEN 'PF4'
+                          WHEN 'Mant Jamon' THEN 'PF4'
+                          WHEN 'Rack Jam' THEN 'PF4'
+                          WHEN 'Edif Pizza' THEN 'PF5'
+                          WHEN 'Higiene P5' THEN 'PF5'
+                          WHEN 'Infra Pizz' THEN 'PF5'
+                          WHEN 'Mant Pizza' THEN 'PF5'
+                          WHEN 'Rack Pizz' THEN 'PF5'
+                          WHEN 'Higiene P6' THEN 'PF6'
+                          WHEN 'Infra Plat' THEN 'PF6'
+                          WHEN 'Mant Plato' THEN 'PF6'
+                          WHEN 'Rack Plato' THEN 'PF6'
+                          WHEN 'Redes Plat' THEN 'PF6'
+                          WHEN 'Edif PR Ad' THEN 'OTROS'
+                          WHEN 'Edif PR PF' THEN 'OTROS'
+                          WHEN 'Gerencia' THEN 'OTROS'
+                          WHEN 'Infra Lomb' THEN 'OTROS'
+                          WHEN 'Infra Comp' THEN 'OTROS'
+                          WHEN 'Edif CDT' THEN 'CDT'
+                          WHEN 'Infra CDT' THEN 'CDT'
+                          WHEN 'Mant CDT' THEN 'CDT'
+                          WHEN 'Rack CDT' THEN 'CDT'
+                          WHEN 'Edif DataC' THEN 'DC'
+                          WHEN 'Infra DatC' THEN 'DC'
+                          WHEN 'Mant DataC' THEN 'DC'
+                          WHEN 'Edif Vent' THEN 'VENTAS'
+                          WHEN 'Infra Vent' THEN 'VENTAS'
+                          WHEN 'Mant Vent' THEN 'VENTAS'
+                          WHEN 'Equipo PF' THEN 
+                              CASE 
+                                  WHEN a.nro_de_activo LIKE '%(1%' THEN 'PF1'
+                                  WHEN a.nro_de_activo LIKE '%(2%' THEN 'PF2'
+                                  ELSE 'OTROS'
+                              END
+                          ELSE 'OTROS'
+                      END
                   END,
                   CASE 
-                      WHEN p.departamento_propiedad LIKE '%P1%' THEN 'PF1'
-                      WHEN p.departamento_propiedad LIKE '%P2%' THEN 'PF2'
-                      WHEN p.departamento_propiedad LIKE 'Mant CDS' THEN 'MPS'
-                      WHEN p.departamento_propiedad LIKE 'Mant TDLG' THEN 'MPS'
-                      ELSE NULL
-                  END,
-                  CASE 
-                      WHEN SUBSTR(p.numero_activo, -5, 1) IN ('0', '1') THEN 'PF1'
-                      WHEN SUBSTR(p.numero_activo, -5, 1) = '2' THEN 'PF2'
-                      WHEN SUBSTR(p.numero_activo, -5, 1) = '3' THEN 'PF3'
-                      WHEN SUBSTR(p.numero_activo, -5, 1) = '4' THEN 'PF4'
-                      WHEN SUBSTR(p.numero_activo, -5, 1) = '5' THEN 'PF5'
-                      WHEN SUBSTR(p.numero_activo, -5, 1) = '6' THEN 'PF6'
-                      ELSE NULL
+                      WHEN p.numero_activo LIKE '%(1%' THEN 'PF1'
+                      WHEN p.numero_activo LIKE '%(2%' THEN 'PF2'
+                      WHEN p.numero_activo LIKE '%(3%' THEN 'PF3'
+                      WHEN p.numero_activo LIKE '%(4%' THEN 'PF4'
+                      WHEN p.numero_activo LIKE '%(5%' THEN 'PF5'
+                      WHEN p.numero_activo LIKE '%(6%' THEN 'PF6'
+                      ELSE 'OTROS'
                   END
             ) as "PLANTA",
 
@@ -196,12 +197,9 @@ export const SeguimientoRepository = {
         console.error('Error parsing details:', e);
       }
       return {
-        id: r.OT,
         planta: r.PLANTA || 'OTROS',
-        ot: r.OT,
         nroOrden: r.OT,
         nroActivo: r.NRO_ACTIVO,
-        equipo: r.NRO_ACTIVO,
         descripcion: r.DESCRIPCION,
         estado: r.ESTADO,
         clasificacion: r.CLASIFICACION,

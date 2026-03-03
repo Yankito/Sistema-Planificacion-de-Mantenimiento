@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { Activity, DollarSign, Clock, Zap, History } from "lucide-react";
+import { Activity, DollarSign, Clock, Zap } from "lucide-react";
 import { KpiTile } from "./ui/KpiTile";
 import { HeaderSection } from "./ui/HeaderSection";
 import { TrendChart } from "./TrendChart";
@@ -40,17 +39,16 @@ interface Props {
   filtroDrill: FiltroDrill | null;
   setFiltroDrill: (f: FiltroDrill | null) => void;
   rangoTexto: string;
-  topN: number;
   anioFiltro: number;
+  showComparison: boolean;
 }
 
 export const DashboardTab = ({
   analytics, timelineStats, timelineStatsPrev, semanaFiltro, setSemanaFiltro,
-  filtroDrill, setFiltroDrill, rangoTexto, anioFiltro
+  filtroDrill, setFiltroDrill, rangoTexto, anioFiltro, showComparison
 }: Props) => {
 
   const { heroStats } = analytics;
-  const [showComparison, setShowComparison] = useState(false);
 
   const handleBarClick = (tipo: 'EQUIPO' | 'CAUSA', valor: string) => {
     if (filtroDrill && filtroDrill.tipo === tipo && filtroDrill.valor === valor) {
@@ -115,16 +113,6 @@ export const DashboardTab = ({
         <KpiTile title="Gasto Acumulado" value={clp(analytics.totalGasto)} currentValue={analytics.totalGasto} previousValue={analytics.totalGastoPrev} formatter={clp} icon={DollarSign} color="red" />
         <KpiTile title="Tiempo Perdido" value={`${num(analytics.totalTiempo)}'`} subValue={`${(analytics.totalTiempo / 60).toFixed(1)} hrs`} currentValue={analytics.totalTiempo} previousValue={analytics.totalTiempoPrev} formatter={(v) => `${num(v)} min`} icon={Clock} color="amber" />
         <KpiTile title="MTTR Global" value={`${(analytics.totalTiempo / (analytics.totalFallas || 1)).toFixed(0)}'`} subValue="Promedio Rep." currentValue={analytics.mttrGlobal} previousValue={analytics.mttrGlobalPrev} formatter={(v) => `${v.toFixed(0)}'`} icon={Zap} color="purple" />
-      </div>
-
-      <div className="flex justify-end mb-[-10px] relative z-20">
-        <button
-          onClick={() => setShowComparison(!showComparison)}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border shadow-sm active:scale-95 ${showComparison ? 'bg-pf-neutral-900 text-white border-pf-neutral-900 shadow-lg' : 'bg-white text-pf-neutral-500 border-pf-neutral-200 hover:border-pf-neutral-300'}`}
-        >
-          <History size={14} className={showComparison ? "text-pf-red animate-spin-slow" : ""} />
-          Comparar vs {anioFiltro - 1}
-        </button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[500px]">

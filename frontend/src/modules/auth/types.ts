@@ -23,6 +23,13 @@ export interface DashboardIndicadores {
     DURACION_MINUTOS: number;
     FECHA: string;
   }>;
+  ultimasOTs: Array<{
+    ID: string;
+    DESCRIPCION: string;
+    ESTADO: string;
+    FECHA: string;
+    PLANTA: string;
+  }>;
   otsPorEstado: Array<{
     ESTADO: string;
     CANTIDAD: number;

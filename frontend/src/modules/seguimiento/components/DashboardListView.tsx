@@ -57,7 +57,7 @@ export const DashboardListView = ({
 
         {/* SUBTABS FLOW */}
         {activeTab === "FLOW" && (
-          <div className="flex gap-2 mb-4 overflow-x-auto pb-1 no-scrollbar">
+          <div className="flex gap-2 mb-2 overflow-x-auto pb-1 no-scrollbar">
             <button onClick={() => setSubTabFlow("NUEVAS")} className={`px-3 py-1.5 rounded-full text-[10px] font-bold border transition-colors flex items-center gap-1 ${subTabFlow === 'NUEVAS' ? 'bg-pf-red-50 text-pf-red-600 border-pf-red-200' : 'bg-white text-pf-neutral-400 border-pf-neutral-200'}`}><Plus size={12} /> NUEVAS ({flowStats.nuevas.length})</button>
             <button onClick={() => setSubTabFlow("CAMBIOS")} className={`px-3 py-1.5 rounded-full text-[10px] font-bold border transition-colors flex items-center gap-1 ${subTabFlow === 'CAMBIOS' ? 'bg-pf-blue-50 text-pf-blue-600 border-pf-blue-200' : 'bg-white text-pf-neutral-400 border-pf-neutral-200'}`}><ArrowRight size={12} /> CAMBIOS ({flowStats.conAvance.length})</button>
             <button onClick={() => setSubTabFlow("FINALIZADAS")} className={`px-3 py-1.5 rounded-full text-[10px] font-bold border transition-colors flex items-center gap-1 ${subTabFlow === 'FINALIZADAS' ? 'bg-pf-success-50 text-pf-success-600 border-pf-success-200' : 'bg-white text-pf-neutral-400 border-pf-neutral-200'}`}><CheckCircle2 size={12} /> FINALIZADAS ({flowStats.finalizadas.length})</button>
@@ -66,7 +66,7 @@ export const DashboardListView = ({
 
         {/* SUBTABS TECNICOS (SORTING) */}
         {activeTab === "TECNICOS" && (
-          <div className="flex gap-2 mb-4 overflow-x-auto pb-1 no-scrollbar">
+          <div className="flex gap-2 mb-2 overflow-x-auto pb-1 no-scrollbar">
             <button
               onClick={() => setSortConfig("nombre")}
               className={`px-3 py-1.5 rounded-full text-[10px] font-bold border transition-colors flex items-center gap-1 ${sortConfig?.key === 'nombre' ? 'bg-pf-blue-50 text-pf-blue-600 border-pf-blue-200' : 'bg-white text-pf-neutral-400 border-pf-neutral-200'}`}
@@ -112,7 +112,7 @@ export const DashboardListView = ({
               const otItem = item as OTFlowResult;
               return (
                 <div
-                  key={otItem.ot}
+                  key={otItem.nroOrden}
                   role="button"
                   tabIndex={0}
                   onClick={() => onSelectOT(otItem)}
@@ -121,7 +121,7 @@ export const DashboardListView = ({
                   <div className="flex-1 min-w-0 pr-2">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-[9px] font-black bg-pf-neutral-100 text-pf-neutral-500 px-1.5 py-0.5 rounded border border-pf-neutral-200 shadow-sm">{otItem.planta}</span>
-                      <span className="font-mono text-xs font-bold text-pf-neutral-700 group-hover:text-pf-blue-600 transition-colors">{otItem.ot}</span>
+                      <span className="font-mono text-xs font-bold text-pf-neutral-700 group-hover:text-pf-blue-600 transition-colors">{otItem.nroOrden}</span>
                     </div>
                     <p className="text-[11px] text-pf-neutral-500 font-medium truncate">{otItem.descripcion}</p>
                   </div>

@@ -16,8 +16,8 @@ export interface SeguimientoResult {
 
 export interface AtrasoRow {
   planta: string;
-  ot: string;
-  nroActivo?: string;
+  nroOrden: string;
+  nroActivo: string;
   descripcion: string;
   estado: string;
   clasificacion: "FINALIZADA" | "TECNICO / SERVICIO" | "PROGRAMADOR" | "OC / OTRO" | "MANTENIMIENTO";
@@ -60,7 +60,7 @@ export interface CumplimientoRow {
 }
 
 export interface OTFlowResult {
-  ot: string;
+  nroOrden: string;
   descripcion: string;
   planta: string;
   estadoAnterior?: string;

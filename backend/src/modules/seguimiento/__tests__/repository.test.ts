@@ -41,7 +41,7 @@ describe('SeguimientoRepository - SQL Validation', () => {
 
     // 4. Validamos que solo trajo 2 (Inclusivo de límites)
     expect(result).toHaveLength(2);
-    const ots = result.map(r => r.ot);
+    const ots = result.map(r => r.nroOrden);
     expect(ots).toContain('OT-DENTRO');
     expect(ots).toContain('OT-LIMITE-SUP');
     expect(ots).not.toContain('OT-FUERA');
@@ -74,11 +74,11 @@ describe('SeguimientoRepository - SQL Validation', () => {
     expect(result).toHaveLength(2);
 
     // Verificamos la OT Normal
-    expect(result[0].ot).toBe('123');
+    expect(result[0].nroOrden).toBe('123');
     expect(result[0].esOB).toBe(false);
 
     // Verificamos la OT de Infraestructura (OB)
-    expect(result[1].ot).toBe('456');
+    expect(result[1].nroOrden).toBe('456');
     expect(result[1].esOB).toBe(true); // El mapeo detecta ES_OB === 1
   });
 

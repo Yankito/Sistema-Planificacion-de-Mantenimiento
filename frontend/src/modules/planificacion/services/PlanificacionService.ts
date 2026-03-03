@@ -101,7 +101,6 @@ export async function ejecutarPlanificacionRemota(
     planta?: string
 ): Promise<ProcesoExcelResponse | null> {
     try {
-        console.log("ejecutando planificacion remota...");
         const response = await fetchAuth(`${API_BASE}/ejecutar`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

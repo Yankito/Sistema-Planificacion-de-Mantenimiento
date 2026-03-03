@@ -24,7 +24,6 @@ export const PlanificacionView = () => {
     planFiltrado, sinAsignarFiltrado,
     cargarPlanificacion, cargarHorarios
   } = planning;
-  console.log("cargandoPlan", cargandoPlan);
 
   useEffect(() => {
     const mes = periodoSeleccionado.split('-')[1];
@@ -35,6 +34,7 @@ export const PlanificacionView = () => {
   }, [cargarPlanificacion, cargarHorarios, periodoSeleccionado, plantaPlan]);
 
   const [idOrdenEditando, setIdOrdenEditando] = useState<string | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const monthOpts = getMonthOptions().options;
 
@@ -82,9 +82,9 @@ export const PlanificacionView = () => {
   const { plantasPlanificacion: plantas } = usePlantasAcceso();
 
   return (
-    <div className="flex flex-col h-full gap-4 relative">
+    <div className="flex flex-col h-full gap-4 relative overflow-hidden p-2 lg:p-4 bg-pf-neutral-50/30">
       {/* HEADER CON FILTROS Y ALGORITMOS */}
-      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between bg-white p-6 rounded-[2.5rem] border border-pf-neutral-200 shadow-sm gap-6">
+      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between bg-white p-4 lg:p-6 rounded-[2rem] border border-pf-neutral-200 shadow-sm gap-4 lg:gap-6">
         <div className="flex items-center gap-6">
           <div className="flex flex-col w-56">
             <label className="text-[10px] font-black text-pf-neutral-400 uppercase mb-1 px-1 flex items-center gap-1 tracking-widest">
@@ -94,7 +94,7 @@ export const PlanificacionView = () => {
               value={periodoSeleccionado}
               onChange={(e) => setPeriodoSeleccionado(e.target.value)}
               disabled={cargandoPlan}
-              className="w-full bg-pf-neutral-50 border border-pf-neutral-200 rounded-xl px-4 py-2.5 font-bold text-pf-neutral-700 outline-none focus:border-pf-red/30 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-pf-neutral-50 border border-pf-neutral-200 rounded-xl px-4 py-2 font-bold text-pf-neutral-700 outline-none focus:border-pf-red/30 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {monthOpts.map(opt => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -110,7 +110,7 @@ export const PlanificacionView = () => {
               value={plantaPlan}
               onChange={(e) => setPlantaPlan(e.target.value)}
               disabled={cargandoPlan}
-              className="w-full bg-pf-neutral-50 border border-pf-neutral-200 rounded-xl px-4 py-2.5 font-bold text-pf-neutral-700 outline-none focus:border-pf-red/30 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-pf-neutral-50 border border-pf-neutral-200 rounded-xl px-4 py-2 font-bold text-pf-neutral-700 outline-none focus:border-pf-red/30 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {plantas.map((p) => <option key={p} value={p}>{p}</option>)}
             </select>
@@ -153,6 +153,18 @@ export const PlanificacionView = () => {
           >
             Guardar Plan
           </button>
+
+          <div className="w-px h-8 bg-pf-neutral-200 mx-1 hidden lg:block" />
+
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className={`hidden lg:flex items-center justify-center p-2.5 rounded-xl transition-all active:scale-95 border ${sidebarOpen ? 'bg-pf-neutral-100 border-pf-neutral-200 text-pf-neutral-600' : 'bg-pf-red text-white border-pf-red shadow-lg shadow-pf-red/20'}`}
+            title={sidebarOpen ? "Ocultar Panel" : "Mostrar Panel"}
+          >
+            <div className={`transition-transform duration-300 ${sidebarOpen ? '' : 'rotate-180'}`}>
+              <CalendarDays size={18} />
+            </div>
+          </button>
         </div>
       </div>
 
@@ -161,7 +173,7 @@ export const PlanificacionView = () => {
           <LoadingOverlay message="Sincronizando con Oracle" />
         )}
 
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto custom-scrollbar">
           <Calendario
             {...logic}
             planResult={planFiltrado}
@@ -193,12 +205,14 @@ export const PlanificacionView = () => {
           />
         </div>
 
-        <PanelLateral
-          {...logic}
-          planResultSinAsignar={sinAsignarFiltrado}
-          plantaSeleccionada={plantaPlan}
-          onEditTecnicos={(orden) => setIdOrdenEditando(orden.nroOrden)}
-        />
+        <div className={`transition-all duration-500 ease-in-out overflow-hidden flex flex-col ${sidebarOpen ? 'w-80 opacity-100 mr-0' : 'w-0 opacity-0 -mr-6'}`}>
+          <PanelLateral
+            {...logic}
+            planResultSinAsignar={sinAsignarFiltrado}
+            plantaSeleccionada={plantaPlan}
+            onEditTecnicos={(orden) => setIdOrdenEditando(orden.nroOrden)}
+          />
+        </div>
       </div>
 
       {ordenEnEdicion && (

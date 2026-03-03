@@ -31,7 +31,8 @@ describe('Technician Analysis', () => {
             ...MOCK_DATA_ANALISIS,
             {
                 planta: "PF2",
-                ot: "OT-999",
+                nroOrden: "OT-999",
+                nroActivo: "999",
                 descripcion: "Otra",
                 estado: "PENDIENTE",
                 clasificacion: "TECNICO / SERVICIO" as const,
@@ -39,8 +40,6 @@ describe('Technician Analysis', () => {
                 semana: "2025-S01",
                 esOB: false,
                 detallesTecnicos: [{ tecnico: { nombre: "JUAN PEREZ", rol: "M", planta: "PF2" }, opFinalizada: true }],
-                nroOrden: "999",
-                equipo: "Equipo 4"
             }
         ];
 
@@ -64,14 +63,15 @@ describe('prepareTechProfile (Detalle Individual)', () => {
 
         expect(result.techName).toBe("JUAN PEREZ");
         expect(result.orders).toHaveLength(1);
-        expect(result.orders[0].ot).toBe("OT-100");
+        expect(result.orders[0].nroOrden).toBe("OT-100");
         expect(result.stats.pendientes).toBe(1);
     });
 
     it('debe marcar como pendiente si OP_FINALIZADA es NO, aunque la OT exista en cumplimiento', () => {
         const dataConPendiente = [
             {
-                ot: "OT-TEST-01",
+                nroOrden: "OT-TEST-01",
+                nroActivo: "1",
                 planta: "PF1",
                 descripcion: "Tarea de prueba",
                 estado: "Liberado",
@@ -79,9 +79,7 @@ describe('prepareTechProfile (Detalle Individual)', () => {
                 clasificacion: "TECNICO / SERVICIO" as const,
                 periodo: "2026",
                 semana: "2026-S06",
-                esOB: false,
-                nroOrden: "TEST-01",
-                equipo: "Equipo 5"
+                esOB: false
             }
         ];
 

@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { Filter, LayoutDashboard, Table as TableIcon, PieChart, XCircle, ArrowRight } from "lucide-react";
+import { Filter, LayoutDashboard, Table as TableIcon, PieChart, XCircle, ArrowRight, History } from "lucide-react";
 import { getRangoSemana } from "../../../shared/utils/dateUtils";
 import { SelectPill } from "../components/ui/SelectPill";
 import { AssetDetailView } from "../components/AssetDetailView";
@@ -37,6 +37,7 @@ export const FallasView = () => {
     // 2. ESTADOS VISUALES (Solo UI)
     const [activeTab, setActiveTab] = useState<'DASH' | 'CAUSAS' | 'TABLA'>('DASH');
     const [activoSeleccionado, setActivoSeleccionado] = useState<string | null>(null);
+    const [showComparison, setShowComparison] = useState(false);
 
     // Filtrar plantas del selector por las que el usuario tiene acceso
     const { filtrarPlantas } = usePlantasAcceso();
@@ -111,6 +112,15 @@ export const FallasView = () => {
                         <button onClick={() => setActiveTab('TABLA')} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${activeTab === 'TABLA' ? 'bg-white text-pf-red shadow-md' : 'text-pf-neutral-400 hover:text-pf-neutral-600'}`}><TableIcon size={14} /> <span className="hidden sm:inline">Datos</span></button>
                     </div>
                     <div className="flex gap-2">
+                        {activeTab === 'DASH' && (
+                            <button
+                                onClick={() => setShowComparison(!showComparison)}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${showComparison ? 'bg-pf-neutral-900 text-white shadow-md' : 'bg-white text-pf-neutral-500 hover:bg-pf-neutral-50 border border-pf-neutral-200'}`}
+                            >
+                                <History size={14} className={showComparison ? "text-pf-red animate-spin-slow" : ""} />
+                                {showComparison ? "Ocultar Anterior" : `Comparar con ${anioFiltro - 1}`}
+                            </button>
+                        )}
                         <SelectPill value={semanaFiltro} onChange={setSemanaFiltro} options={config.semanas} label="Semana" allLabel="Todas" />
                         <SelectPill value={plantaFiltro} onChange={setPlantaFiltro} options={plantasAccesibles} label="Planta" allLabel="Todas" />
                         <SelectPill value={anioFiltro} onChange={(val: string | number) => setAnioFiltro(Number(val))} options={config.anios} label="Año" />
@@ -129,8 +139,8 @@ export const FallasView = () => {
                         filtroDrill={filtroDrill}
                         setFiltroDrill={setFiltroDrill}
                         rangoTexto={rangoTextoHeader}
-                        topN={topN}
                         anioFiltro={anioFiltro}
+                        showComparison={showComparison}
                     />
                 )}
 

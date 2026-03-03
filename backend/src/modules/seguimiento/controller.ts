@@ -6,8 +6,18 @@ import { generarExcelReporte } from './utils/exportUtils.js';
 import * as TemplateGenerator from './logic/templateGenerator.js';
 import type { OrdenTrabajo } from '../../shared/types/index.js';
 
+/**
+ * Controlador del módulo de Seguimiento.
+ * Expone endpoints para consultar órdenes de trabajo, estadísticas de backlog
+ * y descargar reportes Excel con análisis de atrasos o OTs cumplidas.
+ */
 export const SeguimientoController = {
 
+  /**
+   * GET /api/seguimiento/pedidos
+   * Retorna las OTs filtradas por rango de fechas y las plantas autorizadas del usuario.
+   * Requiere query params: fechaInicio y fechaFin (formato YYYY-MM-DD).
+   */
   getPedidos: async (req: Request, res: Response) => {
     try {
       const { fechaInicio, fechaFin } = req.query;
@@ -16,9 +26,8 @@ export const SeguimientoController = {
         return res.status(400).json({ error: "Parámetros fechaInicio y fechaFin son obligatorios (formato YYYY-MM-DD)" });
       }
 
-      // Plantas autorizadas del usuario (desde el JWT, ya validado por authMiddleware)
+      // Las plantas autorizadas del usuario vienen del token JWT (validado por authMiddleware)
       const plantasUsuario = req.authUser?.plantas || [];
-      console.log(`[Seguimiento] getPedidos: ${fechaInicio} -> ${fechaFin} | plantas: [${plantasUsuario.join(', ')}]`);
 
       const data = await SeguimientoRepository.getPedidos(
         fechaInicio as string,
@@ -33,6 +42,11 @@ export const SeguimientoController = {
     }
   },
 
+  /**
+   * GET /api/seguimiento/stats
+   * Retorna estadísticas de backlog (flujo de OTs) y métricas de técnicos.
+   * Usa los mismos datos de getPedidos para calcular ambos análisis sin consultas adicionales.
+   */
   getDashboardStats: async (req: Request, res: Response) => {
     try {
       const { fechaInicio, fechaFin } = req.query;
@@ -41,7 +55,6 @@ export const SeguimientoController = {
 
       const plantasUsuario = req.authUser?.plantas || [];
 
-      // Una sola consulta: reutilizamos los mismos datos para actial y anterior
       const data = await SeguimientoRepository.getPedidos(start, end, plantasUsuario);
 
       const flowStats = analyzeBacklogFlow(data, data);
@@ -61,7 +74,12 @@ export const SeguimientoController = {
     }
   },
 
-  // Endpoint unificado: retorna pedidos + stats en UNA sola consulta a Oracle
+  /**
+   * GET /api/seguimiento/datos
+   * Endpoint unificado que retorna pedidos + estadísticas en una única consulta a Oracle.
+   * Optimizado para reducir round-trips al realizar un solo SELECT y computar el análisis en memoria.
+   * Requiere query params: fechaInicio y fechaFin (formato YYYY-MM-DD).
+   */
   getDatos: async (req: Request, res: Response) => {
     try {
       const { fechaInicio, fechaFin } = req.query;
@@ -71,16 +89,14 @@ export const SeguimientoController = {
       }
 
       const plantasUsuario = req.authUser?.plantas || [];
-      console.log(`[Seguimiento] getDatos: ${fechaInicio} -> ${fechaFin} | plantas: [${plantasUsuario.join(', ')}]`);
 
-      // Una sola consulta a Oracle
       const pedidos = await SeguimientoRepository.getPedidos(
         fechaInicio as string,
         fechaFin as string,
         plantasUsuario
       );
 
-      // Computamos las estadísticas sobre los datos ya cargados (sin nueva query)
+      // Calcular estadísticas sobre los datos ya cargados (sin nueva consulta a Oracle)
       const flowStats = analyzeBacklogFlow(pedidos, pedidos);
       const techStats = analyzeTechnicians(pedidos, []);
 
@@ -96,6 +112,13 @@ export const SeguimientoController = {
     }
   },
 
+  /**
+   * GET /api/seguimiento/reporte
+   * Genera y descarga un archivo Excel con el reporte de atrasos o OTs cumplidas.
+   * El modo define qué OTs se incluyen: 'ATRASOS' (no finalizadas) o 'CUMPLIDAS' (finalizadas).
+   * Requiere query params: fechaInicio, fechaFin, semana, modo.
+   * Opcionalmente acepta semanaAnt para comparar con una semana anterior.
+   */
   descargarReporte: async (req: Request, res: Response) => {
     try {
       const { semana, modo, semanaAnt, fechaInicio, fechaFin } = req.query;
@@ -108,7 +131,6 @@ export const SeguimientoController = {
 
       let dataAnterior: OrdenTrabajo[] = [];
       if (semanaAnt) {
-        console.log("semanaAnt", semanaAnt);
         dataAnterior = await SeguimientoRepository.getPedidos(start, end, plantasUsuario);
       }
 
@@ -130,6 +152,11 @@ export const SeguimientoController = {
     }
   },
 
+  /**
+   * GET /api/seguimiento/plantilla/:tipo
+   * Descarga un archivo Excel vacío con el formato de carga para el tipo especificado.
+   * El tipo se pasa como parámetro de ruta (ej: 'PLAN', 'FALLAS', 'MASIVO_EAM', 'HORARIOS_EAM').
+   */
   descargarPlantilla: async (req: Request, res: Response) => {
     try {
       const { tipo } = req.params;

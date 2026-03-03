@@ -5,6 +5,14 @@ import { useTecnicosCarga } from "../hooks/useTecnicosCarga";
 import { CONFIG_ROLES } from "../utils/planificacionUtils";
 import { usePlanificacionManager } from "../hooks/usePlanificacionManager";
 
+/**
+ * Función auxiliar para renderizar un icono representativo basado en el rol técnico.
+ * Categorías extraídas desde la BD local y la planilla de carga.
+ * M = Mecánico, E = Eléctrico, SADEMA = Sistema Medioambiental, etc.
+ * 
+ * @param {string} rol - Código de rol del trabajador.
+ * @returns Nodo de React con el icono (Lucide).
+ */
 const getIconForRole = (rol: string) => {
   switch (rol) {
     case 'M': return <Wrench size={14} fill="currentColor" />;
@@ -17,13 +25,25 @@ const getIconForRole = (rol: string) => {
   }
 };
 
-
+/**
+ * Propiedades del componente SeguimientoTecnicosView.
+ */
 interface Props {
+  /** Array con los nombres de las plantas disponibles para el usuario en sesión. */
   plantas: string[];
+  /** Callback para derivar al usuario hacia el modal/página de detalles de una planta en una fecha dada. */
   onNavegar: (planta: string, fecha?: string) => void;
 }
 
+/**
+ * Vista de Seguimiento de Carga de Trabajo de Técnicos (Heatmap).
+ * 
+ * Este componente lista a los técnicos filtrados y genera un "mapa de calor" tipo Gantt
+ * sobre un mes, coloreando los días según la carga de trabajo diaria (cantidad de OTs).
+ * Evita superposición excesiva y permite inspeccionar los trabajos haciendo clic en las celdas.
+ */
 export const SeguimientoTecnicosView = ({ plantas, onNavegar }: Props) => {
+  // Manejador del estado global proveniente del servidor
   const planning = usePlanificacionManager();
   const { planResult, mes, periodoSeleccionado, plantaPlan, cargarPlanificacion } = planning;
   const [plantaSel, setPlantaSel] = useState("TODAS");

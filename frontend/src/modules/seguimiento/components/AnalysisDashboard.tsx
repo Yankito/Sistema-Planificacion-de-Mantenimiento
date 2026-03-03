@@ -5,9 +5,9 @@ import type { AtrasoRow, OTFlowResult, TechStats, BacklogStats, TechFilters } fr
 import { TechProfile } from "./TechProfile";
 import { DashboardListView } from "./DashboardListView";
 
-// VISTA DETALLE OT (Estilo Sidebar)
+// VISTA DETALLE OT (Estilo Sidebar)1
 const OTDetailView = ({ otItem, allData, onBack, onTechClick }: { otItem: OTFlowResult, allData: AtrasoRow[], onBack: () => void, onTechClick: (tech: string) => void }) => {
-  const fullRow = allData.find(d => d.ot === otItem.ot);
+  const fullRow = allData.find(d => d.nroOrden === otItem.nroOrden);
   const tecnicos = fullRow?.detallesTecnicos || [];
 
   return (
@@ -18,7 +18,7 @@ const OTDetailView = ({ otItem, allData, onBack, onTechClick }: { otItem: OTFlow
           <span className="bg-pf-blue-50 text-pf-blue-600 px-2 py-0.5 rounded text-[10px] font-black border border-pf-blue-100/50">{otItem.planta}</span>
           <span className={`px-2 py-0.5 rounded text-[10px] font-black border ${otItem.tipoMovimiento === 'NUEVA' ? 'bg-pf-red-50 text-pf-red-600 border-pf-red-100/50' : 'bg-pf-success-50 text-pf-success-600 border-pf-success-100/50'}`}>{otItem.tipoMovimiento}</span>
         </div>
-        <h2 className="text-2xl font-mono font-black text-pf-neutral-800 tracking-tight mb-2">{otItem.ot}</h2>
+        <h2 className="text-2xl font-mono font-black text-pf-neutral-800 tracking-tight mb-2">{otItem.nroOrden}</h2>
         <p className="text-sm text-pf-neutral-600 font-medium leading-relaxed bg-pf-neutral-50 p-3 rounded-lg border border-pf-neutral-100">{otItem.descripcion}</p>
 
         <div className="mt-4 flex items-center justify-between text-xs pt-2 border-t border-pf-neutral-50">
@@ -119,7 +119,7 @@ export const AnalysisDashboard = ({
       const matchPlanta = techFilters.planta === "TODAS" || o.planta === techFilters.planta;
       const matchPeriodo = techFilters.periodo === "TODOS" || o.periodo === techFilters.periodo;
       const matchClasificacion = techFilters.clasificacion === "TODAS" || !techFilters.clasificacion || o.clasificacion === techFilters.clasificacion;
-      const matchSearch = !techSearch || o.ot.toLowerCase().includes(techSearch.toLowerCase()) || o.descripcion.toLowerCase().includes(techSearch.toLowerCase());
+      const matchSearch = !techSearch || o.nroOrden.toLowerCase().includes(techSearch.toLowerCase()) || o.descripcion.toLowerCase().includes(techSearch.toLowerCase());
       return matchPlanta && matchPeriodo && matchClasificacion && matchSearch;
     });
 

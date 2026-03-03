@@ -1,16 +1,16 @@
-// Repositorio de Autenticación
-// Consultas a las tablas PF_EAM_USUARIOS, PF_EAM_ROLES, PF_EAM_ACCESO_PLANTAS
+// Repositorio de autenticación.
+// Accede a las tablas PF_EAM_USUARIOS, PF_EAM_ROLES y PF_EAM_ACCESO_PLANTAS.
 import { query } from '../../db/config.js';
 
 export const AuthRepository = {
 
   /**
-   * Buscar usuario por credenciales (simula autenticación Oracle)
-   * En producción real, la contraseña se validaría contra el servidor Oracle directamente.
+   * Busca un usuario activo por sus credenciales (usuario + contraseña).
+   * Retorna la fila del usuario si las credenciales son correctas, o null si no existe.
    */
   async login(usuario: string, contrasena: string) {
     const result = await query(
-      `SELECT u.ID, u.USUARIO, u.PRIMER_NOMBRE, u.SEGUNDO_NOMBRE, 
+      `SELECT u.USUARIO, u.PRIMER_NOMBRE, u.SEGUNDO_NOMBRE, 
               u.PRIMER_APELLIDO, u.SEGUNDO_APELLIDO
        FROM PF_EAM_USUARIOS u
        WHERE u.USUARIO = :1 AND u.CONTRASENA = :2 AND u.ACTIVO = 1`,
@@ -20,7 +20,7 @@ export const AuthRepository = {
   },
 
   /**
-   * Obtener los roles asignados a un usuario
+   * Obtiene todos los roles asignados a un usuario (ej: 'programador', 'supervisor').
    */
   async getRoles(usuario: string): Promise<string[]> {
     const result = await query(
@@ -31,7 +31,7 @@ export const AuthRepository = {
   },
 
   /**
-   * Obtener las plantas a las que un usuario tiene acceso
+   * Obtiene todas las plantas a las que el usuario tiene acceso autorizado.
    */
   async getPlantas(usuario: string): Promise<string[]> {
     const result = await query(
@@ -42,44 +42,71 @@ export const AuthRepository = {
   },
 
   /**
-   * Obtener indicadores generales del dashboard (consultas ligeras)
-   * - Total OTs cargadas
-   * - Total técnicos activos
-   * - Total fallas registradas
-   * - Total activos registrados
+   * Retorna los indicadores clave para el dashboard principal:
+   * - Contadores globales (total OTs, técnicos, fallas, activos, plantas)
+   * - Últimas 5 fallas registradas
+   * - Top 5 estados de OTs
+   * - Distribución de técnicos por planta
    */
-  async getDashboardIndicadores() {
+  async getDashboardIndicadores(plantas: string[] = []) {
+    const hasPlantas = plantas.length > 0;
+
+    // Filtros dinámicos basados en el acceso del usuario
+    const plantasStr = plantas.map(p => `'${p}'`).join(',');
+    const fallaFiltro = hasPlantas ? `WHERE PLANTA IN (${plantasStr})` : '';
+    const tecnicoFiltro = hasPlantas ? `AND PLANTA IN (${plantasStr})` : '';
+    const activoFiltro = hasPlantas ? `WHERE ORGANIZACION IN (${plantasStr})` : '';
+
+    // Para Pedidos (OTs), si hay filtro de plantas, debemos unir con ACTIVOS para saber la planta
+    const pedidoFiltro = hasPlantas
+      ? `WHERE numero_activo IN (SELECT nro_de_activo FROM PF_EAM_ACTIVOS WHERE ORGANIZACION IN (${plantasStr}))`
+      : '';
+
     const [totalOTs, totalTecnicos, totalFallas, totalActivos, plantasActivas] = await Promise.all([
-      query(`SELECT COUNT(*) AS TOTAL FROM PF_EAM_PEDIDOS`),
-      query(`SELECT COUNT(*) AS TOTAL FROM PF_IM_TECNICOS WHERE ACTIVO = 1`),
-      query(`SELECT COUNT(*) AS TOTAL FROM PF_EAM_FALLAS`),
-      query(`SELECT COUNT(*) AS TOTAL FROM PF_EAM_ACTIVOS`),
-      query(`SELECT COUNT(DISTINCT PLANTA) AS TOTAL FROM PF_EAM_ACTIVOS WHERE PLANTA IS NOT NULL`),
+      query(`SELECT COUNT(*) AS TOTAL FROM PF_EAM_PEDIDOS ${pedidoFiltro}`),
+      query(`SELECT COUNT(*) AS TOTAL FROM PF_SPM_TECNICOS WHERE ACTIVO = 1 ${tecnicoFiltro}`),
+      query(`SELECT COUNT(*) AS TOTAL FROM PF_EAM_FALLAS ${fallaFiltro}`),
+      query(`SELECT COUNT(*) AS TOTAL FROM PF_EAM_ACTIVOS ${activoFiltro}`),
+      query(`SELECT COUNT(DISTINCT ORGANIZACION) AS TOTAL FROM PF_EAM_ACTIVOS ${activoFiltro}`),
     ]);
 
-    // Últimas 5 fallas registradas
+    // Últimas 5 fallas de las plantas del usuario
     const ultimasFallas = await query(
       `SELECT * FROM (
         SELECT PLANTA, EQUIPO, CAUSA, DURACION_MINUTOS, FECHA 
         FROM PF_EAM_FALLAS 
+        ${fallaFiltro}
         ORDER BY FECHA DESC
       ) WHERE ROWNUM <= 5`
     );
 
-    // OTs por estado (top 5 estados)
+    // Últimas 5 OTs (Pedidos) de las plantas del usuario
+    const ultimasOTs = await query(
+      `SELECT * FROM (
+        SELECT p.pedido_trabajo AS ID, p.descripcion AS DESCRIPCION, p.estado AS ESTADO, p.fecha_carga AS FECHA, a.organizacion AS PLANTA
+        FROM PF_EAM_PEDIDOS p
+        LEFT JOIN PF_EAM_ACTIVOS a ON p.numero_activo = a.nro_de_activo
+        ${hasPlantas ? `WHERE a.organizacion IN (${plantasStr})` : ''}
+        ORDER BY p.fecha_carga DESC
+      ) WHERE ROWNUM <= 5`
+    );
+
+    // Top 5 estados de OTs con mayor cantidad de registros
     const otsPorEstado = await query(
       `SELECT ESTADO, COUNT(*) AS CANTIDAD 
        FROM PF_EAM_PEDIDOS 
+       ${pedidoFiltro}
        GROUP BY ESTADO 
        ORDER BY COUNT(*) DESC 
        FETCH FIRST 5 ROWS ONLY`
     );
 
-    // Distribución de técnicos por planta
+    // Distribución de técnicos activos agrupados por planta
     const tecnicosPorPlanta = await query(
       `SELECT PLANTA, COUNT(*) AS CANTIDAD 
-       FROM PF_IM_TECNICOS 
+       FROM PF_SPM_TECNICOS 
        WHERE ACTIVO = 1 AND PLANTA IS NOT NULL
+       ${tecnicoFiltro}
        GROUP BY PLANTA 
        ORDER BY PLANTA`
     );
@@ -93,6 +120,7 @@ export const AuthRepository = {
         plantasActivas: (plantasActivas?.rows as any[])?.[0]?.TOTAL || 0,
       },
       ultimasFallas: (ultimasFallas?.rows as any[]) || [],
+      ultimasOTs: (ultimasOTs?.rows as any[]) || [],
       otsPorEstado: (otsPorEstado?.rows as any[]) || [],
       tecnicosPorPlanta: (tecnicosPorPlanta?.rows as any[]) || [],
     };

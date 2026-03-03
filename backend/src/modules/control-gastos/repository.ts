@@ -16,6 +16,7 @@ const normalizeFrecuencia = (f: string): string => {
   if (low.startsWith('hito')) return 'hito';
   return low;
 };
+
 const getTipoGasto = (tipo: string, tipoOt: string): string => {
   if (tipo === 'B' && (tipoOt === 'Preventivo' || tipoOt === 'Procedimientos')) {
     return 'BODEGA';
@@ -107,8 +108,8 @@ export const ControlGastosRepository = {
 
     await withConnection(async (connection) => {
       const sql = `INSERT INTO PF_EAM_GASTOS_CONSOLIDADOS 
-                (TIPO, NUMERO_OT, TIPO_OT, NRO_ACTIVO, FECHA_TRANSACCION, DESCRIP_ARTICULO, COSTO_TRX, MANTENIBLE)
-                VALUES (:tipo, :numeroOt, :tipoOt, :nroActivo, :fechaTrx, :descripcionArticulo, :costoTrx, :mantenible)`;
+                (tipo, numero_ot, tipo_ot, nro_activo, fecha_transaccion, descrip_articulo, costo_trx)
+                VALUES (:tipo, :numeroOt, :tipoOt, :nroActivo, :fechaTrx, :descripcionArticulo, :costoTrx)`;
 
       const binds = rows.map(r => ({
         tipo: r.tipo,
@@ -117,8 +118,7 @@ export const ControlGastosRepository = {
         nroActivo: r.nroActivo,
         descripcionArticulo: r.descripcionArticulo?.substring(0, 500) || '',
         fechaTrx: r.fechaTrx,
-        costoTrx: r.costoTrx,
-        mantenible: r.mantenible
+        costoTrx: r.costoTrx
       }));
 
       const batchSize = 1000;
@@ -126,8 +126,6 @@ export const ControlGastosRepository = {
         const batch = binds.slice(i, i + batchSize);
         await connection.executeMany(sql, batch, { autoCommit: true });
       }
-
-      console.log(`Insertadas ${rows.length} filas en PF_EAM_GASTOS_CONSOLIDADOS`);
     });
   },
 
@@ -135,9 +133,19 @@ export const ControlGastosRepository = {
     if (rows.length === 0) return;
 
     await withConnection(async (connection) => {
-      const sql = `INSERT INTO PF_GASTOS_PRESUPUESTO 
-                (ACTIVO_COD, FRECUENCIA, MES, ANIO, MONTO_BODEGA, MONTO_SERV_EXT, MONTO_CORRECTIVO)
-                VALUES (:activo, :frecuencia, :mes, :anio, :montoBodega, :montoServExt, :montoCorrectivo)`;
+      const sql = `
+        MERGE INTO PF_SPM_GASTOS_PRESUPUESTO target
+        USING (SELECT :activo as numero_activo, :frecuencia as frecuencia, :mes as mes, :anio as anio FROM DUAL) source
+        ON (target.numero_activo = source.numero_activo AND target.frecuencia = source.frecuencia AND target.mes = source.mes AND target.anio = source.anio)
+        WHEN MATCHED THEN
+          UPDATE SET 
+            monto_bodega = :montoBodega,
+            monto_serv_ext = :montoServExt,
+            monto_correctivo = :montoCorrectivo
+        WHEN NOT MATCHED THEN
+          INSERT (numero_activo, frecuencia, mes, anio, monto_bodega, monto_serv_ext, monto_correctivo)
+          VALUES (:activo, :frecuencia, :mes, :anio, :montoBodega, :montoServExt, :montoCorrectivo)
+      `;
 
       const binds = rows.map(r => ({
         activo: r.activo,
@@ -150,7 +158,6 @@ export const ControlGastosRepository = {
       }));
 
       await connection.executeMany(sql, binds, { autoCommit: true });
-      console.log(`Insertadas ${rows.length} filas en PF_GASTOS_PRESUPUESTO`);
     });
   },
 
@@ -169,70 +176,85 @@ export const ControlGastosRepository = {
                         p.DESCRIPCION as DESC_OT,
                         p.ESTADO as ESTADO_OT,
                         g.COSTO_TRX, 
-                        EXTRACT(YEAR FROM p.FECHA_INICIAL_PROGRAMADA) as ANIO_CALC,
-                        EXTRACT(MONTH FROM p.FECHA_INICIAL_PROGRAMADA) as MES_CALC,
+                        EXTRACT(YEAR FROM g.FECHA_TRANSACCION) as ANIO_CALC,
+                        EXTRACT(MONTH FROM g.FECHA_TRANSACCION) as MES_CALC,
                         a.clase_contable as CLASE_CONTABLE_ACTIVO,
                         a.mantenible as MANTENIBLE_ACTIVO,
                         COALESCE(
-                            CASE 
-                                WHEN a.organizacion = 'MP1' THEN 'PF1'
-                                WHEN a.organizacion = 'MP2' THEN 'PF2'
-                                WHEN a.organizacion = 'MPS' THEN 'MPS'
-                                ELSE CASE a.clase_contable
-                                    WHEN 'Edif ElabC' THEN 'PF3'
-                                    WHEN 'Edif Mant' THEN 'PF3'
-                                    WHEN 'Higiene P3' THEN 'PF3'
-                                    WHEN 'Infra ElaC' THEN 'PF3'
-                                    WHEN 'Infra Mant' THEN 'PF3'
-                                    WHEN 'Mant AMB' THEN 'PF3'
-                                    WHEN 'Rack ElabC' THEN 'PF3'
-                                    WHEN 'Edif Jamon' THEN 'PF4'
-                                    WHEN 'Higiene P4' THEN 'PF4'
-                                    WHEN 'Infra Jam' THEN 'PF4'
-                                    WHEN 'Mant Jamon' THEN 'PF4'
-                                    WHEN 'Rack Jam' THEN 'PF4'
-                                    WHEN 'Edif Pizza' THEN 'PF5'
-                                    WHEN 'Higiene P5' THEN 'PF5'
-                                    WHEN 'Infra Pizz' THEN 'PF5'
-                                    WHEN 'Mant Pizza' THEN 'PF5'
-                                    WHEN 'Rack Pizz' THEN 'PF5'
-                                    WHEN 'Higiene P6' THEN 'PF6'
-                                    WHEN 'Infra Plat' THEN 'PF6'
-                                    WHEN 'Mant Plato' THEN 'PF6'
-                                    WHEN 'Rack Plato' THEN 'PF6'
-                                    WHEN 'Redes Plat' THEN 'PF6'
-                                    WHEN 'Edif PR Ad' THEN 'OTROS'
-                                    WHEN 'Edif PR PF' THEN 'OTROS'
-                                    WHEN 'Gerencia' THEN 'OTROS'
-                                    WHEN 'Infra Lomb' THEN 'OTROS'
-                                    WHEN 'Edif CDT' THEN 'CDT'
-                                    WHEN 'Infra CDT' THEN 'CDT'
-                                    WHEN 'Mant CDT' THEN 'CDT'
-                                    WHEN 'Rack CDT' THEN 'CDT'
-                                    WHEN 'Edif DataC' THEN 'DC'
-                                    WHEN 'Infra DatC' THEN 'DC'
-                                    WHEN 'Mant DataC' THEN 'DC'
-                                    WHEN 'Edif Vent' THEN 'VENTAS'
-                                    WHEN 'Infra Vent' THEN 'VENTAS'
-                                    WHEN 'Mant Vent' THEN 'VENTAS'
-                                    WHEN 'Equipo PF' THEN 
-                                        CASE 
-                                            WHEN a.nro_de_activo LIKE '%(1%' THEN 'PF1'
-                                            WHEN a.nro_de_activo LIKE '%(2%' THEN 'PF2'
-                                            ELSE 'OTROS'
-                                        END
-                                    ELSE 'OTROS'
+                            (
+                                SELECT CASE 
+                                    WHEN a.organizacion = 'MP1' THEN 'PF1'
+                                    WHEN a.organizacion = 'MP2' THEN 'PF2'
+                                    WHEN a.organizacion = 'MPS' THEN 'MPS'
+                                    ELSE CASE a.clase_contable
+                                        WHEN 'Edif ElabC' THEN 'PF3'
+                                        WHEN 'Edif Mant' THEN 'PF3'
+                                        WHEN 'Higiene P3' THEN 'PF3'
+                                        WHEN 'Infra ElaC' THEN 'PF3'
+                                        WHEN 'Infra Mant' THEN 'PF3'
+                                        WHEN 'Mant AMB' THEN 'PF3'
+                                        WHEN 'Rack ElabC' THEN 'PF3'
+                                        WHEN 'Edif Jamon' THEN 'PF4'
+                                        WHEN 'Higiene P4' THEN 'PF4'
+                                        WHEN 'Infra Jam' THEN 'PF4'
+                                        WHEN 'Mant Jamon' THEN 'PF4'
+                                        WHEN 'Rack Jam' THEN 'PF4'
+                                        WHEN 'Edif Pizza' THEN 'PF5'
+                                        WHEN 'Higiene P5' THEN 'PF5'
+                                        WHEN 'Infra Pizz' THEN 'PF5'
+                                        WHEN 'Mant Pizza' THEN 'PF5'
+                                        WHEN 'Rack Pizz' THEN 'PF5'
+                                        WHEN 'Higiene P6' THEN 'PF6'
+                                        WHEN 'Infra Plat' THEN 'PF6'
+                                        WHEN 'Mant Plato' THEN 'PF6'
+                                        WHEN 'Rack Plato' THEN 'PF6'
+                                        WHEN 'Redes Plat' THEN 'PF6'
+                                        WHEN 'Edif PR Ad' THEN 'OTROS'
+                                        WHEN 'Edif PR PF' THEN 'OTROS'
+                                        WHEN 'Gerencia' THEN 'OTROS'
+                                        WHEN 'Infra Lomb' THEN 'OTROS'
+                                        WHEN 'Infra Comp' THEN 'OTROS'
+                                        WHEN 'Edif CDT' THEN 'CDT'
+                                        WHEN 'Infra CDT' THEN 'CDT'
+                                        WHEN 'Mant CDT' THEN 'CDT'
+                                        WHEN 'Rack CDT' THEN 'CDT'
+                                        WHEN 'Edif DataC' THEN 'DC'
+                                        WHEN 'Infra DatC' THEN 'DC'
+                                        WHEN 'Mant DataC' THEN 'DC'
+                                        WHEN 'Edif Vent' THEN 'VENTAS'
+                                        WHEN 'Infra Vent' THEN 'VENTAS'
+                                        WHEN 'Mant Vent' THEN 'VENTAS'
+                                        WHEN 'Equipo PF' THEN 
+                                            CASE 
+                                                WHEN a.nro_de_activo LIKE '%(1%' THEN 'PF1'
+                                                WHEN a.nro_de_activo LIKE '%(2%' THEN 'PF2'
+                                                ELSE 'OTROS'
+                                            END
+                                        ELSE 'OTROS'
+                                    END
                                 END
-                            END,
-                            'OTROS'
+                                FROM PF_EAM_ACTIVOS a 
+                                WHERE UPPER(a.nro_de_activo) = UPPER(g.NRO_ACTIVO)
+                                AND ROWNUM = 1
+                            ),
+                            CASE 
+                                WHEN g.NRO_ACTIVO LIKE '%(1%' THEN 'PF1'
+                                WHEN g.NRO_ACTIVO LIKE '%(2%' THEN 'PF2'
+                                WHEN g.NRO_ACTIVO LIKE '%(3%' THEN 'PF3'
+                                WHEN g.NRO_ACTIVO LIKE '%(4%' THEN 'PF4'
+                                WHEN g.NRO_ACTIVO LIKE '%(5%' THEN 'PF5'
+                                WHEN g.NRO_ACTIVO LIKE '%(6%' THEN 'PF6'
+                                ELSE 'OTROS'
+                            END
                         ) as PLANTA_CALC
                     FROM PF_EAM_GASTOS_CONSOLIDADOS g
                     INNER JOIN PF_EAM_PEDIDOS p ON g.NUMERO_OT = p.PEDIDO_TRABAJO
                     LEFT JOIN PF_EAM_ACTIVOS a ON UPPER(g.NRO_ACTIVO) = UPPER(a.nro_de_activo)
-                    WHERE TRUNC(p.FECHA_INICIAL_PROGRAMADA) >= TO_DATE(:startDate, 'YYYY-MM-DD')
-                      AND TRUNC(p.FECHA_INICIAL_PROGRAMADA) <= TO_DATE(:endDate, 'YYYY-MM-DD')
+                    WHERE TRUNC(g.FECHA_TRANSACCION) >= TO_DATE(:startDate, 'YYYY-MM-DD')
+                      AND TRUNC(g.FECHA_TRANSACCION) <= TO_DATE(:endDate, 'YYYY-MM-DD')
+                      AND TRIM(g.TIPO) IN ('B', 'SER', 'OC')
                 )
-                SELECT * FROM DataCalculada
+                SELECT DISTINCT * FROM DataCalculada
                 WHERE (:plantaFiltro IS NULL OR PLANTA_CALC = :planta)
             `;
 
@@ -253,6 +275,12 @@ export const ControlGastosRepository = {
 
       for (const row of rows) {
         const mappedData = mapGastoRow(row);
+        if (row.NRO_ACTIVO === "PF Conj Etiqu Foxjet P1 (0177)") {
+          console.log(mappedData);
+        }
+        // if (row.NRO_ACTIVO === "PF Eq Apoyo Producc P1 (0240)") {
+        //   console.log(mappedData);
+        // }
         if (mappedData) {
           results.push(mappedData);
         }
@@ -261,22 +289,12 @@ export const ControlGastosRepository = {
     });
   },
 
-  clearPresupuesto: async (anio: number) => {
-    await withConnection(async (connection) => {
-      await connection.execute(
-        `DELETE FROM PF_GASTOS_PRESUPUESTO WHERE ANIO = :anio`,
-        [anio],
-        { autoCommit: true }
-      );
-    });
-  },
-
   getPresupuesto: async (anio: number, planta?: string, activo?: string, mes?: number): Promise<PresupuestoRow[]> => {
     return await withConnection(async (connection) => {
       const sql = `
                 WITH DataPresupuesto AS (
                     SELECT 
-                        ACTIVO_COD as "activo", 
+                        NUMERO_ACTIVO as "activo", 
                         FRECUENCIA as "frecuencia", 
                         MES as "mes", 
                         ANIO as "anio", 
@@ -286,19 +304,19 @@ export const ControlGastosRepository = {
                         (
                             SELECT a.clase_contable 
                             FROM PF_EAM_ACTIVOS a 
-                            WHERE a.nro_de_activo = ACTIVO_COD
+                            WHERE a.nro_de_activo = NUMERO_ACTIVO
                             AND ROWNUM = 1
                         ) as "claseContable",
                         (
                             SELECT a.mantenible 
                             FROM PF_EAM_ACTIVOS a 
-                            WHERE a.nro_de_activo = ACTIVO_COD
+                            WHERE a.nro_de_activo = NUMERO_ACTIVO
                             AND ROWNUM = 1
                         ) as "mantenible",
                         (
                             SELECT a.organizacion 
                             FROM PF_EAM_ACTIVOS a 
-                            WHERE a.nro_de_activo = ACTIVO_COD
+                            WHERE a.nro_de_activo = NUMERO_ACTIVO
                             AND ROWNUM = 1
                         ) as "organizacion",
                         COALESCE(
@@ -334,6 +352,7 @@ export const ControlGastosRepository = {
                                         WHEN 'Edif PR PF' THEN 'OTROS'
                                         WHEN 'Gerencia' THEN 'OTROS'
                                         WHEN 'Infra Lomb' THEN 'OTROS'
+                                        WHEN 'Infra Comp' THEN 'OTROS'
                                         WHEN 'Edif CDT' THEN 'CDT'
                                         WHEN 'Infra CDT' THEN 'CDT'
                                         WHEN 'Mant CDT' THEN 'CDT'
@@ -354,23 +373,23 @@ export const ControlGastosRepository = {
                                     END
                                 END
                                 FROM PF_EAM_ACTIVOS a 
-                                WHERE a.nro_de_activo = ACTIVO_COD
+                                WHERE a.nro_de_activo = NUMERO_ACTIVO
                                 AND ROWNUM = 1
                             ),
                             CASE 
-                                WHEN ACTIVO_COD LIKE '%(1%' THEN 'PF1'
-                                WHEN ACTIVO_COD LIKE '%(2%' THEN 'PF2'
-                                WHEN ACTIVO_COD LIKE '%(3%' THEN 'PF3'
-                                WHEN ACTIVO_COD LIKE '%(4%' THEN 'PF4'
-                                WHEN ACTIVO_COD LIKE '%(5%' THEN 'PF5'
-                                WHEN ACTIVO_COD LIKE '%(6%' THEN 'PF6'
+                                WHEN NUMERO_ACTIVO LIKE '%(1%' THEN 'PF1'
+                                WHEN NUMERO_ACTIVO LIKE '%(2%' THEN 'PF2'
+                                WHEN NUMERO_ACTIVO LIKE '%(3%' THEN 'PF3'
+                                WHEN NUMERO_ACTIVO LIKE '%(4%' THEN 'PF4'
+                                WHEN NUMERO_ACTIVO LIKE '%(5%' THEN 'PF5'
+                                WHEN NUMERO_ACTIVO LIKE '%(6%' THEN 'PF6'
                                 ELSE 'OTROS'
                             END
                         ) as PLANTA_CALC,
                         FRECUENCIA
-                    FROM PF_GASTOS_PRESUPUESTO 
+                    FROM PF_SPM_GASTOS_PRESUPUESTO 
                     WHERE ANIO = :anio
-                    AND (:activo IS NULL OR ACTIVO_COD = :activo)
+                    AND (:activo IS NULL OR NUMERO_ACTIVO = :activo)
                     AND (:mes IS NULL OR MES = :mes)
                 )
                 SELECT * FROM DataPresupuesto
@@ -430,9 +449,9 @@ export const ControlGastosRepository = {
 
   updatePresupuestoAssetName: async (oldName: string, newName: string, anio: number): Promise<void> => {
     await withConnection(async (connection) => {
-      const sql = `UPDATE PF_GASTOS_PRESUPUESTO 
-                         SET ACTIVO_COD = :newName 
-                         WHERE ACTIVO_COD = :oldName AND ANIO = :anio`;
+      const sql = `UPDATE PF_SPM_GASTOS_PRESUPUESTO 
+                         SET NUMERO_ACTIVO = :newName 
+                         WHERE NUMERO_ACTIVO = :oldName AND ANIO = :anio`;
       await connection.execute(sql, { oldName, newName, anio }, { autoCommit: true });
     });
   },
@@ -441,17 +460,17 @@ export const ControlGastosRepository = {
     return await withConnection(async (connection) => {
       // 1. Obtener activos del presupuesto que no tienen coincidencia exacta
       const sqlMissing = `
-                SELECT DISTINCT ACTIVO_COD 
-                FROM PF_GASTOS_PRESUPUESTO 
+                SELECT DISTINCT NUMERO_ACTIVO 
+                FROM PF_SPM_GASTOS_PRESUPUESTO 
                 WHERE ANIO = :anio 
                 AND NOT EXISTS (
                     SELECT 1 FROM PF_EAM_ACTIVOS 
-                    WHERE TRIM(UPPER(nro_de_activo)) = TRIM(UPPER(ACTIVO_COD))
+                    WHERE TRIM(UPPER(nro_de_activo)) = TRIM(UPPER(NUMERO_ACTIVO))
                 )
             `;
       const resultMissing = await connection.execute(sqlMissing, { anio });
       const rows = (resultMissing.rows || []) as Record<string, any>[];
-      const missingAssets = rows.map((r) => r.ACTIVO_COD || r[0]);
+      const missingAssets = rows.map((r) => r.NUMERO_ACTIVO || r[0]);
 
       let fixedCount = 0;
 
@@ -475,9 +494,9 @@ export const ControlGastosRepository = {
 
           // 3. Actualizar
           const sqlUpdate = `
-                        UPDATE PF_GASTOS_PRESUPUESTO 
-                        SET ACTIVO_COD = :newName 
-                        WHERE ACTIVO_COD = :oldName AND ANIO = :anio
+                        UPDATE PF_SPM_GASTOS_PRESUPUESTO 
+                        SET NUMERO_ACTIVO = :newName 
+                        WHERE NUMERO_ACTIVO = :oldName AND ANIO = :anio
                     `;
           await connection.execute(sqlUpdate, { newName, oldName, anio }, { autoCommit: true });
           fixedCount++;
@@ -495,12 +514,12 @@ export const ControlGastosRepository = {
     await withConnection(async (connection) => {
       // Borramos lo anterior del mismo activo/año para reemplazo completo desde el modal manual
       await connection.execute(
-        `DELETE FROM PF_GASTOS_PRESUPUESTO WHERE ACTIVO_COD = :activo AND ANIO = :anio`,
+        `DELETE FROM PF_SPM_GASTOS_PRESUPUESTO WHERE NUMERO_ACTIVO = :activo AND ANIO = :anio`,
         { activo, anio }
       );
 
-      const sql = `INSERT INTO PF_GASTOS_PRESUPUESTO 
-                (ACTIVO_COD, FRECUENCIA, MES, ANIO, MONTO_BODEGA, MONTO_SERV_EXT, MONTO_CORRECTIVO)
+      const sql = `INSERT INTO PF_SPM_GASTOS_PRESUPUESTO 
+                (NUMERO_ACTIVO, FRECUENCIA, MES, ANIO, MONTO_BODEGA, MONTO_SERV_EXT, MONTO_CORRECTIVO)
                 VALUES (:activo, :frecuencia, :mes, :anio, :montoBodega, :montoServExt, :montoCorrectivo)`;
 
       const binds = rows.map(r => ({

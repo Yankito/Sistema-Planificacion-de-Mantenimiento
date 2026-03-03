@@ -1,20 +1,27 @@
 import type { Request, Response } from 'express';
 import XLSX from "xlsx-js-style";
 import { query } from '../../db/config.js';
-
-/**
- * Controlador para carga masiva de datos
- * Procesa un Excel que contiene múltiples hojas con datos de:
- * - Empleados
- * - Horarios
- * - Activos
- * - Pedidos de trabajo (OTs)
- * - Fallas
- */
 import { generarBufferPlantilla } from '../seguimiento/logic/templateGenerator.js';
 import { EamRepository } from '../eam/repository.js';
-// Helper para convertir fecha Excel o String DD/MM/YYYY a String ISO o compatible DB
-// Helper para convertir fecha Excel o String a objeto Date de JavaScript
+
+/**
+ * Controlador de carga masiva de datos EAM.
+ * Procesa un archivo Excel que puede contener múltiples hojas con datos de:
+ *   - Pedidos de trabajo (por planta: PF1, PF2, MP3, MPS)
+ *   - Activos físicos (hoja ACTIVOS)
+ *   - Cumplimiento de técnicos (hoja CUMPLIMIENTO)
+ *   - Control masivo de materiales/servicios (hoja MASIVO)
+ *   - Fallas de equipos (hoja Detalle MTBF MTTR)
+ */
+
+/**
+ * Convierte un valor de fecha proveniente de Excel o un string a un objeto Date.
+ * Soporta:
+ *   - Instancias Date nativas
+ *   - Códigos de fecha numéricos de Excel (serial dates)
+ *   - Strings ISO (YYYY-MM-DD)
+ *   - Strings con formato DD/MM/YYYY o DD/MM/YYYY HH:mm:ss
+ */
 const parseFecha = (val: unknown): Date | null => {
     if (!val) return null;
     if (val instanceof Date) return val;
@@ -44,8 +51,10 @@ const parseFecha = (val: unknown): Date | null => {
     return Number.isNaN(parsed.getTime()) ? null : parsed;
 };
 
-// Helper SOLO FECHA (DD/MM/YYYY) para Cumplimiento y Masivo
-// Helper SOLO FECHA para Cumplimiento y Masivo (pone hora a 00:00:00)
+/**
+ * Igual que parseFecha pero fuerza la hora a 00:00:00 (solo fecha, sin hora).
+ * Usado para campos de cumplimiento y masivo donde solo importa el día.
+ */
 const parseFechaDateOnly = (val: unknown): Date | null => {
     const d = parseFecha(val);
     if (!d) return null;
@@ -53,6 +62,10 @@ const parseFechaDateOnly = (val: unknown): Date | null => {
     return d;
 };
 
+/**
+ * Convierte un valor monetario (puede venir con separadores de miles, signo $, etc.)
+ * a número float. Retorna 0 si el valor es inválido.
+ */
 const parseDineroLocal = (valor: unknown): number => {
     if (typeof valor === 'number') return valor;
     if (!valor) return 0;
@@ -69,36 +82,42 @@ const parseDineroLocal = (valor: unknown): number => {
 };
 
 export const MassiveController = {
+
+    /**
+     * POST /api/masivo/upload
+     * Detecta el tipo de carga según las hojas encontradas en el Excel:
+     *   - Si hay hojas PF1/PF2/MP3/MPS o ACTIVOS o CUMPLIMIENTO: modo EAM (trunca y recarga todo).
+     *   - Si solo existen hojas CUMPLIMIENTO/MASIVO sin cabecera de pedidos: muestra advertencia.
+     * Luego procesa en secuencia: Pedidos → Activos → Cumplimiento → Masivo → Fallas.
+     */
     uploadMassive: async (req: Request, res: Response) => {
         try {
             if (!req.file) {
                 return res.status(400).json({ error: "Archivo requerido" });
             }
 
-            const { targetWeek } = req.body;
-            console.log(`[MASIVO] 📁 Iniciando carga masiva para semana: ${targetWeek}`);
+            console.log(`[MASIVO] Iniciando carga masiva`);
 
             const workbook = XLSX.read(req.file.buffer, { type: 'buffer', cellDates: true });
             const sheetNames = workbook.SheetNames;
-            console.log(`[MASIVO] 📊 Hojas detectadas: ${sheetNames.join(', ')}`);
+            console.log(`[MASIVO] Hojas detectadas: ${sheetNames.join(', ')}`);
 
             const counts = { empleados: 0, horarios: 0, activos: 0, pedidos: 0, fallas: 0 };
 
-            // DETECCIÓN DE SIMULACIÓN EAM
+            // Identificar el tipo de carga según las hojas presentes
             const hojasPedidosPosibles = ['PF1', 'PF2', 'MP3', 'MPS'];
             const hojasPedidosEncontradas = sheetNames.filter(s => hojasPedidosPosibles.includes(s.trim().toUpperCase()));
             const hojaActivos = sheetNames.find(s => s.trim().toUpperCase() === 'ACTIVOS');
-
             const isEamSimulation = hojasPedidosEncontradas.length > 0 || !!hojaActivos || sheetNames.some(s => s.toUpperCase() === 'CUMPLIMIENTO');
 
             if (isEamSimulation) {
-                console.log("[MASIVO] 🚀 Detectada simulación EAM completa. Usando tablas PF_EAM_...");
+                console.log("[MASIVO] Detectada simulación EAM completa. Usando tablas PF_EAM_...");
                 await EamRepository.truncateTables();
 
-                // 1. Cargar PEDIDOS (Múltiples hojas)
+                // 1. Cargar Pedidos de Trabajo desde cada hoja de planta
                 let totalPedidos = 0;
                 for (const hojaNombre of hojasPedidosEncontradas) {
-                    console.log(`[MASIVO] 📊 Procesando hoja ${hojaNombre} con pedidos...`);
+                    console.log(`[MASIVO] Procesando hoja ${hojaNombre} con pedidos...`);
                     const pedidosRaw = XLSX.utils.sheet_to_json(workbook.Sheets[hojaNombre]) as Record<string, unknown>[];
                     const pedidosMapped = pedidosRaw.map((r) => ({
                         pedido_trabajo: String(r['Pedido de Trabajo'] || r['PEDIDO_DE_TRABAJO'] || '').trim(),
@@ -119,7 +138,7 @@ export const MassiveController = {
                 console.log(`[MASIVO-EAM] Insertados ${totalPedidos} pedidos totales.`);
                 counts.pedidos = totalPedidos;
 
-                // 1.5 Cargar ACTIVOS
+                // 2. Cargar Activos si la hoja existe
                 if (hojaActivos) {
                     const activosRaw = XLSX.utils.sheet_to_json(workbook.Sheets[hojaActivos]) as Record<string, unknown>[];
                     const activosMapped = activosRaw.map((r) => ({
@@ -127,13 +146,11 @@ export const MassiveController = {
                         desc_grupo_de_activo: String(r['DESC_GRUPO_DE_ACTIVO'] || '').trim(),
                         nro_de_serie: String(r['NRO_DE_SERIE'] || '').trim(),
                         mantenible: String(r['MANTENIBLE'] || '').trim(),
-                        cc: String(r['CC'] || '').trim(),
                         nro_de_activo: String(r['NRO_DE_ACTIVO'] || '').trim(),
                         desc_nro_de_activo: String(r['DESC_NRO_DE_ACTIVO'] || '').trim(),
                         nro_de_activo_padre: String(r['NRO_DE_ACTIVO_PADRE'] || '').trim(),
                         organizacion: String(r['ORGANIZACION'] || '').trim(),
                         clase_contable: String(r['CLASE_CONTABLE'] || '').trim(),
-                        planta: String(r['PLANTA'] || '').trim()
                     })).filter(a => a.nro_de_activo);
 
                     if (activosMapped.length > 0) {
@@ -143,7 +160,7 @@ export const MassiveController = {
                     }
                 }
 
-                // 2. Cargar CUMPLIMIENTO
+                // 3. Cargar registros de Cumplimiento (técnicos por OT)
                 if (sheetNames.includes('CUMPLIMIENTO')) {
                     const cumplimientoRaw = XLSX.utils.sheet_to_json(workbook.Sheets['CUMPLIMIENTO']) as Record<string, unknown>[];
                     const cumplimientoMapped = cumplimientoRaw.map((r) => ({
@@ -162,7 +179,7 @@ export const MassiveController = {
                     await EamRepository.insertarCumplimiento(cumplimientoMapped);
                 }
 
-                // 3. Cargar MASIVO
+                // 4. Cargar el control masivo de materiales y servicios
                 if (sheetNames.includes('MASIVO')) {
                     const masivoRaw = XLSX.utils.sheet_to_json(workbook.Sheets['MASIVO']) as Record<string, unknown>[];
                     const masivoMapped = masivoRaw.map((r) => ({
@@ -185,10 +202,8 @@ export const MassiveController = {
                             return Number.isNaN(num) ? 0 : num;
                         })(),
                         rmd: (() => {
-                            // Si son numéricos en DB, mejor pasar número o null. Si son string, pasar string.
-                            // Asumiendo que pueden ser numéricos por el error reportado, trataremos de limpiar.
                             const val = r['RMD'];
-                            if (val === undefined || val === null || String(val).trim() === '') return null; // Enviar null si está vacío
+                            if (val === undefined || val === null || String(val).trim() === '') return null;
                             return String(val).trim();
                         })(),
                         rse: (() => {
@@ -198,6 +213,7 @@ export const MassiveController = {
                         })()
                     })).filter(m => m.numero);
 
+                    // Deduplicar por número de OT antes de insertar
                     const uniqueMasivo = Array.from(
                         new Map(masivoMapped.map(item => [item.numero, item])).values()
                     );
@@ -206,44 +222,29 @@ export const MassiveController = {
                     await EamRepository.insertarMasivo(uniqueMasivo);
                 }
 
-                // 4. SINCRONIZAR A APP
-                // Necesitamos un snapshot ID para asociar los pedidos
-                // Usaremos la targetWeek y 'SEGUIMIENTO' como tipo
-                if (targetWeek) {
-                    console.log(`[MASIVO-EAM] Sincronizando hacia App (Snapshot para ${targetWeek})...`);
-
-                    console.log(`[MASIVO-EAM] Datos cargados en tablas PF_EAM_*. Listos para consumo.`);
-                }
+                console.log(`[MASIVO-EAM] Datos cargados en tablas PF_EAM_*. Listos para consumo.`);
 
             } else {
-                console.warn("[MASIVO] ⚠️ No se detectó hoja 'Pedido de Trabajo'. Omitiendo carga de OTs (Requiere formato EAM).");
+                console.warn("[MASIVO] No se detectó hoja 'Pedido de Trabajo'. Omitiendo carga de OTs (Requiere formato EAM).");
                 const seguimientoSheets = ['CUMPLIMIENTO', 'MASIVO'];
                 if (sheetNames.some(s => seguimientoSheets.includes(s))) {
-                    console.warn("[MASIVO] ⚠️ Se detectaron hojas antiguas (CUMPLIMIENTO/MASIVO) sin cabecera de Pedidos. Actualice el formato a EAM Simulation.");
+                    console.warn("[MASIVO] Se detectaron hojas antiguas (CUMPLIMIENTO/MASIVO) sin cabecera de Pedidos. Actualice el formato a EAM Simulation.");
                 }
             }
 
-
-
-
-
-            // 4. Procesar FALLAS (Común)
+            // 5. Procesar Fallas (independiente del modo de carga)
             if (sheetNames.includes('Detalle MTBF MTTR')) {
-                console.log(`[MASIVO] ⚠️ Procesando fallas...`);
+                console.log(`[MASIVO] Procesando fallas...`);
                 try { await query("TRUNCATE TABLE PF_EAM_FALLAS"); } catch (e) { console.warn("Tabla fallas no existe o error truncate", e); }
 
-                // Usamos targetWeek o calculamos una por defecto si no viene
-
-                console.log(`[MASIVO] 💾 Guardando fallas...`);
                 const sheetName = "Detalle MTBF MTTR";
                 const sheet = workbook.Sheets[sheetName];
                 if (!sheet) {
                     console.error(`La hoja "${sheetName}" no se encuentra en el archivo.`);
-                    return [];
+                    return res.json({ success: true, counts }); // Continuar sin fallas
                 }
 
                 const fallasData = XLSX.utils.sheet_to_json(sheet) as Record<string, unknown>[];
-
                 const fallasMapped = fallasData.map((r) => ({
                     fecha: parseFechaDateOnly(r["Fecha"]),
                     planta: String(r["Planta"]),
@@ -261,17 +262,15 @@ export const MassiveController = {
                     descripcionOperador: String(r["Descripción Operador"] || ""),
                 }));
 
-                console.log(fallasMapped);
-
                 if (fallasMapped.length > 0) {
                     console.log(`[MASIVO-EAM] Insertando ${fallasMapped.length} fallas...`);
                     await EamRepository.insertarFallas(fallasMapped);
                     counts.fallas = fallasMapped.length;
                 }
-                console.log(`[MASIVO] ✅ ${counts.fallas} registros de fallas guardados`);
+                console.log(`[MASIVO] ${counts.fallas} registros de fallas guardados`);
             }
 
-            console.log(`[MASIVO] ✅ Carga masiva completada exitosamente`);
+            console.log(`[MASIVO] Carga masiva completada exitosamente`);
             res.json({
                 success: true,
                 message: "Carga masiva completada",
@@ -280,10 +279,15 @@ export const MassiveController = {
 
         } catch (error) {
             const message = error instanceof Error ? error.message : "Error desconocido";
-            console.error("[MASIVO] ❌ Error en carga masiva:", message);
+            console.error("[MASIVO] Error en carga masiva:", message);
             res.status(500).json({ error: message });
         }
     },
+
+    /**
+     * GET /api/masivo/plantilla-eam
+     * Descarga la plantilla Excel de carga masiva EAM con el formato correcto de columnas.
+     */
     descargarPlantillaEAM: async (req: Request, res: Response) => {
         try {
             const buffer = generarBufferPlantilla('MASIVO_EAM');
@@ -297,6 +301,10 @@ export const MassiveController = {
         }
     },
 
+    /**
+     * GET /api/masivo/plantilla-horarios
+     * Descarga la plantilla Excel de carga de horarios de técnicos.
+     */
     descargarPlantillaHorarios: async (req: Request, res: Response) => {
         try {
             const buffer = generarBufferPlantilla('HORARIOS_EAM');

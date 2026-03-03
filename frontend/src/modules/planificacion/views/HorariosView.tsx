@@ -8,9 +8,20 @@ import { confirmDialog } from "../../../shared/utils/confirmDialog";
 import { toast } from "sonner";
 import { MasivoService } from "../../../shared/services/MasivoService";
 import { LoadingOverlay } from "../../../shared/components/ui/LoadingOverlay";
+import { uploadHorarios } from "../services/PlanificacionService";
 
+/**
+ * Vista principal para la gestión y visualización de Horarios (Disponibilidad de Técnicos).
+ * 
+ * Funcionalidades principales:
+ * - Consulta de disponibilidad mensual distribuida en un calendario (Gantt).
+ * - Carga masiva de horarios mediante archivos Excel.
+ * - Filtros por Planta y Mes para dimensionar correctamente a los equipos (Mecánicos/Eléctricos, etc).
+ */
 export const HorariosView = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Custom hook que concentra toda la lógica de estado global (datos devueltos por la API, filtros seleccionados)
   const manager = usePlanificacionManager();
   const {
     horariosResult,
@@ -23,11 +34,17 @@ export const HorariosView = () => {
     cargarHorarios
   } = manager;
 
-  // Carga de datos al montar o cambiar filtros
+  // React hook para mantener la vista sincronizada con el backend ante cambios en los filtros clave
   useEffect(() => {
     cargarHorarios(periodoSeleccionado, plantaPlan);
   }, [cargarHorarios, periodoSeleccionado, plantaPlan]);
 
+  /** 
+   * Manejador del evento de subida de archivos Excel.
+   * Utiliza la API `uploadHorarios` para parsear y guardar el periodo elegido.
+   * 
+   * @param {React.ChangeEvent<HTMLInputElement>} e - Evento del input type file oculto.
+   */
   const handleUploadHorarios = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -39,7 +56,6 @@ export const HorariosView = () => {
     }
 
     try {
-      const { uploadHorarios } = await import("../services/PlanificacionService");
       const parts = periodoSeleccionado.split('-');
       const anio = Number(parts[0]);
       const mes = Number(parts[1]);
@@ -128,10 +144,10 @@ export const HorariosView = () => {
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={cargandoPlan}
-              className="bg-purple-600 text-white p-3 rounded-2xl hover:bg-purple-700 transition-all shadow-lg shadow-purple-200 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+              className="bg-pf-red hover:bg-pf-red/80 text-white p-3 rounded-2xl transition-all shadow-lg shadow-pf-red/20 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
               title="Cargar Horarios"
             >
-              <FileSpreadsheet size={20} />
+              <FileSpreadsheet size={20} /> Carga de Horarios
             </button>
             <button
               onClick={async () => {
@@ -142,10 +158,10 @@ export const HorariosView = () => {
                 }
               }}
               disabled={cargandoPlan}
-              className="bg-white border border-slate-200 text-slate-400 p-3 rounded-2xl hover:text-purple-600 hover:border-purple-200 transition-all flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+              className="bg-white border border-slate-200 text-slate-400 p-3 rounded-2xl hover:text-pf-red hover:border-pf-red/20 transition-all flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
               title="Descargar Plantilla Horarios"
             >
-              <Download size={20} />
+              <Download size={20} /> Plantilla de Horarios
             </button>
           </div>
         </div>

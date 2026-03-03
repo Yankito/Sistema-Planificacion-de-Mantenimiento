@@ -54,7 +54,7 @@ vi.mock('../../services/SeguimientoService', () => ({
 }));
 
 const mockData = [
-  { ot: '100', planta: 'PF1', periodo: '2026', semana: '2026-S05', clasificacion: 'TECNICO', esOB: false, descripcion: 'T1' },
+  { nroOrden: '100', nroActivo: '1', planta: 'PF1', periodo: '2026', semana: '2026-S05', clasificacion: 'TECNICO', esOB: false, descripcion: 'T1' },
 ];
 
 const baseSeguimientoData = {

@@ -48,7 +48,7 @@ describe('PlanificacionController', () => {
 
             vi.spyOn(PlanificacionRepository, 'getDataParaPlanificar')
                 .mockResolvedValue({
-                    ots: [{ OT: '100', PLANTA: 'PF1', NRO_ACTIVO: 'A1', DESCRIPCION: 'D1' }],
+                    ots: [{ nroOrden: '100', planta: 'PF1', nroActivo: 'A1', descripcion: 'D1' }],
                     empleados: [{ NOMBRE: 'JUAN', PLANTA: 'PF1', ROL: 'M' }]
                 } as any);
 
@@ -82,7 +82,7 @@ describe('PlanificacionController', () => {
 
             await PlanificacionController.guardarPlanificacion(req as any, res as any);
 
-            expect(saveSpy).toHaveBeenCalledWith([{ ot: 'OT1', tecnicos: [], mes: 1, anio: 2026 }]);
+            expect(saveSpy).toHaveBeenCalledWith([{ nroOrden: 'OT1', tecnicos: [], mes: 1, anio: 2026 }]);
             expect(res.json).toHaveBeenCalledWith({ success: true, count: 1 });
         });
     });
@@ -93,8 +93,6 @@ describe('PlanificacionController', () => {
             const res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
 
             await PlanificacionController.obtenerPlanificacion(req as any, res as any);
-            // Controller handles undefined week gracefully (logs and likely returns empty or current week data)
-            // It does NOT return 400.
             expect(res.status).not.toHaveBeenCalledWith(400);
         });
 
@@ -103,7 +101,7 @@ describe('PlanificacionController', () => {
             const res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
 
             vi.spyOn(PlanificacionRepository, 'getPlanificacion').mockResolvedValue([
-                { OT: '123', PLANTA: 'PF3', DESCRIPCION: 'Desc', DETALLES_TECNICOS: '[{"nombre":"JUAN"}]', FECHA: '20/02/2026' }
+                { nroOrden: '123', planta: 'PF3', descripcion: 'Desc', detallesTecnicos: '[{"nombre":"JUAN"}]', fecha: '20/02/2026' }
             ] as any);
 
             await PlanificacionController.obtenerPlanificacion(req as any, res as any);

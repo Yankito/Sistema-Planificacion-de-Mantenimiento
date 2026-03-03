@@ -28,7 +28,7 @@ describe('PlannerService - Lógica de Balanceo (Peak Shaving)', () => {
         );
 
         const assigned = result.resultados;
-        
+
         // 3. Validaciones
         expect(assigned.length).toBe(10);
 
@@ -39,20 +39,19 @@ describe('PlannerService - Lógica de Balanceo (Peak Shaving)', () => {
         });
 
         // Debug: Para que veas cómo las repartió en la consola si falla
-        // console.log("Distribución:", distribution);
 
         const uniqueDates = Object.keys(distribution).length;
 
         // SI EL BALANCEO FUNCIONA: 
         // No deberían estar las 10 en la misma fecha. Debería haber usado al menos 2 o 3 días de la semana.
-        expect(uniqueDates).toBeGreaterThan(1); 
-        
+        expect(uniqueDates).toBeGreaterThan(1);
+
         // Verificamos que sean fechas de la misma semana (misma planta)
         // Como son 10 y el techo por día es ceil(10/5) = 2, debería haber 2 por día idealmente.
         const counts = Object.values(distribution);
         const maxLoad = Math.max(...counts);
-        
+
         // El algoritmo no debería dejar más de 2 o 3 OTs por día si es perfecto
-        expect(maxLoad).toBeLessThanOrEqual(3); 
+        expect(maxLoad).toBeLessThanOrEqual(3);
     });
 });

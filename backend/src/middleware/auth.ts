@@ -3,8 +3,16 @@
 import jwt from 'jsonwebtoken';
 import type { Request, Response, NextFunction } from 'express';
 
-// Clave secreta para firmar los tokens (en producción usar variable de entorno)
-export const JWT_SECRET = process.env.JWT_SECRET;
+// Clave secreta para firmar los tokens (se lee de env cada vez o se puede cachear)
+const getJwtSecret = (): string => {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    // Si no está definido, lanzamos un error claro para el log del servidor
+    console.error('FATAL ERROR: JWT_SECRET is not defined in environment variables');
+    return 'default_secret_warning_change_me_in_production'; // Fallback mínimo o lanzar error
+  }
+  return secret;
+};
 
 // Tiempo de expiración del token (8 horas de jornada laboral)
 export const JWT_EXPIRATION = '8h';
@@ -57,7 +65,7 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction):
   const token = parts[1];
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as TokenPayload;
+    const decoded = jwt.verify(token, getJwtSecret()) as TokenPayload;
     req.authUser = decoded;
     next();
   } catch (err) {
@@ -80,7 +88,7 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction):
  * Genera un token JWT firmado con los datos del usuario.
  */
 export const generateToken = (payload: Omit<TokenPayload, 'iat' | 'exp'>): string => {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRATION });
+  return jwt.sign(payload, getJwtSecret(), { expiresIn: JWT_EXPIRATION });
 };
 
 /**

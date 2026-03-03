@@ -36,14 +36,14 @@ vi.mock('xlsx-js-style', () => {
 
 // --- FIXTURES ---
 const mockDataActual = [
-  { planta: 'PF1', periodo: 'ENE-26', clasificacion: 'TECNICO / SERVICIO', esOB: false, ot: '100', descripcion: '', estado: 'Liberado', semana: '2026-S05' },
-  { planta: 'PF1', periodo: 'ENE-26', clasificacion: 'TECNICO / SERVICIO', esOB: false, ot: '101', descripcion: '', estado: 'Liberado', semana: '2026-S05' },
-  { planta: 'DC', periodo: 'ENE-26', clasificacion: 'PROGRAMADOR', esOB: true, ot: '200', descripcion: '', estado: 'Liberado', semana: '2026-S05' },
+  { planta: 'PF1', periodo: 'ENE-26', clasificacion: 'TECNICO / SERVICIO', esOB: false, nroOrden: '100', nroActivo: '100', descripcion: '', estado: 'Liberado', semana: '2026-S05' },
+  { planta: 'PF1', periodo: 'ENE-26', clasificacion: 'TECNICO / SERVICIO', esOB: false, nroOrden: '101', nroActivo: '101', descripcion: '', estado: 'Liberado', semana: '2026-S05' },
+  { planta: 'DC', periodo: 'ENE-26', clasificacion: 'PROGRAMADOR', esOB: true, nroOrden: '200', nroActivo: '200', descripcion: '', estado: 'Liberado', semana: '2026-S05' },
 ] as AtrasoRow[];
 
 const mockDataAnterior = [
-  { planta: 'PF1', periodo: 'ENE-26', clasificacion: 'TECNICO / SERVICIO', esOB: false, ot: '101', descripcion: '', estado: 'Liberado', semana: '2026-S04' },
-  { planta: 'DC', periodo: 'ENE-26', clasificacion: 'PROGRAMADOR', esOB: true, ot: '200', descripcion: '', estado: 'Liberado', semana: '2026-S04' },
+  { planta: 'PF1', periodo: 'ENE-26', clasificacion: 'TECNICO / SERVICIO', esOB: false, nroOrden: '101', nroActivo: '101', descripcion: '', estado: 'Liberado', semana: '2026-S04' },
+  { planta: 'DC', periodo: 'ENE-26', clasificacion: 'PROGRAMADOR', esOB: true, nroOrden: '200', nroActivo: '200', descripcion: '', estado: 'Liberado', semana: '2026-S04' },
 ] as AtrasoRow[];
 
 describe('ExportUtils Backend Tests', () => {
@@ -87,10 +87,10 @@ describe('ExportUtils Backend Tests', () => {
     });
 
     it('debería asignar color VERDE si los atrasos bajaron', async () => {
-      const actual = [{ planta: 'PF1', periodo: 'ENE-26', clasificacion: 'TECNICO / SERVICIO', esOB: false, ot: '100' }] as OrdenTrabajo[];
+      const actual = [{ planta: 'PF1', periodo: 'ENE-26', clasificacion: 'TECNICO / SERVICIO', esOB: false, nroOrden: '100' }] as OrdenTrabajo[];
       const anterior = [
-        { planta: 'PF1', periodo: 'ENE-26', clasificacion: 'TECNICO / SERVICIO', esOB: false, ot: '101' },
-        { planta: 'PF1', periodo: 'ENE-26', clasificacion: 'TECNICO / SERVICIO', esOB: false, ot: '102' }
+        { planta: 'PF1', periodo: 'ENE-26', clasificacion: 'TECNICO / SERVICIO', esOB: false, nroOrden: '101' },
+        { planta: 'PF1', periodo: 'ENE-26', clasificacion: 'TECNICO / SERVICIO', esOB: false, nroOrden: '102' }
       ] as OrdenTrabajo[];
 
       await generarExcelReporte(actual, anterior, 'ATRASOS', '2026-S05');

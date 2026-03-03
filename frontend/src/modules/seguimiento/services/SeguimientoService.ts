@@ -70,10 +70,7 @@ export const getAnalytics = async (actual: string, anterior: string, fechaInicio
 export const uploadExcel = async (file: File, targetWeek: string): Promise<UploadResponse> => {
   const formData = new FormData();
   formData.append('file', file);
-  console.log("File preparado para subir:", file.name, "con tamaño", file.size);
-  console.log("Hojas en el archivo:", file);
   formData.append('targetWeek', targetWeek);
-  console.log("Subiendo archivo para semana:", targetWeek);
 
   try {
     const res = await fetchAuth(`${API_BASE}/upload`, {

@@ -17,8 +17,8 @@ interface ExecutionMonitorProps {
 
 export const ExecutionMonitor = ({ selectedYear, selectedPlanta, selectedMonth }: ExecutionMonitorProps) => {
     const [groupedData, setGroupedData] = useState<CostCenterGroup[]>([]);
-    // Si no se selecciona un mes globalmente, se toma el mes actual
-    const currentMonth = selectedMonth ?? (new Date().getMonth() + 1);
+    // Si no se selecciona un mes globalmente, se toma el mes actual (memoizado para estabilidad)
+    const currentMonth = useMemo(() => selectedMonth ?? (new Date().getMonth() + 1), [selectedMonth]);
     const [selectedCategory, setSelectedCategory] = useState<string>('Todos');
     const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
     const [searchTerm, setSearchTerm] = useState('');
@@ -55,12 +55,19 @@ export const ExecutionMonitor = ({ selectedYear, selectedPlanta, selectedMonth }
     };
 
     const loadData = useCallback(async () => {
+        // Evitar renders en cascada difiriendo la ejecución al siguiente microtick
+        await Promise.resolve();
         try {
             // Optimizamos: Pedimos solo los datos del mes seleccionado si aplica
             const [budgetData, realExpenses] = await Promise.all([
                 getPresupuesto(selectedYear, selectedPlanta, undefined, currentMonth),
                 getGastosConsolidados(selectedYear, selectedPlanta, currentMonth)
             ]);
+            for (const trx of realExpenses) {
+                if (trx.nroActivo === "PF Conj Etiqu Foxjet P1 (0177)") {
+                    console.log(trx);
+                }
+            }
 
             const monthlyBudget = budgetData; // Ya viene filtrado por mes desde el backend
             const monthlyReal = realExpenses; // Ya viene filtrado por mes desde el backend
@@ -107,11 +114,6 @@ export const ExecutionMonitor = ({ selectedYear, selectedPlanta, selectedMonth }
                 const rowReal = realBodega + realServExt + realCorrectivo;
 
                 const firstReal = assetReal[0];
-                //mostrar activo : PF Conj Basculas P1 (0228)
-                if (row.activo.startsWith('PF Conj Basculas P1 (0228)')) {
-                    console.log(row);
-                    console.log(firstReal);
-                }
                 const claseContableAsset = row.claseContable || firstReal?.claseContable;
 
                 groups[cc].assets.push({
@@ -187,8 +189,6 @@ export const ExecutionMonitor = ({ selectedYear, selectedPlanta, selectedMonth }
             });
 
             setGroupedData(Object.values(groups));
-
-            setGroupedData(Object.values(groups));
             setExpandedGroups({});
 
         } catch (e) {
@@ -197,8 +197,12 @@ export const ExecutionMonitor = ({ selectedYear, selectedPlanta, selectedMonth }
     }, [selectedYear, selectedPlanta, currentMonth, getPresupuesto, getGastosConsolidados]);
 
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        loadData();
+        // Diferimos la ejecución del fetch para evitar "setState synchronously within an effect"
+        // Este patrón asegura que el renderizado actual termine antes de disparar la actualización de carga.
+        const timer = setTimeout(() => {
+            loadData();
+        }, 0);
+        return () => clearTimeout(timer);
     }, [loadData]);
 
 
@@ -301,7 +305,14 @@ export const ExecutionMonitor = ({ selectedYear, selectedPlanta, selectedMonth }
             return factor * (a[sortField] - b[sortField]);
         });
 
-    const [prevFilters, setPrevFilters] = useState({
+    // Resetear página a 1 cuando cambian los filtros o parámetros de contexto
+    // Usamos un timer para evitar "setState synchronously within an effect" que causa renders en cascada
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setCurrentPage(1);
+        }, 0);
+        return () => clearTimeout(timer);
+    }, [
         searchTerm,
         filterExceededOnly,
         filterInternalDeviation,
@@ -314,38 +325,7 @@ export const ExecutionMonitor = ({ selectedYear, selectedPlanta, selectedMonth }
         selectedYear,
         selectedPlanta,
         currentMonth
-    });
-
-    if (
-        prevFilters.searchTerm !== searchTerm ||
-        prevFilters.filterExceededOnly !== filterExceededOnly ||
-        prevFilters.filterInternalDeviation !== filterInternalDeviation ||
-        prevFilters.filterDateAlert !== filterDateAlert ||
-        prevFilters.filterCriticalOnly !== filterCriticalOnly ||
-        prevFilters.selectedCategory !== selectedCategory ||
-        prevFilters.sortField !== sortField ||
-        prevFilters.sortOrder !== sortOrder ||
-        prevFilters.itemsPerPage !== itemsPerPage ||
-        prevFilters.selectedYear !== selectedYear ||
-        prevFilters.selectedPlanta !== selectedPlanta ||
-        prevFilters.currentMonth !== currentMonth
-    ) {
-        setPrevFilters({
-            searchTerm,
-            filterExceededOnly,
-            filterInternalDeviation,
-            filterDateAlert,
-            filterCriticalOnly,
-            selectedCategory,
-            sortField,
-            sortOrder,
-            itemsPerPage,
-            selectedYear,
-            selectedPlanta,
-            currentMonth
-        });
-        setCurrentPage(1);
-    }
+    ]);
 
     // Pagination Logic
     const totalItems = filteredAndSortedData.length;

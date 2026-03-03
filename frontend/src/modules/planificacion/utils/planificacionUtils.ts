@@ -43,3 +43,47 @@ export const CONFIG_ROLES: Record<string, { label: string, color: string, text: 
   'CALDERA': { label: 'Caldera', color: 'bg-pink-600', text: 'text-pink-500' },
   'SE': { label: 'Servicio Externo', color: 'bg-slate-600', text: 'text-slate-500' },
 };
+
+export const BLOQUEOS_SABADO = ['L', 'V', 'LIC', 'LM', 'LP'];
+
+interface TecnicoShort {
+  nombre: string;
+  rol: string;
+  planta: string;
+}
+
+/**
+ * Valida si un técnico es el mejor candidato para una vacante específica.
+ */
+export const estaTecnicoDisponible = (
+  tecnico: TecnicoShort,
+  slot: { rol: string },
+  plantaOT: string,
+  yaAsignados: string[],
+  diaIndex: number,
+  esSabado: boolean,
+  mapaHorarios: Map<string, string[]>
+): boolean => {
+  const nombre = tecnico.nombre.toUpperCase();
+
+  // 1. Validaciones básicas
+  if (yaAsignados.includes(nombre)) return false;
+  if (!rolesCoinciden(slot.rol, tecnico.rol)) return false;
+  if (!esPlantaCompatible(tecnico.planta, plantaOT)) return false;
+
+  // 2. Validación de turnos (si aplica)
+  if (!necesitaValidacionTurno(tecnico.rol)) return true;
+
+  const turnos = mapaHorarios.get(nombre);
+  if (!turnos) return false;
+
+  const turnoDia = String(turnos[diaIndex] || "").trim().toUpperCase();
+
+  if (esSabado) {
+    // En sábado, no debe tener bloqueos (Licencias, Vacaciones, etc)
+    return !BLOQUEOS_SABADO.some(b => turnoDia.startsWith(b));
+  }
+
+  // En día de semana, buscamos específicamente el turno N (Noche/Disponible según lógica de negocio)
+  return turnoDia === 'N';
+};

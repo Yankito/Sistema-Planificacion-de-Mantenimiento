@@ -57,8 +57,8 @@ export const Calendario = ({
       )}
 
       {/* Header */}
-      <div className="flex justify-between items-center bg-white p-6 rounded-2xl border border-pf-neutral-100 shadow-sm">
-        <div className="flex items-center space-x-6">
+      <div className="flex justify-between items-center bg-white p-4 rounded-2xl border border-pf-neutral-100 shadow-sm">
+        <div className="flex items-center">
           <h3 className="text-xl font-black text-pf-neutral-900 uppercase italic tracking-tight">Planificación</h3>
 
           {/* BOTÓN FILTRO */}

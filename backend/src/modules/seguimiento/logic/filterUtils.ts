@@ -65,7 +65,7 @@ export const filterOrders = (
   // A. Filtro de Estado
   if (filters.filterEstado === "NUEVAS") {
     // Una OT es nueva si NO existe en el Set de OTs de la semana anterior
-    f = f.filter(d => !context.previousOtSet.has(normalizeOT(d.ot)));
+    f = f.filter(d => !context.previousOtSet.has(normalizeOT(d.nroOrden)));
   } else if (filters.filterEstado !== "TODOS") {
     f = f.filter(d => d.estado === filters.filterEstado);
   }
@@ -74,7 +74,7 @@ export const filterOrders = (
   if (filters.searchTerm) {
     const term = filters.searchTerm.toLowerCase();
     f = f.filter(d =>
-      d.ot.toLowerCase().includes(term) ||
+      d.nroOrden.toLowerCase().includes(term) ||
       d.descripcion.toLowerCase().includes(term) ||
       // Busca también dentro de los nombres de los técnicos asignados
       (d.detallesTecnicos && d.detallesTecnicos.some(t => t.tecnico.nombre.toLowerCase().includes(term)))

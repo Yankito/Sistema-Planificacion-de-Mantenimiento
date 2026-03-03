@@ -200,7 +200,7 @@ export const BudgetMatrixTable: React.FC<BudgetMatrixTableProps> = React.memo(({
             type="file"
             ref={fileInputRef}
             className="hidden"
-            accept=".xlsx, .xls"
+            accept=".xlsx, .xls, .xlsm"
             onChange={handleFileChange}
           />
           <button
@@ -215,17 +215,15 @@ export const BudgetMatrixTable: React.FC<BudgetMatrixTableProps> = React.memo(({
             type="file"
             ref={executionFileInputRef}
             className="hidden"
-            accept=".xlsx, .xls"
+            accept=".xlsx, .xls, .xlsm"
             onChange={handleExecutionFileChange}
           />
-          {/* <button
+          <button
             onClick={() => executionFileInputRef.current?.click()}
-            disabled={loading || executionUploading}
+            disabled={loading}
             className="px-5 py-2.5 bg-pf-neutral-100 text-pf-neutral-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-pf-neutral-200 transition-all flex items-center gap-2.5 border border-pf-neutral-200 shadow-sm active:scale-95"
           >
-            {executionUploading ? <Loader2 className="animate-spin" size={16} /> : null}
-            Cargar Ejecución (Debug)
-          </button> */}
+          </button>
         </div>
       </div>
 

@@ -19,14 +19,14 @@ describe('useSeguimientoModal Hook', () => {
   it('debería filtrar datos según viewDetail (id: PF1)', () => {
     const { result } = setup();
     expect(result.current.totalItems).toBe(2);
-    expect(result.current.datosPaginados[0].ot).toBe('100');
+    expect(result.current.datosPaginados[0].nroOrden).toBe('100');
   });
 
   it('debería filtrar por estado', () => {
     const { result } = setup();
     act(() => { result.current.handleFilterChange('En Proceso'); });
     expect(result.current.totalItems).toBe(1);
-    expect(result.current.datosPaginados[0].ot).toBe('101');
+    expect(result.current.datosPaginados[0].nroOrden).toBe('101');
   });
 
   it('debería seleccionar un tecnico y calcular sus estadísticas', () => {

@@ -18,13 +18,10 @@ interface FileUploaderProps {
     fallas: boolean;
   };
   highlightedModule: FileType | null;
-  targetWeek: string;
-  weekOptions: { label: string, value: string }[];
-  setTargetWeek: (w: string) => void;
 }
 
 
-export const FileUploader = ({ onFileUpload, isLoading, status, highlightedModule, targetWeek, weekOptions, setTargetWeek }: FileUploaderProps) => {
+export const FileUploader = ({ onFileUpload, isLoading, status, highlightedModule }: FileUploaderProps) => {
 
   const [pendingFile, setPendingFile] = useState<{ event: UploadEvent, tipo: FileType } | null>(null);
 
@@ -34,7 +31,7 @@ export const FileUploader = ({ onFileUpload, isLoading, status, highlightedModul
   const [targetYear, setTargetYear] = useState(currentYear);
 
   const cardsConfig = [
-    { type: 'MASIVO' as FileType, label: 'Carga Masiva (EAM)', sublabel: 'OTs, Horarios, Técnicos', icon: FileSpreadsheet, color: 'text-purple-600', bg: 'bg-purple-600', active: status.plan || status.seguimiento }
+    { type: 'MASIVO' as FileType, label: 'Carga Masiva (EAM) solo debug', sublabel: 'OTs, Horarios, Técnicos', icon: FileSpreadsheet, color: 'text-purple-600', bg: 'bg-purple-600', active: status.plan || status.seguimiento }
   ];
 
   // Interceptor de subida
@@ -76,19 +73,6 @@ export const FileUploader = ({ onFileUpload, isLoading, status, highlightedModul
             </div>
 
             <div className="space-y-4">
-              {/* SELECTOR SEMANA */}
-              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                <label className="text-[10px] font-black text-slate-400 uppercase mb-2 block">Semana del Reporte:</label>
-                <select
-                  value={targetWeek}
-                  onChange={(e) => setTargetWeek(e.target.value)}
-                  className="w-full text-base font-black text-slate-700 bg-white border border-slate-200 p-3 rounded-xl outline-none focus:ring-2 ring-blue-500/20"
-                >
-                  {weekOptions.map(opt => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                  ))}
-                </select>
-              </div>
 
               {/* SELECTOR MES/AÑO (Solo Masivo para Horarios) */}
               {(pendingFile.tipo === 'MASIVO' || pendingFile.tipo === 'PLAN') && (

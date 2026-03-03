@@ -1,9 +1,8 @@
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-import { initDB } from './db/init.js';
 import { authMiddleware, plantaMiddleware } from './middleware/auth.js';
 
 // Importación de Rutas
@@ -13,9 +12,6 @@ import fallasRoutes from './routes/fallas.routes.js';
 import masivoRoutes from './routes/masivo.routes.js';
 import controlGastosRoutes from './routes/control-gastos.routes.js';
 import authRoutes from './routes/auth.routes.js';
-
-
-dotenv.config();
 
 const app = express();
 app.disable('x-powered-by');
@@ -95,14 +91,11 @@ app.use('/api/control-gastos', authMiddleware, plantaMiddleware, controlGastosRo
 // --- INICIO DEL SERVIDOR ---
 const startServer = async () => {
     try {
-        // Inicializamos la conexión a Oracle antes de escuchar peticiones
-        await initDB();
-
         app.listen(PORT, () => {
             console.log("---------------------------------------------------");
-            console.log(`🚀 SERVIDOR PF ALIMENTOS INICIADO`);
-            console.log(`📍 URL: http://localhost:${PORT}`);
-            console.log(`📅 FECHA: ${new Date().toLocaleString()}`);
+            console.log(`SERVIDOR PF ALIMENTOS INICIADO`);
+            console.log(`URL: http://localhost:${PORT}`);
+            console.log(`FECHA: ${new Date().toLocaleString()}`);
             console.log("---------------------------------------------------");
         });
     } catch (error) {

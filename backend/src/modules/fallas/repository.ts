@@ -1,8 +1,16 @@
 import { query } from '../../db/config.js';
 import type { FallaRow } from './types.js';
 
+/**
+ * Repositorio del módulo de Fallas.
+ * Accede a la tabla PF_EAM_FALLAS con los registros de paros de equipos.
+ */
 export const FallasRepository = {
-    // Get All Fallas
+
+    /**
+     * Obtiene todos los registros de fallas ordenados por fecha descendente.
+     * Mapea las columnas de Oracle a los campos del tipo FallaRow.
+     */
     getFallas: async () => {
         const res = await query(`
       SELECT f.*
@@ -31,10 +39,11 @@ export const FallasRepository = {
         }));
     },
 
-    // Get Fallas by Week (Optional)
-    getFallasBySemana: async (semana: string) => {
-        // As the DB no longer has the 'semana' column, we fetch all and let the logic layer handle filtering or we just use getFallas directly.
-        // For backwards compatibility returning all if this is ever called before being refactored out.
+    /**
+     * Alias de getFallas para mantener retrocompatibilidad.
+     * La tabla no almacena la semana como columna; el filtrado se realiza en la capa de lógica.
+     */
+    getFallasBySemana: async (_semana: string) => {
         return FallasRepository.getFallas();
     }
 };

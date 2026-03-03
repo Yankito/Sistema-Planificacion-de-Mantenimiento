@@ -1,9 +1,12 @@
-// src/logic/excelProcessor.ts
 import XLSX from "xlsx-js-style";
 import { PlannerService } from "./PlannerService.js";
 import { type HorarioTecnico } from "../types.js";
 import { query } from "../../../db/config.js";
 
+/**
+ * Normaliza las claves (cabeceras) de un array de objetos a mayúsculas sin espacios.
+ * Permite tolerar variaciones de capitalización en las hojas de Excel.
+ */
 export const normalizarColumnas = (df: Record<string, unknown>[]) => {
   if (df.length === 0) return [];
   const keys = Object.keys(df[0]);
@@ -16,20 +19,26 @@ export const normalizarColumnas = (df: Record<string, unknown>[]) => {
   });
 };
 
-
+/**
+ * Busca una hoja en el workbook de forma case-insensitive por su nombre.
+ * Retorna la hoja si la encuentra o undefined si no existe.
+ */
 const findSheet = (sheets: { [key: string]: XLSX.WorkSheet }, name: string) => {
   const key = Object.keys(sheets).find(k => k.toUpperCase() === name.toUpperCase());
   return key ? sheets[key] : undefined;
 };
 
+/**
+ * Construye un Map de técnico -> array de turnos (ej: ['M','T','N'...])
+ * leyendo la hoja HORARIOS del workbook.
+ * Cada fila contiene el nombre del técnico en la primera columna y los turnos en las siguientes.
+ */
 export const obtenerMapaHorarios = (sheets: { [key: string]: XLSX.WorkSheet }): Map<string, string[]> => {
-  console.log("Iniciando extracción de horarios desde hoja HORARIOS...");
   const sheet = findSheet(sheets, "HORARIOS");
   if (!sheet) {
     console.warn("Hoja HORARIOS no encontrada (case-insensitive check failed).");
     return new Map();
   }
-  console.log("Procesando hoja HORARIOS para obtener mapa de horarios por técnico");
 
   const dfHorarios = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as unknown[][];
   const mapa = new Map<string, string[]>();
@@ -43,11 +52,18 @@ export const obtenerMapaHorarios = (sheets: { [key: string]: XLSX.WorkSheet }): 
       }
     }
   });
-  console.log(`Mapa de horarios obtenido: ${mapa.size} técnicos encontrados.`);
   return mapa;
 };
 
-// --- CAMBIO PRINCIPAL AQUÍ ---
+/**
+ * Orquesta el proceso de planificación a partir de un workbook de Excel.
+ * Lee las hojas B.ANT, B.ACT, CUMPLIMIENTO y EMPLEADOS, normaliza los datos
+ * y ejecuta el algoritmo seleccionado (STRICT o BALANCED).
+ *
+ * @param sheets - Hojas del workbook indexadas por nombre
+ * @param modo - 'STRICT' para continuidad histórica, 'BALANCED' para carga equilibrada
+ * @returns Resultado de planificación más los mapas de horarios completos
+ */
 export const processExcelData = (
   sheets: { [key: string]: XLSX.WorkSheet },
   modo: 'STRICT' | 'BALANCED' = 'STRICT'
@@ -71,9 +87,9 @@ export const processExcelData = (
     throw new Error("No se encontraron datos en la hoja 'B.ACT'");
   }
 
+  // Construir mapa de técnicos con búsqueda flexible de cabeceras
   const tecnicosMap = new Map();
   dfTecnicos.forEach(emp => {
-    // Buscar columna que identifique al empleado
     const colEmp = Object.keys(emp).find(k =>
       k.includes("EMPLEADO") || k.includes("NOMBRE") || k.includes("TECNICO") || k.includes("TÉCNICO")
     );
@@ -92,11 +108,10 @@ export const processExcelData = (
 
   const mapaHorarios = obtenerMapaHorarios(sheets);
 
-  // DECIDIR QUÉ ALGORITMO EJECUTAR
+  // Ejecutar el algoritmo según el modo seleccionado
   let resultadoPlanificacion;
 
   if (modo === 'BALANCED') {
-    // Modo Nuevo: Carga Equilibrada
     resultadoPlanificacion = PlannerService.generarPlanificacionEquilibrada(
       dfAct,
       dfAnt,
@@ -104,7 +119,6 @@ export const processExcelData = (
       tecnicosMap
     );
   } else {
-    // Modo Original: Prioridad Turnos (STRICT)
     resultadoPlanificacion = PlannerService.generarPlanificacion(
       dfAct,
       dfAnt,
@@ -125,6 +139,10 @@ export const processExcelData = (
   };
 };
 
+/**
+ * Extrae la lista completa de técnicos y sus turnos desde la hoja HORARIOS del workbook.
+ * Retorna un array de objetos { nombre, turnos[] } para uso en visualización.
+ */
 const obtenerHorariosDesdeSheets = (sheets: { [key: string]: XLSX.WorkSheet }) => {
   const sheet = findSheet(sheets, "HORARIOS");
   if (!sheet) return [];
@@ -139,25 +157,31 @@ const obtenerHorariosDesdeSheets = (sheets: { [key: string]: XLSX.WorkSheet }) =
     });
 };
 
+/**
+ * Obtiene los horarios de los técnicos de una planta específica desde un workbook.
+ * Cruza la hoja HORARIOS con la hoja EMPLEADOS para filtrar por planta y obtener el rol.
+ *
+ * @param workbook - El libro de Excel completo
+ * @param plantaSel - Planta a filtrar (ej: 'PF1', 'SADEMA')
+ * @returns Array de HorarioTecnico con nombre, rol, planta y turnos
+ */
 export const obtenerHorariosPorPlanta = (workbook: XLSX.WorkBook, plantaSel: string): HorarioTecnico[] => {
   const sheet = workbook.Sheets["HORARIOS"];
   const sheetEmp = workbook.Sheets["EMPLEADOS"];
   if (!sheet || !sheetEmp) return [];
 
-  console.log(`Buscando horarios para planta: ${plantaSel}`);
   const dfHorarios = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as unknown[][];
   const dfTecnicos = normalizarColumnas(XLSX.utils.sheet_to_json(sheetEmp) as Record<string, unknown>[]);
 
-  console.log(`Total técnicos en EMPLEADOS: ${dfTecnicos.length}`);
-
+  // Construir mapa nombre -> rol con búsqueda flexible de columnas
   const rolesMap = new Map();
   dfTecnicos.forEach(e => {
-    // Usamos búsqueda flexible de cabeceras en normalizarColumnas
     const colEmp = Object.keys(e).find(k => k.includes("EMPLEADO") || k.includes("NOMBRE")) || "EMPLEADO";
     const colRol = Object.keys(e).find(k => k.includes("ROL") || k.includes("CARGO")) || "ROL";
     rolesMap.set(String(e[colEmp]).trim().toUpperCase(), String(e[colRol] || "M").trim().toUpperCase());
   });
 
+  // Filtrar los nombres de técnicos que pertenecen a la planta seleccionada
   const tecnicosFiltrados = dfTecnicos
     .filter(e => {
       const colPlanta = Object.keys(e).find(k => k.includes("PLANTA")) || "PLANTA";
@@ -170,6 +194,7 @@ export const obtenerHorariosPorPlanta = (workbook: XLSX.WorkBook, plantaSel: str
       return String(e[colEmp] || "").trim().toUpperCase();
     });
 
+  // Recuperar turnos de la hoja HORARIOS solo para los técnicos filtrados
   return dfHorarios.slice(1)
     .filter(fila => {
       const nombreEnFila = String(fila[0] || "").trim().toUpperCase();

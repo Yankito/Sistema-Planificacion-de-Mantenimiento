@@ -9,7 +9,8 @@ describe('OTCard Component (UI)', () => {
 
     // Mock acorde a tu interfaz AtrasoRow
     const mockItem: AtrasoRow = {
-        ot: "OT-500",
+        nroOrden: "OT-500",
+        nroActivo: "1",
         clasificacion: "PROGRAMADOR", // Debería pintar verde
         descripcion: "Falla crítica en línea 1",
         detallesTecnicos: [

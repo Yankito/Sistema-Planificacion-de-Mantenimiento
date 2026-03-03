@@ -7,6 +7,23 @@ import { getMonthOptions } from "../../../shared/utils/dateUtils";
 import { usePlantasAcceso } from "../../../shared/hooks/usePlantasAcceso";
 import { toast } from "sonner";
 
+/**
+ * Normaliza los datos de planificación (OTs y técnicos) para asegurar consistencia.
+ */
+const normalizePlanData = (
+  plan: PlanResult[],
+  options: { toUpper?: boolean; setExiste?: boolean } = {}
+): PlanResult[] => {
+  return (plan || []).map(ot => ({
+    ...ot,
+    tecnicos: (ot.tecnicos || []).map((t: Tecnico) => ({
+      ...t,
+      nombre: options.toUpper ? (t.nombre || "").toUpperCase() : t.nombre,
+      ...(options.setExiste ? { existe: true } : {})
+    }))
+  }));
+};
+
 export const usePlanificacionManager = () => {
   const { plantaDefault } = usePlantasAcceso();
 
@@ -39,17 +56,10 @@ export const usePlanificacionManager = () => {
    */
   const actualizarDesdeRespuesta = useCallback((data: ProcesoExcelResponse) => {
     if (!data) return;
-    console.log("usePlanificacionManager: Actualizando desde respuesta:", data);
-
-    // Helper para normalizar nombres
-    const normalizePlan = (plan: PlanResult[]) => plan.map(ot => ({
-      ...ot,
-      tecnicos: ot.tecnicos.map((t: Tecnico) => ({ ...t, nombre: t.nombre }))
-    }));
 
     // 1. OTs
-    setPlanResult(normalizePlan(data.resultados || []));
-    setPlanResultSinAsignar(normalizePlan(data.sinAsignar || []));
+    setPlanResult(normalizePlanData(data.resultados || []));
+    setPlanResultSinAsignar(normalizePlanData(data.sinAsignar || []));
 
     // 2. Horarios si vienen
     if (data.horariosCompletos) {
@@ -77,7 +87,6 @@ export const usePlanificacionManager = () => {
         const d = new Date(y, m - 1, 1);
         return d.toLocaleString('es-ES', { month: 'long', year: 'numeric' });
       }
-      console.log("usePlanificacionManager: Mes seleccionado no válido:", periodoSeleccionado);
       // Fallback para formato antiguo de semanas
       return periodoSeleccionado;
     } catch (e) {
@@ -106,10 +115,9 @@ export const usePlanificacionManager = () => {
     horariosInFlightRef.current = key;
     setLoadingHorarios(true);
     try {
-      console.log("Cargando horarios para periodo:", periodo, "planta:", planta);
       const [anio, mes] = periodo.split('-').map(Number);
       const resp = await PlanificacionService.getHorarios(mes, anio, planta);
-      if (resp && resp.data) {
+      if (resp?.data) {
         setHorariosResult(resp.data);
         lastHorariosKeyRef.current = key;
       }
@@ -145,15 +153,9 @@ export const usePlanificacionManager = () => {
     setLoadingPlan(true);
     try {
       const data = await PlanificacionService.getResultadosPlanificacion(mes, anio, planta);
-      if (data && data.resultados) {
-        // Helper inline o reusado (mejor inline aquí para no romper deps del useCallback)
-        const normalizePlan = (plan: PlanResult[]) => plan.map(ot => ({
-          ...ot,
-          tecnicos: ot.tecnicos.map((t: Tecnico) => ({ ...t, nombre: t.nombre.toUpperCase(), existe: true }))
-        }));
-
-        setPlanResult(normalizePlan(data.resultados));
-        setPlanResultSinAsignar(normalizePlan(data.sinAsignar || []));
+      if (data?.resultados) {
+        setPlanResult(normalizePlanData(data.resultados, { toUpper: true, setExiste: true }));
+        setPlanResultSinAsignar(normalizePlanData(data.sinAsignar || [], { toUpper: true, setExiste: true }));
         lastPlanKeyRef.current = key;
       }
     } catch (error) {
@@ -268,7 +270,7 @@ export const usePlanificacionManager = () => {
     };
 
     setPlanResult(prev => prev.map(ot => ot.nroOrden === nroOrden ? actualizar(ot) : ot));
-    setOrdenEditando(prev => prev && prev.nroOrden === nroOrden ? actualizar(prev) : prev);
+    setOrdenEditando(prev => prev?.nroOrden === nroOrden ? actualizar(prev) : prev);
   };
 
   // --- FILTROS DE VISTA ---

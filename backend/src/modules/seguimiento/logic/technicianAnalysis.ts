@@ -1,5 +1,8 @@
 import type { OrdenTrabajo } from "../../../shared/types/index.js";
 
+/**
+ * Estadísticas de rendimiento de un técnico individual.
+ */
 export interface TechStats {
   nombre: string;
   totalAsignado: number;
@@ -9,6 +12,15 @@ export interface TechStats {
   plantas: string[];
 }
 
+/**
+ * Prepara el perfil completo de un técnico específico: sus órdenes de trabajo asignadas,
+ * las plantas donde opera, sus estadísticas de efectividad y la lista de plantas disponibles.
+ * Deduplica OTs por si aparecen en múltiples fuentes de datos.
+ *
+ * @param techName - Nombre exacto del técnico (case-sensitive)
+ * @param allOrders - Todas las OTs disponibles en el período
+ * @param plantasDisponibles - Lista de plantas disponibles para el selector del frontend
+ */
 export const prepareTechProfile = (
   techName: string,
   allOrders: OrdenTrabajo[],
@@ -18,14 +30,13 @@ export const prepareTechProfile = (
     return d.detallesTecnicos?.some(t => t.tecnico.nombre === techName);
   });
 
-  // Calcular plantas activas
+  // Plantas donde el técnico ha ejecutado OTs (sin duplicados, ordenadas)
   const activePlants = Array.from(new Set(techOrders.map(o => o.planta)))
     .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
 
-  // Deduplicar (Por si una OT está en ambas listas, aunque raro, es seguro hacerlo)
+  // Deduplicar OTs por ID para evitar conteos incorrectos
   const uniqueOrders = Array.from(new Map(techOrders.map(item => [item.ot, item])).values());
 
-  // Calcular Stats
   const stats = {
     total: uniqueOrders.length,
     finalizadas: uniqueOrders.filter(o =>
@@ -45,13 +56,23 @@ export const prepareTechProfile = (
   };
 };
 
+/**
+ * Analiza todas las OTs del backlog y de cumplimiento para calcular estadísticas
+ * de rendimiento de cada técnico (total asignado, finalizadas, pendientes, efectividad, plantas).
+ * Retorna el array ordenado de mayor a menor por total de OTs asignadas.
+ *
+ * @param backlogData - OTs pendientes del período
+ * @param cumplimientoData - OTs completadas del período
+ */
 export const analyzeTechnicians = (
   backlogData: OrdenTrabajo[],
   cumplimientoData: OrdenTrabajo[]
 ): TechStats[] => {
   const map = new Map<string, TechStats>();
 
-  // Helper para inicializar o recuperar un técnico
+  /**
+   * Recupera o inicializa el registro de estadísticas de un técnico en el mapa.
+   */
   const getStat = (nombre: string) => {
     const key = nombre.trim();
     if (!map.has(key)) {
@@ -69,6 +90,7 @@ export const analyzeTechnicians = (
 
   const allData = [...backlogData, ...cumplimientoData];
 
+  // Recorrer todas las OTs y acumular estadísticas por técnico
   allData.forEach(row => {
     row.detallesTecnicos?.forEach(t => {
       const stat = getStat(t.tecnico.nombre);
@@ -84,6 +106,7 @@ export const analyzeTechnicians = (
     });
   });
 
+  // Calcular efectividad y ordenar de mayor a menor por total asignado
   return Array.from(map.values()).map(s => ({
     ...s,
     efectividad: s.totalAsignado > 0 ? Math.round((s.finalizadas / s.totalAsignado) * 100) : 0

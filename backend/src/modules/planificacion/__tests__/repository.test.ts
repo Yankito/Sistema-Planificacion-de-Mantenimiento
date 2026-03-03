@@ -16,21 +16,21 @@ describe('PlanificacionRepository', () => {
 
 
     describe('guardarPlanificacion', () => {
-        it('debe hacer MERGE en PF_IM_PLANIFICACION', async () => {
+        it('debe hacer MERGE en PF_SPM_PLANIFICACION', async () => {
             (dbConfig.query as any).mockResolvedValue({ rows: [] });
 
             const asignaciones = [
-                { ot: 'OT1', tecnicos: [], mes: 2, anio: 2026 }
+                { nroOrden: 'OT1', tecnicos: [], mes: 2, anio: 2026 }
             ];
 
             await PlanificacionRepository.guardarPlanificacion(asignaciones);
 
             expect(dbConfig.query).toHaveBeenCalledWith(
-                expect.stringContaining('MERGE INTO PF_IM_PLANIFICACION'),
+                expect.stringContaining('MERGE INTO PF_SPM_PLANIFICACION'),
                 expect.objectContaining({
                     anio: 2026,
                     mes: 2,
-                    ot: 'OT1'
+                    nroOrden: 'OT1'
                 })
             );
         });
@@ -65,8 +65,8 @@ describe('PlanificacionRepository', () => {
     });
 
     describe('getDataParaPlanificar', () => {
-        it('debe consultar PF_EAM_PEDIDOS y unir con PF_IM_PLANIFICACION', async () => {
-            const mockRows = [{ OT: '123', descripcion: 'Test' }];
+        it('debe consultar PF_EAM_PEDIDOS y unir con PF_SPM_PLANIFICACION', async () => {
+            const mockRows = [{ nroOrden: '123', descripcion: 'Test' }];
             (dbConfig.query as any).mockResolvedValue({ rows: mockRows });
 
             const result = await PlanificacionRepository.getDataParaPlanificar(2, 2026);
@@ -79,7 +79,7 @@ describe('PlanificacionRepository', () => {
                 })
             );
             expect(result.ots).toEqual(expect.arrayContaining([
-                expect.objectContaining({ OT: '123' })
+                expect.objectContaining({ nroOrden: '123' })
             ]));
         });
     });

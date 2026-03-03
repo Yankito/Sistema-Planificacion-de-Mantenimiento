@@ -2,7 +2,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MassiveController } from '../controller.js';
 import { EamRepository } from '../../eam/repository.js';
-import { FallasRepository } from '../../fallas/repository.js';
 import XLSX from 'xlsx-js-style';
 
 // Mock repositories and external libs

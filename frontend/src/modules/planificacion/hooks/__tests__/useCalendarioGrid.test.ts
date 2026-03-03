@@ -64,8 +64,9 @@ describe('useCalendarioGrid Hook', () => {
   it('debería manejar un estado seguro si el planResult viene vacío', () => {
     const { result } = renderHook(() => useCalendarioGrid([], {}));
 
-    // Verificamos el fallback "01/02/2026" que tienes en el código
-    expect(result.current.nombreMes).toBe('Febrero');
+    const nombreMesActual = new Date().toLocaleString('es-ES', { month: 'long' }).charAt(0).toUpperCase() + new Date().toLocaleString('es-ES', { month: 'long' }).slice(1);
+
+    expect(result.current.nombreMes).toBe(nombreMesActual);
     expect(result.current.totalOrdenesMes).toBe(0);
   });
 });

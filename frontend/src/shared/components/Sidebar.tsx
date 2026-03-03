@@ -1,5 +1,5 @@
 // components/Sidebar.tsx
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import {
   LayoutDashboard, Calendar, CalendarCheck, Clock,
   ClipboardList, BarChart2, ChevronLeft, ChevronRight, Briefcase, ChevronDown, CircleDollarSign,
@@ -25,6 +25,70 @@ interface SidebarProps {
   userRoles?: string[];
 }
 
+interface SidebarGroupProps {
+  item: MenuItem;
+  isCollapsed: boolean;
+  activeTab: string;
+  openGroups: string[];
+  toggleGroup: (id: string) => void;
+  handleNav: (id: string) => void;
+}
+
+const SidebarGroup = ({
+  item,
+  isCollapsed,
+  activeTab,
+  openGroups,
+  toggleGroup,
+  handleNav,
+}: SidebarGroupProps) => {
+  const isOpen = openGroups.includes(item.id);
+  const hasActiveChild = item.children?.some((c: MenuItem) => c.id === activeTab);
+
+  return (
+    <div className="mb-2">
+      {/* Cabecera del Grupo */}
+      <button
+        onClick={() => !item.locked && toggleGroup(item.id)}
+        disabled={item.locked}
+        className={`
+          flex items-center w-full p-3 rounded-xl transition-all duration-200 group relative
+          ${isCollapsed ? 'justify-center' : 'justify-between'}
+          ${item.locked ? 'opacity-40 cursor-not-allowed grayscale' : 'hover:bg-pf-neutral-100'}
+          ${hasActiveChild && !isOpen ? 'bg-pf-neutral-50 text-pf-red' : 'text-pf-neutral-600'}
+        `}
+      >
+        <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'space-x-4'}`}>
+          <item.icon size={20} className={hasActiveChild ? 'text-pf-red' : ''} />
+          <span className={`font-black text-sm uppercase tracking-tight transition-all duration-300 ${isCollapsed ? 'w-0 opacity-0' : 'w-auto opacity-100 ml-4'}`}>
+            {item.label}
+          </span>
+        </div>
+        {!isCollapsed && !item.locked && (
+          <ChevronDown size={14} className={`text-pf-neutral-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+        )}
+      </button>
+
+      {/* Hijos del Grupo */}
+      <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isOpen && !isCollapsed ? 'max-h-96 opacity-100 mt-1' : 'max-h-0 opacity-0'}`}>
+        <div className="ml-4 pl-2 border-l-2 border-pf-neutral-100 space-y-1 mt-1">
+          {item.children?.map((child: MenuItem) => (
+            <SidebarItem
+              key={child.id}
+              to={child.path}
+              label={child.label}
+              icon={child.icon}
+              isCollapsed={false}
+              onClick={() => handleNav(child.id)}
+              className="py-2 text-xs font-medium"
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export const Sidebar = ({
   activeTab, setActiveTab, userRoles = []
 }: SidebarProps) => {
@@ -32,7 +96,9 @@ export const Sidebar = ({
   const { user, logout } = useAuth();
   const [isCollapsed, setIsCollapsed] = useState(window.innerWidth < 1024);
   const [openGroups, setOpenGroups] = useState<string[]>([]);
-  const [_v, _s] = useState(0);
+  const _K = {
+    _m1: "RGVzYXJyb2xsYWRvIHBvciBZYW5rbyBBY3XDsWEgVmlsbGFzZWNh"
+  };
 
   // Determinar acceso por rol
   const esProgramador = userRoles.includes('programador');
@@ -103,32 +169,35 @@ export const Sidebar = ({
     setOpenGroups(prev => prev.includes(groupId) ? prev.filter(g => g !== groupId) : [...prev, groupId]);
   };
 
-  // Easter Egg logic
+  const _clicks = useRef(0);
+  const _timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const _hI = () => {
-    _s(v => {
-      const next = v + 1;
-      if (next >= 10) {
-        const _m1 = "RGV2ZWxvcGVkIGJ5IFlhbmtvIEFjdcOxYQ==";
-        const _m2 = "TWFpbnRlbmFuY2UgUGxhbm5pbmcgU3lzdGVtIHYxLjAuNA==";
+    if (_timer.current) clearTimeout(_timer.current);
 
-        toast.success(decodeURIComponent(escape(atob(_m1))), {
-          description: atob(_m2),
-          icon: "🚀",
-          duration: 5000,
-          style: { borderRadius: '12px', fontWeight: 'bold' }
-        });
-        return 0;
-      }
-      return next;
-    });
-  };
+    _clicks.current++;
 
-  useEffect(() => {
-    if (_v > 0) {
-      const t = setTimeout(() => _s(0), 4000);
-      return () => clearTimeout(t);
+    if (_clicks.current >= 10) {
+      const _d = (s: string) => {
+        const b = atob(s);
+        const u = new Uint8Array(b.length);
+        for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i);
+        return new TextDecoder().decode(u);
+      };
+
+      toast.success(_d(_K._m1), {
+        duration: 5000,
+        style: { borderRadius: '12px', border: '1px solid #f1f1f1' }
+      });
+
+      _clicks.current = 0;
+    } else {
+      // Al asignar el timeout, TS ahora estará feliz
+      _timer.current = setTimeout(() => {
+        _clicks.current = 0;
+      }, 3000);
     }
-  }, [_v]);
+  };
 
   // Cerrar al seleccionar en móvil
   const handleNav = (id: string) => {
@@ -190,59 +259,18 @@ export const Sidebar = ({
 
           {/* MENU NAV */}
           <nav className="flex-1 px-3 space-y-1.5 overflow-x-hidden overflow-y-auto custom-scrollbar">
-            {menuStructure.map((item) => {
-
-              // RENDER: GRUPO
-              if (item.type === 'group') {
-                const isOpen = openGroups.includes(item.id);
-                const hasActiveChild = item.children?.some((c: MenuItem) => c.id === activeTab);
-
-                return (
-                  <div key={item.id} className="mb-2">
-                    {/* Cabecera del Grupo */}
-                    <button
-                      onClick={() => !item.locked && toggleGroup(item.id)}
-                      disabled={item.locked}
-                      className={`
-                    flex items-center w-full p-3 rounded-xl transition-all duration-200 group relative
-                    ${isCollapsed ? 'justify-center' : 'justify-between'}
-                    ${item.locked ? 'opacity-40 cursor-not-allowed grayscale' : 'hover:bg-pf-neutral-100'}
-                    ${hasActiveChild && !isOpen ? 'bg-pf-neutral-50 text-pf-red' : 'text-pf-neutral-600'}
-                  `}
-                    >
-                      <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'space-x-4'}`}>
-                        <item.icon size={20} className={hasActiveChild ? 'text-pf-red' : ''} />
-                        <span className={`font-black text-sm uppercase tracking-tight transition-all duration-300 ${isCollapsed ? 'w-0 opacity-0' : 'w-auto opacity-100 ml-4'}`}>
-                          {item.label}
-                        </span>
-                      </div>
-                      {!isCollapsed && !item.locked && (
-                        <ChevronDown size={14} className={`text-pf-neutral-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
-                      )}
-                    </button>
-
-                    {/* Hijos del Grupo */}
-                    <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isOpen && !isCollapsed ? 'max-h-96 opacity-100 mt-1' : 'max-h-0 opacity-0'}`}>
-                      <div className="ml-4 pl-2 border-l-2 border-pf-neutral-100 space-y-1 mt-1">
-                        {item.children?.map((child: MenuItem) => (
-                          <SidebarItem
-                            key={child.id}
-                            to={child.path}
-                            label={child.label}
-                            icon={child.icon}
-                            isCollapsed={false}
-                            onClick={() => handleNav(child.id)}
-                            className="py-2 text-xs font-medium"
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                );
-              }
-
-              // RENDER: ITEM SIMPLE
-              return (
+            {menuStructure.map((item) => (
+              item.type === 'group' ? (
+                <SidebarGroup
+                  key={item.id}
+                  item={item}
+                  isCollapsed={isCollapsed}
+                  activeTab={activeTab}
+                  openGroups={openGroups}
+                  toggleGroup={toggleGroup}
+                  handleNav={handleNav}
+                />
+              ) : (
                 <SidebarItem
                   key={item.id}
                   to={item.path}
@@ -253,8 +281,8 @@ export const Sidebar = ({
                   onClick={() => handleNav(item.id)}
                   className="py-2 text-sm font-medium"
                 />
-              );
-            })}
+              )
+            ))}
           </nav>
 
           {/* FOOTER: USUARIO + LOGOUT */}
